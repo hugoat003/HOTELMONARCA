@@ -4,7 +4,8 @@ import Tabs from '../../components/Tabs.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { METHOD_LABELS } from '../../data.js';
-import { fmtDateTime, fmtTime } from '../../lib/dates.js';
+import { fmtDateTime, fmtTime, today } from '../../lib/dates.js';
+import { exportXlsx } from '../../lib/excel.js';
 import { sum } from '../../lib/money.js';
 import { TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
@@ -75,6 +76,32 @@ function Cobros({ embedded = false }) {
           <span className="pill">{ok.length} cobros</span>
           <span className="pill">Total {fmt(sum(ok, (s) => s.grand))}</span>
           {mine && <span className="pill">Tus propinas {fmt(sum(ok, (s) => s.tip))}</span>}
+          {!mine && (
+            <button
+              className="btn small"
+              onClick={() =>
+                exportXlsx(`Monarca cobros ${scope === 'turno' ? 'turno' : 'todos'} ${today()}`, [
+                  {
+                    name: 'Cobros',
+                    rows: sales.map((s) => ({
+                      No: s.number,
+                      Fecha: fmtDateTime(s.ts),
+                      Cuenta: s.ref,
+                      'Forma de pago': s.payments.map((p) => METHOD_LABELS[p.method]).join(' + '),
+                      Cajero: userName(s.cashierId),
+                      Total: s.total,
+                      Propina: s.tip || 0,
+                      Cobrado: s.grand,
+                      Estado: s.status === 'ok' ? 'Cobrado' : 'Anulado',
+                      Factura: s.invoice ? s.invoice.number || 'Pendiente' : '',
+                    })),
+                  },
+                ])
+              }
+            >
+              Exportar a Excel
+            </button>
+          )}
         </div>
       </div>
 
@@ -212,6 +239,28 @@ function Facturas() {
         </div>
         <div className="header-stats">
           <span className="pill">Por facturar {fmt(pendingTotal)}</span>
+          <button
+            className="btn small"
+            onClick={() =>
+              exportXlsx(`Monarca facturas ${show} ${today()}`, [
+                {
+                  name: show === 'pendientes' ? 'Por facturar' : 'Facturadas',
+                  rows: list.map((s) => ({
+                    Comprobante: s.number,
+                    Fecha: fmtDateTime(s.ts),
+                    Cuenta: s.ref,
+                    NIT: s.invoice.nit,
+                    Nombre: s.invoice.name,
+                    Correo: s.invoice.email || '',
+                    Total: s.grand,
+                    Factura: s.invoice.number || '',
+                  })),
+                },
+              ])
+            }
+          >
+            Exportar a Excel
+          </button>
         </div>
       </div>
 

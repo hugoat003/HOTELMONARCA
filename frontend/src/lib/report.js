@@ -1,5 +1,5 @@
 import { METHOD_LABELS } from '../data.js';
-import { dateOf } from './dates.js';
+import { addDays, dateOf, nightsBetween, today } from './dates.js';
 import { nightlyRate } from './hotel.js';
 import { round2, sum } from './money.js';
 
@@ -104,6 +104,137 @@ export function buildReport(state, shift) {
     events: { collected: sum(events, (s) => s.grand), count: events.length },
     shop: { total: shopTotal, count: shop.length, margin: round2(shopTotal - shopCost) },
     production: round2(restTotal + lodgingRevenue + sum(events, (s) => s.grand) + shopTotal),
+    sales: [...sales].sort((a, b) => b.ts - a.ts),
+  };
+}
+
+// ── Reporte por rango de fechas (varios turnos) ──
+const inRange = (day, from, to) => day >= from && day <= to;
+
+// Ocupación e ingreso de hospedaje noche por noche (solo hasta hoy: el futuro aún no se produce)
+function lodgingByDay(state, from, to) {
+  const out = [];
+  const last = to < today() ? to : today();
+  for (let d = from; d <= last; d = addDays(d, 1)) {
+    const stays = state.reservations.filter(
+      (r) => (r.status === 'hospedado' || r.status === 'salida') && r.checkIn <= d && d < r.checkOut,
+    );
+    out.push({ day: d, occupied: stays.length, revenue: sum(stays, (r) => nightlyRate(r, state, d)) });
+  }
+  return out;
+}
+
+// Ventas (restaurante + tienda) y ocupación por día, para las gráficas de tendencia
+export function dailySeries(state, from, to) {
+  const lodging = Object.fromEntries(lodgingByDay(state, from, to).map((x) => [x.day, x]));
+  const rooms = state.rooms.length || 1;
+  const out = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    const sales = state.sales.filter(
+      (s) => s.status === 'ok' && (s.kind === 'restaurante' || s.kind === 'tienda') && dateOf(s.ts) === d,
+    );
+    out.push({
+      day: d,
+      sales: sum(sales, (s) => s.total),
+      occupancy: lodging[d] ? Math.round((lodging[d].occupied / rooms) * 100) : null,
+    });
+  }
+  return out;
+}
+
+export function buildRangeReport(state, from, to) {
+  const sales = state.sales.filter((s) => inRange(dateOf(s.ts), from, to));
+  const ok = sales.filter((s) => s.status === 'ok');
+  const rest = ok.filter((s) => s.kind === 'restaurante');
+  const hotel = ok.filter((s) => s.kind === 'hotel');
+  const events = ok.filter((s) => s.kind === 'evento');
+  const shop = ok.filter((s) => s.kind === 'tienda');
+
+  const rangeVoids = state.voids.filter((v) => inRange(dateOf(v.ts), from, to));
+  const voidedSales = sales.filter((s) => s.status === 'anulada');
+  const restTotal = sum(rest, (s) => s.total);
+  const tips = sum(rest, (s) => s.tip);
+  const courtesyLines = rest.flatMap((s) => s.lines).filter((l) => l.courtesy);
+
+  const byMethod = Object.keys(METHOD_LABELS).map((k) => {
+    const pays = ok.flatMap((s) => s.payments).filter((p) => p.method === k);
+    return { key: k, label: METHOD_LABELS[k], count: pays.length, amount: sum(pays, (p) => p.amount) };
+  });
+  const cats = {};
+  const items = {};
+  for (const l of rest.flatMap((s) => s.lines)) {
+    cats[l.cat] = round2((cats[l.cat] || 0) + l.price * l.qty);
+    items[l.name] = (items[l.name] || 0) + l.qty;
+  }
+
+  // Ventas y propinas por mesero; reparto según la configuración
+  const waiters = {};
+  for (const s of rest) {
+    const w = (waiters[s.waiterId] ||= { waiterId: s.waiterId, count: 0, total: 0, tips: 0 });
+    w.count++;
+    w.total = round2(w.total + s.total);
+    w.tips = round2(w.tips + s.tip);
+  }
+  const split = state.config.tipSplit || 'propio';
+  const byWaiter = Object.values(waiters)
+    .map((w) => ({
+      ...w,
+      name: state.users.find((u) => u.id === w.waiterId)?.name || '—',
+      avg: w.count ? round2(w.total / w.count) : 0,
+    }))
+    .sort((a, b) => b.total - a.total);
+  const share = byWaiter.length ? round2(tips / byWaiter.length) : 0;
+  for (const w of byWaiter) w.tipShare = split === 'iguales' ? share : w.tips;
+
+  const lodging = lodgingByDay(state, from, to);
+  const rooms = state.rooms.length;
+  const roomNights = sum(lodging, (x) => x.occupied);
+  const lodgingRevenue = sum(lodging, (x) => x.revenue);
+  const available = rooms * lodging.length;
+
+  return {
+    from,
+    to,
+    days: nightsBetween(from, to) + 1,
+    restTotal,
+    restCount: rest.length,
+    avgTicket: rest.length ? round2(restTotal / rest.length) : 0,
+    tips,
+    tipSplit: split,
+    discounts: sum(rest, (s) => s.discount?.amount),
+    courtesies: {
+      count: courtesyLines.reduce((a, l) => a + l.qty, 0),
+      amount: sum(courtesyLines, (l) => l.courtesy.price * l.qty),
+    },
+    byMethod,
+    byCategory: Object.entries(cats)
+      .map(([cat, amount]) => ({ cat, amount }))
+      .sort((a, b) => b.amount - a.amount),
+    topItems: Object.entries(items)
+      .map(([name, qty]) => ({ name, qty }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5),
+    byWaiter,
+    voids: {
+      lines: rangeVoids.length,
+      linesAmount: sum(rangeVoids, (v) => v.amount),
+      sales: voidedSales.length,
+      salesAmount: sum(voidedSales, (s) => s.grand),
+    },
+    hotel: {
+      rooms,
+      roomNights,
+      occupancy: available ? Math.round((roomNights / available) * 100) : 0,
+      lodgingRevenue,
+      adr: roomNights ? round2(lodgingRevenue / roomNights) : 0,
+      revpar: available ? round2(lodgingRevenue / available) : 0,
+      collected: sum(hotel, (s) => s.grand),
+      inguat: sum(hotel, (s) => s.taxes?.inguat),
+    },
+    events: { collected: sum(events, (s) => s.grand), count: events.length },
+    shop: { total: sum(shop, (s) => s.total), count: shop.length },
+    production: round2(restTotal + lodgingRevenue + sum(events, (s) => s.grand) + sum(shop, (s) => s.total)),
+    series: dailySeries(state, from, to),
     sales: [...sales].sort((a, b) => b.ts - a.ts),
   };
 }

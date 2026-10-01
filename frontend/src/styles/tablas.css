@@ -62,3 +62,7 @@
   grid-template-columns: 1.2fr 1.4fr 2fr 90px;
   align-items: center;
 }
+.tx-row.waiters {
+  grid-template-columns: 1.4fr 90px 1fr 1fr 1fr 1fr;
+  align-items: center;
+}

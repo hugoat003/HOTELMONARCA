@@ -115,3 +115,73 @@
 .dash-row strong {
   white-space: nowrap;
 }
+
+/* Gráficas */
+.chart {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.chart-body {
+  position: relative;
+  width: 100%;
+}
+.chart-body svg {
+  display: block;
+}
+.chart-grid {
+  stroke: #ede8e1;
+  stroke-width: 1;
+}
+.chart-base {
+  stroke: #d6cfc4;
+  stroke-width: 1;
+}
+.chart-axis {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.chart-axis.strong,
+.chart-value {
+  fill: var(--ink);
+  font-weight: 600;
+}
+.chart-value {
+  font-size: 12px;
+}
+.chart-body rect:focus {
+  outline: none;
+}
+.chart-tip {
+  position: absolute;
+  width: 140px;
+  pointer-events: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+.chart-table {
+  max-height: 200px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chart-hl {
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.chart-head .link { white-space: nowrap; margin-left: 12px; }

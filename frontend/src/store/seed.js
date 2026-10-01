@@ -2,7 +2,7 @@ import { addDays, addMonths, today } from '../lib/dates.js';
 import { linesTotal, round2 } from '../lib/money.js';
 import { buildReport } from '../lib/report.js';
 
-export const VERSION = 8;
+export const VERSION = 9;
 
 const CATEGORIES = ['Desayunos', 'Entradas', 'Platos fuertes', 'Postres', 'Bebidas', 'Bar', 'Especiales'];
 
@@ -146,6 +146,25 @@ const ROOMS = [
   ['302', 'ste'],
 ].map(([n, typeId]) => ({ n, typeId, hk: n === '203' ? 'sucia' : 'limpia' }));
 const RATE = Object.fromEntries(ROOMS.map((r) => [r.n, ROOM_TYPES.find((t) => t.id === r.typeId).rate]));
+
+// Generador pseudoaleatorio con semilla: el historial de ejemplo sale igual en cada carga
+const mulberry32 = (a) => () => {
+  a |= 0;
+  a = (a + 0x6d2b79f5) | 0;
+  let t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const PAST_GUESTS = [
+  ['Jorge Morales', 'DPI 1844 22331 0101'],
+  ['Claudia Herrera', 'DPI 2091 55418 0101'],
+  ['Emily Carter', 'Pasaporte 561200874'],
+  ['Familia Chen', 'Pasaporte E33018842'],
+  ['Andrés Rodas', 'DPI 2610 77120 0301'],
+  ['Lucía Barrios', 'DPI 2345 10982 0101'],
+  ['Marc Dubois', 'Pasaporte 19FR22871'],
+  ['Silvia Paz', 'DPI 1987 44120 0101'],
+];
 
 const at = (day, time) => new Date(`${day}T${time}:00`).getTime();
 const line = (mid, qty, sent = true, note = '', mods = []) => {
@@ -320,6 +339,29 @@ export function seed() {
       { adults: 1 },
     ),
   ];
+
+  // Historial de ocupación de los últimos 30 días: estancias ya cerradas, sin traslapes por habitación
+  const rnd = mulberry32(20261001);
+  ROOMS.forEach((room, ri) => {
+    const firstCurrent = reservations
+      .filter((r) => r.roomN === room.n && r.checkIn >= addDays(d0, -30))
+      .map((r) => r.checkIn)
+      .sort()[0];
+    const limit = firstCurrent && firstCurrent < addDays(d0, -1) ? firstCurrent : addDays(d0, -1);
+    let day = addDays(d0, -30 + Math.floor(rnd() * 3));
+    let n = 0;
+    while (day < limit) {
+      const nights = 1 + Math.floor(rnd() * 4);
+      const out = addDays(day, nights);
+      if (out > limit) break;
+      if (rnd() < 0.62) {
+        const [name, docId] = PAST_GUESTS[Math.floor(rnd() * PAST_GUESTS.length)];
+        const channel = ['Directo', 'Booking.com', 'Expedia', 'WhatsApp'][Math.floor(rnd() * 4)];
+        reservations.push(R(`hx${ri}_${n++}`, room.n, guest(name, '', docId), day, out, 'salida', { channel }));
+      }
+      day = addDays(out, Math.floor(rnd() * 3));
+    }
+  });
   // Las reservas de OTA llegan con tarifa pactada
   for (const r of reservations) if (r.channel === 'Booking.com' || r.channel === 'Expedia') r.pricing = 'fija';
   for (const r of reservations) if (r.status === 'salida') r.checkedOutOn = r.checkOut;
@@ -415,7 +457,56 @@ export function seed() {
       status: 'ok',
     };
   };
+  // Historial de ventas: un turno cerrado por día durante los últimos 30 días (antes de ayer)
+  const DISHES = [
+    'm1',
+    'm2',
+    'm3',
+    'm4',
+    'm5',
+    'm6',
+    'm8',
+    'm9',
+    'm10',
+    'm11',
+    'm12',
+    'm13',
+    'm14',
+    'm15',
+    'm16',
+    'm17',
+    'm18',
+    'm19',
+    'm20',
+  ];
+  const historyShifts = [];
+  const historySales = [];
+  for (let k = 30; k >= 2; k--) {
+    const day = addDays(d0, -k);
+    const sh = { id: 'sh_h' + k, openedAt: at(day, '07:00'), openedBy: 'u1', float: 1000, movements: [] };
+    historyShifts.push(sh);
+    const weekend = [5, 6, 0].includes(new Date(day + 'T12:00').getDay());
+    const count = 5 + Math.floor(rnd() * 6) + (weekend ? 4 : 0);
+    for (let i = 0; i < count; i++) {
+      const items = Array.from({ length: 2 + Math.floor(rnd() * 4) }, () => [
+        DISHES[Math.floor(rnd() * DISHES.length)],
+        1 + Math.floor(rnd() * 2),
+      ]);
+      const r = rnd();
+      const method = r < 0.4 ? 'efectivo' : r < 0.9 ? 'tarjeta' : 'transferencia';
+      const hh = String(7 + Math.floor((i / count) * 14)).padStart(2, '0');
+      const mm = String(Math.floor(rnd() * 60)).padStart(2, '0');
+      historySales.push(
+        sale(sh.id, day, `${hh}:${mm}`, `Mesa ${1 + Math.floor(rnd() * 10)}`, items, method, {
+          tip: rnd() < 0.6,
+          waiter: rnd() < 0.5 ? 'u3' : 'u4',
+        }),
+      );
+    }
+  }
+
   const sales = [
+    ...historySales,
     sale(
       shiftY.id,
       y,
@@ -527,7 +618,7 @@ export function seed() {
       { tip: true, waiter: 'u4' },
     ),
   ];
-  const roomSale = sales[5];
+  const roomSale = sales.find((x) => x.payments[0].method === 'habitacion');
   reservations
     .find((r) => r.id === 'r2')
     .charges.push({
@@ -945,6 +1036,15 @@ export function seed() {
   shiftY.difference = 0;
   shiftY.report = repY;
   state.shiftHistory.push(shiftY);
+  // Cierres de los días anteriores (más reciente primero)
+  for (const sh of historyShifts.reverse()) {
+    sh.closedAt = sh.openedAt + 15 * 3600 * 1000;
+    sh.closedBy = 'u1';
+    sh.report = buildReport(state, sh);
+    sh.counted = sh.report.cash.expected;
+    sh.difference = 0;
+    state.shiftHistory.push(sh);
+  }
 
   return state;
 }

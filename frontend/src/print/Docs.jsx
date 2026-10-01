@@ -325,3 +325,59 @@ export function EventDoc({ ev }) {
     </div>
   );
 }
+
+// Orden de servicio (BEO) para cocina y montaje: sin precios
+export function BeoDoc({ ev }) {
+  const { state } = useStore();
+  const t = eventTotals(ev, state);
+  return (
+    <div className="doc">
+      <Header />
+      <div className="doc-title">Orden de servicio</div>
+      <div className="doc-center doc-small">
+        {EVENT_STATUS[ev.status]} · impresa {fmtDateTime(Date.now())}
+      </div>
+      <div className="doc-sep" />
+      <Row l="Evento" r={ev.name} strong />
+      <Row l="Fecha" r={fmtDate(ev.date, { weekday: 'long', day: 'numeric', month: 'long' })} />
+      <Row l="Horario" r={`${ev.start} – ${ev.end}`} />
+      <Row l="Lugar" r={t.venue?.name || 'Restaurante / terraza'} />
+      <Row l="Invitados" r={ev.guests} strong />
+      <Row l="Contacto" r={`${ev.client.name}${ev.client.phone ? ' · ' + ev.client.phone : ''}`} />
+      <div className="doc-sep" />
+      <div className="doc-title" style={{ fontSize: 15 }}>
+        Cocina
+      </div>
+      {t.menu ? (
+        <>
+          <Row
+            l={t.menu.name}
+            r={`${ev.menuQty} ${t.menu.unit === 'pareja' ? 'parejas' : t.menu.unit === 'evento' ? 'servicio' : 'platos'}`}
+            strong
+          />
+          {t.menu.description && <div className="doc-small">{t.menu.description}</div>}
+        </>
+      ) : (
+        <div className="doc-small">Sin menú del hotel.</div>
+      )}
+      <div className="doc-sep" />
+      <div className="doc-title" style={{ fontSize: 15 }}>
+        Montaje y extras
+      </div>
+      {ev.extras.length ? (
+        ev.extras.map((x) => <Row key={x.id} l={x.desc} r="✓" />)
+      ) : (
+        <div className="doc-small">Sin extras.</div>
+      )}
+      <div className="doc-sep" />
+      <div className="doc-title" style={{ fontSize: 15 }}>
+        Notas y alergias
+      </div>
+      <div>{ev.notes || 'Sin notas.'}</div>
+      <div className="doc-signatures">
+        <span>Cocina</span>
+        <span>Montaje</span>
+      </div>
+    </div>
+  );
+}

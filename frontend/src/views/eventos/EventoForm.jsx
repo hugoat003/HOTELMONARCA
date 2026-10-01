@@ -9,7 +9,8 @@ import { useStore } from '../../store/store.jsx';
 const qtyFor = (menu, guests) =>
   !menu ? 0 : menu.unit === 'pareja' ? Math.ceil(guests / 2) : menu.unit === 'evento' ? 1 : guests;
 
-export default function EventoForm({ ev, onClose, onSave }) {
+// date (opcional): fecha con la que empieza un evento nuevo (desde el calendario)
+export default function EventoForm({ ev, date, onClose, onSave }) {
   const { state, fmt } = useStore();
   const [f, setF] = useState(() =>
     ev
@@ -17,7 +18,7 @@ export default function EventoForm({ ev, onClose, onSave }) {
       : {
           id: uid('e'),
           name: '',
-          date: addDays(today(), 7),
+          date: date || addDays(today(), 7),
           start: '18:00',
           end: '22:00',
           venueId: state.venues[0]?.id || '',

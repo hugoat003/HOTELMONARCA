@@ -77,3 +77,98 @@
 .event-money .tag {
   margin-left: 0;
 }
+
+/* Calendario mensual de eventos */
+.ev-cal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ev-cal-title {
+  font-family: var(--condensed);
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ev-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--line);
+  gap: 1px;
+}
+.ev-weekday {
+  background: var(--surface);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ev-day {
+  background: #fff;
+  min-height: 96px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.ev-day.outside {
+  background: var(--surface);
+}
+.ev-day.past .ev-day-num {
+  color: var(--faint);
+}
+.ev-day.today .ev-day-num {
+  background: var(--ink);
+  color: #fff;
+}
+.ev-day-num {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ev-day-num:not(:disabled):hover {
+  background: var(--line-soft);
+}
+.ev-chip {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ev-chip span {
+  font-weight: 500;
+  opacity: 0.75;
+}
+.ev-chip.selected {
+  border-color: var(--accent);
+}
+.ev-chip.status-confirmado {
+  background: var(--ink);
+  color: #fff;
+}
+.ev-chip.status-cotizado {
+  background: #f3e3d9;
+  color: #8a3a1b;
+}
+.ev-chip.status-realizado {
+  background: #e3ede4;
+  color: #2f5e38;
+}

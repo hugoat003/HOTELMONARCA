@@ -4,7 +4,8 @@ import KpiCard from '../../components/KpiCard.jsx';
 import { ItemModal, MoveModal, StockMoves, StockTag } from '../../components/Stock.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { INV_CATS, INV_MOVE_LABELS, INV_MOVES } from '../../data.js';
-import { uid } from '../../lib/dates.js';
+import { today, uid } from '../../lib/dates.js';
+import { exportXlsx } from '../../lib/excel.js';
 import { qtyFmt, stockStatus } from '../../lib/inventory.js';
 import { sum } from '../../lib/money.js';
 import { A } from '../../store/actions.js';
@@ -30,6 +31,24 @@ export default function Inventario() {
     )
     .sort((a, b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
   const low = state.inventory.filter((it) => stockStatus(it) !== 'ok');
+  const exportExcel = () =>
+    exportXlsx(`Monarca inventario ${today()}`, [
+      {
+        name: 'Inventario',
+        rows: [...state.inventory]
+          .sort((a, b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name))
+          .map((it) => ({
+            Producto: it.name,
+            Categoría: it.cat,
+            Unidad: it.unit,
+            Existencia: it.stock,
+            Mínimo: it.min,
+            Estado: stockStatus(it) === 'ok' ? 'OK' : stockStatus(it) === 'bajo' ? 'Bajo mínimo' : 'Agotado',
+            'Costo unitario': it.cost,
+            Valor: Math.round(it.stock * it.cost * 100) / 100,
+          })),
+      },
+    ]);
   const value = sum(state.inventory, (it) => it.stock * it.cost);
   const outOfStock = low.filter((i) => i.stock <= 0).length;
   const waste = sum(
@@ -70,23 +89,28 @@ export default function Inventario() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button
-            className="btn btn-primary small"
-            onClick={() =>
-              setEdit({
-                id: uid('i'),
-                name: '',
-                cat: cat === 'Todas' ? INV_CATS[0] : cat,
-                unit: 'unidad',
-                stock: '0',
-                min: '',
-                cost: '',
-                isNew: true,
-              })
-            }
-          >
-            + Producto
-          </button>
+          <span className="chips">
+            <button className="btn small" onClick={exportExcel}>
+              Exportar a Excel
+            </button>
+            <button
+              className="btn btn-primary small"
+              onClick={() =>
+                setEdit({
+                  id: uid('i'),
+                  name: '',
+                  cat: cat === 'Todas' ? INV_CATS[0] : cat,
+                  unit: 'unidad',
+                  stock: '0',
+                  min: '',
+                  cost: '',
+                  isNew: true,
+                })
+              }
+            >
+              + Producto
+            </button>
+          </span>
         </div>
       </div>
 

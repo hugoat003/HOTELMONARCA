@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import KpiCard from '../../components/KpiCard.jsx';
+import Tabs from '../../components/Tabs.jsx';
 import DataTable from '../../components/DataTable.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { METHOD_LABELS } from '../../data.js';
@@ -7,10 +8,29 @@ import { dateOf, fmtDate, fmtDateTime, fmtTime } from '../../lib/dates.js';
 import { buildReport } from '../../lib/report.js';
 import { ReportDoc } from '../../print/Docs.jsx';
 import { useStore } from '../../store/store.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
+import RangeReport from './RangeReport.jsx';
 
 const BAR_COLORS = ['#1B1917', '#6F675E', '#B8B0A6', '#D6CFC4'];
 
 export default function Reporte({ go }) {
+  const [tab, setTab] = usePersisted('reporte.pestana', 'turno');
+  return (
+    <div className="report">
+      <Tabs
+        tabs={[
+          ['turno', 'Por turno'],
+          ['rango', 'Por fechas'],
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
+      {tab === 'rango' ? <RangeReport /> : <ShiftReport go={go} />}
+    </div>
+  );
+}
+
+function ShiftReport({ go }) {
   const { state, fmt } = useStore();
   const ui = useUI();
   const shifts = [...(state.shift ? [state.shift] : []), ...state.shiftHistory];
@@ -28,12 +48,6 @@ export default function Reporte({ go }) {
     );
 
   const r = shift.closedAt ? shift.report : buildReport(state, shift);
-  const maxCat = Math.max(1, ...r.byCategory.map((c) => c.amount));
-  const methodTotal = Math.max(
-    1,
-    r.byMethod.reduce((a, m) => a + m.amount, 0),
-  );
-
   const kpis = [
     ['Ventas restaurante', fmt(r.restTotal), 'IVA incluido, sin propinas'],
     ['Cuentas cobradas', String(r.restCount), 'Ticket promedio ' + fmt(r.avgTicket)],
@@ -46,7 +60,7 @@ export default function Reporte({ go }) {
   ];
 
   return (
-    <div className="report">
+    <>
       <div className="report-head">
         <div>
           <div className="report-title">Reporte Diario de Producción</div>
@@ -86,83 +100,7 @@ export default function Reporte({ go }) {
         ))}
       </div>
 
-      <div className="report-grid three">
-        <div className="card">
-          <div className="card-label">Cobros por forma de pago</div>
-          {r.byMethod.map((m, i) => (
-            <div key={m.key} className="stack-tight gap-6">
-              <div className="row text-md">
-                <span>
-                  {m.label} <span className="panel-sub">· {m.count}</span>
-                </span>
-                <strong>{fmt(m.amount)}</strong>
-              </div>
-              <div className="bar">
-                <div style={{ background: BAR_COLORS[i], width: (m.amount / methodTotal) * 100 + '%' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="card">
-          <div className="card-label">Ventas por categoría</div>
-          {r.byCategory.map((c) => (
-            <div key={c.cat} className="stack-tight gap-6">
-              <div className="row text-md">
-                <span>{c.cat}</span>
-                <strong>{fmt(c.amount)}</strong>
-              </div>
-              <div className="bar">
-                <div style={{ background: '#1B1917', width: (c.amount / maxCat) * 100 + '%' }} />
-              </div>
-            </div>
-          ))}
-          {!r.byCategory.length && <div className="panel-sub">Sin ventas.</div>}
-        </div>
-        <div className="card gap-10">
-          <div className="card-label">Más vendidos</div>
-          {r.topItems.map((t, i) => (
-            <div key={t.name} className="row text-md">
-              <span>
-                <span className="panel-sub">{i + 1}.</span> {t.name}
-              </span>
-              <strong>{t.qty}</strong>
-            </div>
-          ))}
-          <div className="card-label mt-8">Control</div>
-          <div className="row text-md">
-            <span>Descuentos</span>
-            <strong>{fmt(r.discounts)}</strong>
-          </div>
-          <div className="row text-md">
-            <span>Cortesías · {r.courtesies?.count || 0}</span>
-            <strong>{fmt(r.courtesies?.amount)}</strong>
-          </div>
-          <div className="row text-md">
-            <span>Propinas</span>
-            <strong>{fmt(r.tips)}</strong>
-          </div>
-          <div className="row text-md">
-            <span>Platillos anulados · {r.voids.lines}</span>
-            <strong>{fmt(r.voids.linesAmount)}</strong>
-          </div>
-          <div className="row text-md">
-            <span>Comprobantes anulados · {r.voids.sales}</span>
-            <strong>{fmt(r.voids.salesAmount)}</strong>
-          </div>
-          <div className="row text-md">
-            <span>INGUAT cobrado</span>
-            <strong>{fmt(r.hotel.inguat)}</strong>
-          </div>
-          <div className="row text-md">
-            <span>Cobros de eventos · {r.events?.count || 0}</span>
-            <strong>{fmt(r.events?.collected)}</strong>
-          </div>
-          <div className="row text-md">
-            <span>Tienda · {r.shop?.count || 0} ventas</span>
-            <strong>{fmt(r.shop?.total)}</strong>
-          </div>
-        </div>
-      </div>
+      <BreakdownCards r={r} />
 
       <DataTable title="Cobros del turno" columns={['Hora', 'Cuenta', 'Forma de pago', 'Total']}>
         {r.sales.map((s) => (
@@ -174,6 +112,95 @@ export default function Reporte({ go }) {
           </div>
         ))}
       </DataTable>
+    </>
+  );
+}
+
+// Formas de pago, categorías, más vendidos y controles (compartido por turno y por fechas)
+export function BreakdownCards({ r }) {
+  const { fmt } = useStore();
+  const maxCat = Math.max(1, ...r.byCategory.map((c) => c.amount));
+  const methodTotal = Math.max(
+    1,
+    r.byMethod.reduce((a, m) => a + Math.max(0, m.amount), 0),
+  );
+  return (
+    <div className="report-grid three">
+      <div className="card">
+        <div className="card-label">Cobros por forma de pago</div>
+        {r.byMethod.map((m, i) => (
+          <div key={m.key} className="stack-tight gap-6">
+            <div className="row text-md">
+              <span>
+                {m.label} <span className="panel-sub">· {m.count}</span>
+              </span>
+              <strong>{fmt(m.amount)}</strong>
+            </div>
+            <div className="bar">
+              <div style={{ background: BAR_COLORS[i], width: (m.amount / methodTotal) * 100 + '%' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="card">
+        <div className="card-label">Ventas por categoría</div>
+        {r.byCategory.map((c) => (
+          <div key={c.cat} className="stack-tight gap-6">
+            <div className="row text-md">
+              <span>{c.cat}</span>
+              <strong>{fmt(c.amount)}</strong>
+            </div>
+            <div className="bar">
+              <div style={{ background: '#1B1917', width: (c.amount / maxCat) * 100 + '%' }} />
+            </div>
+          </div>
+        ))}
+        {!r.byCategory.length && <div className="panel-sub">Sin ventas.</div>}
+      </div>
+      <div className="card gap-10">
+        <div className="card-label">Más vendidos</div>
+        {r.topItems.map((t, i) => (
+          <div key={t.name} className="row text-md">
+            <span>
+              <span className="panel-sub">{i + 1}.</span> {t.name}
+            </span>
+            <strong>{t.qty}</strong>
+          </div>
+        ))}
+        <div className="card-label mt-8">Control</div>
+        <div className="row text-md">
+          <span>Descuentos</span>
+          <strong>{fmt(r.discounts)}</strong>
+        </div>
+        <div className="row text-md">
+          <span>Cortesías · {r.courtesies?.count || 0}</span>
+          <strong>{fmt(r.courtesies?.amount)}</strong>
+        </div>
+        <div className="row text-md">
+          <span>Propinas</span>
+          <strong>{fmt(r.tips)}</strong>
+        </div>
+        <div className="row text-md">
+          <span>Platillos anulados · {r.voids.lines}</span>
+          <strong>{fmt(r.voids.linesAmount)}</strong>
+        </div>
+        <div className="row text-md">
+          <span>Comprobantes anulados · {r.voids.sales}</span>
+          <strong>{fmt(r.voids.salesAmount)}</strong>
+        </div>
+        <div className="row text-md">
+          <span>INGUAT cobrado</span>
+          <strong>{fmt(r.hotel.inguat)}</strong>
+        </div>
+        <div className="row text-md">
+          <span>Cobros de eventos · {r.events?.count || 0}</span>
+          <strong>{fmt(r.events?.collected)}</strong>
+        </div>
+        <div className="row text-md">
+          <span>Tienda · {r.shop?.count || 0} ventas</span>
+          <strong>{fmt(r.shop?.total)}</strong>
+        </div>
+      </div>
     </div>
   );
 }

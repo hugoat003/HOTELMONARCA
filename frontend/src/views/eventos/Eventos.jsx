@@ -3,10 +3,11 @@ import { useUI } from '../../components/ui/UIProvider.jsx';
 import { EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../../data.js';
 import { dateOf, fmtDate, fmtTime, today, uid } from '../../lib/dates.js';
 import { eventTotals, isActiveEvent } from '../../lib/events.js';
-import { EventDoc, TicketDoc } from '../../print/Docs.jsx';
+import { BeoDoc, EventDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import Cobro, { AmountModal } from '../restaurante/Cobro.jsx';
+import EventCalendar from './EventCalendar.jsx';
 import EventoForm from './EventoForm.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
 
@@ -24,7 +25,9 @@ export default function Eventos() {
   const ui = useUI();
   const [filter, setFilter] = usePersisted('eventos.filtro', 'proximos');
   const [selId, setSelId] = usePersisted('eventos.seleccion', null);
-  const [form, setForm] = useState(null); // null | 'new' | evento
+  const [form, setForm] = useState(null); // null | { date } (nuevo) | evento
+  const [view, setView] = usePersisted('eventos.vista', 'lista');
+  const [month, setMonth] = usePersisted('eventos.mes', today().slice(0, 8) + '01');
 
   const d0 = today();
   const list = state.events
@@ -69,50 +72,84 @@ export default function Eventos() {
         </div>
 
         <div className="row items-center">
-          <div className="chips">
-            {FILTERS.map(([k, l]) => (
-              <button key={k} className={'chip small' + (filter === k ? ' active' : '')} onClick={() => setFilter(k)}>
+          <div className="segmented row two" style={{ width: 220, padding: 3 }}>
+            {[
+              ['lista', 'Lista'],
+              ['calendario', 'Calendario'],
+            ].map(([k, l]) => (
+              <button
+                key={k}
+                className={'seg-btn' + (view === k ? ' active' : '')}
+                style={{ padding: '7px 4px' }}
+                onClick={() => setView(k)}
+              >
                 {l}
               </button>
             ))}
           </div>
-          <button className="btn btn-primary small" onClick={() => setForm('new')}>
+          <button className="btn btn-primary small" onClick={() => setForm({})}>
             + Nuevo evento
           </button>
         </div>
 
-        <div className="stack-tight gap-10">
-          {list.map((e) => {
-            const t = eventTotals(e, state);
-            return (
-              <button
-                key={e.id}
-                className={'event-row' + (selId === e.id ? ' selected' : '')}
-                onClick={() => setSelId(e.id)}
-              >
-                <span className="event-date">
-                  <strong>{fmtDate(e.date, { day: 'numeric' })}</strong>
-                  <span>{fmtDate(e.date, { month: 'short' })}</span>
-                </span>
-                <span className="event-main">
-                  <strong>{e.name}</strong>
-                  <span className="panel-sub">
-                    {t.venue?.name || 'Restaurante / terraza'} · {e.start}–{e.end} · {e.guests} invitados
-                    {t.menu ? ` · ${t.menu.name}` : ''}
+        {view === 'calendario' && (
+          <EventCalendar
+            events={state.events.filter((e) => e.status !== 'cancelado')}
+            venues={state.venues}
+            month={month}
+            onMonth={setMonth}
+            selectedId={selId}
+            onSelect={(e) => setSelId(e.id)}
+            onNew={(date) => setForm({ date })}
+          />
+        )}
+
+        {view === 'lista' && (
+          <div className="row items-center">
+            <div className="chips">
+              {FILTERS.map(([k, l]) => (
+                <button key={k} className={'chip small' + (filter === k ? ' active' : '')} onClick={() => setFilter(k)}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {view === 'lista' && (
+          <div className="stack-tight gap-10">
+            {list.map((e) => {
+              const t = eventTotals(e, state);
+              return (
+                <button
+                  key={e.id}
+                  className={'event-row' + (selId === e.id ? ' selected' : '')}
+                  onClick={() => setSelId(e.id)}
+                >
+                  <span className="event-date">
+                    <strong>{fmtDate(e.date, { day: 'numeric' })}</strong>
+                    <span>{fmtDate(e.date, { month: 'short' })}</span>
                   </span>
-                </span>
-                <span className="event-money">
-                  <span className={'tag status-' + e.status}>{EVENT_STATUS[e.status]}</span>
-                  <strong>{fmt(t.total)}</strong>
-                  {t.balance > 0.004 && e.status !== 'cancelado' && (
-                    <span className="panel-sub">Saldo {fmt(t.balance)}</span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-          {!list.length && <div className="panel-sub">No hay eventos en esta vista.</div>}
-        </div>
+                  <span className="event-main">
+                    <strong>{e.name}</strong>
+                    <span className="panel-sub">
+                      {t.venue?.name || 'Restaurante / terraza'} · {e.start}–{e.end} · {e.guests} invitados
+                      {t.menu ? ` · ${t.menu.name}` : ''}
+                    </span>
+                  </span>
+                  <span className="event-money">
+                    <span className={'tag status-' + e.status}>{EVENT_STATUS[e.status]}</span>
+                    <strong>{fmt(t.total)}</strong>
+                    {t.balance > 0.004 && e.status !== 'cancelado' && (
+                      <span className="panel-sub">Saldo {fmt(t.balance)}</span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+            {!list.length && <div className="panel-sub">No hay eventos en esta vista.</div>}
+          </div>
+        )}
       </div>
 
       <div className="side-panel room-panel">
@@ -123,7 +160,7 @@ export default function Eventos() {
             <div className="panel-empty">
               Selecciona un evento para ver su detalle, registrar pagos o imprimir la cotización.
             </div>
-            <button className="btn btn-primary" onClick={() => setForm('new')}>
+            <button className="btn btn-primary" onClick={() => setForm({})}>
               Nuevo evento
             </button>
           </div>
@@ -132,13 +169,14 @@ export default function Eventos() {
 
       {form && (
         <EventoForm
-          ev={form === 'new' ? null : form}
+          ev={form.id ? form : null}
+          date={form.date}
           onClose={() => setForm(null)}
           onSave={(ev) => {
             update((d) => A.saveEvent(d, ev));
             setForm(null);
             setSelId(ev.id);
-            ui.notify(form === 'new' ? `Evento creado · ${ev.name}` : 'Evento actualizado');
+            ui.notify(form.id ? 'Evento actualizado' : `Evento creado · ${ev.name}`);
           }}
         />
       )}
@@ -318,6 +356,9 @@ function EventPanel({ ev, onEdit }) {
           )}
         </>
       )}
+      <button className="btn btn-quiet" onClick={() => ui.preview('Orden de servicio', <BeoDoc ev={ev} />)}>
+        Orden de servicio (BEO)
+      </button>
       <button
         className="btn btn-quiet"
         onClick={() =>

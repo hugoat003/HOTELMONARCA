@@ -54,6 +54,13 @@ test('pantallas de gerencia', async ({ page }) => {
   await page.getByRole('button', { name: 'Imprimir' }).click();
   await snap(page, 'reporte-impreso');
   await modalClick(page, 'Cerrar');
+  await page.getByRole('button', { name: 'Por fechas', exact: true }).click();
+  await page.getByRole('button', { name: 'Últimos 30 días' }).click();
+  await snap(page, 'reporte-rango');
+  await nav(page, 'Eventos');
+  await page.getByRole('button', { name: 'Calendario', exact: true }).click();
+  await snap(page, 'eventos-calendario');
+  await page.getByRole('button', { name: 'Lista', exact: true }).click();
   await nav(page, 'Configuración');
   await snap(page, 'config-menu');
   await page.getByRole('button', { name: 'Mapa de mesas' }).click();
