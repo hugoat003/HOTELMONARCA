@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cotización · Sistema POS Monarca</title>
+<style>
+@font-face { font-family: 'Barlow'; font-weight: 400; src: url('../../frontend/public/fonts/barlow-400.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 500; src: url('../../frontend/public/fonts/barlow-500.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 600; src: url('../../frontend/public/fonts/barlow-600.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-weight: 600; src: url('../../frontend/public/fonts/barlow-condensed-600.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-weight: 700; src: url('../../frontend/public/fonts/barlow-condensed-700.woff2') format('woff2'); }
+
+@page { size: letter; margin: 16mm 16mm 18mm; }
+:root { --ink: #1b1917; --muted: #6f675e; --line: #e4ded5; --soft: #f5f2ed; --accent: #c4552b; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Barlow', sans-serif; font-size: 10.5pt; line-height: 1.45; color: var(--ink); }
+h1, h2, h3 { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .03em; margin: 0; }
+h1 { font-size: 22pt; line-height: 1.05; }
+h2 { font-size: 15pt; margin: 0 0 8px; }
+h3 { font-size: 11.5pt; letter-spacing: .05em; }
+p { margin: 0 0 8px; }
+.muted { color: var(--muted); }
+.accent { color: var(--accent); }
+.page-break { break-before: page; }
+section { margin-top: 16px; }
+
+/* Encabezado */
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--ink); }
+.head img { width: 92px; }
+.meta { text-align: right; font-size: 9.5pt; }
+.meta .doc { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16pt; letter-spacing: .04em; }
+.parties { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; font-size: 9.5pt; }
+.parties .label { font-size: 8pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.hero { margin-top: 12px; }
+.hero p { font-size: 10.5pt; margin-top: 6px; }
+
+/* Módulos */
+.modules { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mod { border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; break-inside: avoid; font-size: 9.3pt; line-height: 1.35; }
+.mod h3 { margin-bottom: 5px; }
+.mod ul { margin: 0; padding-left: 15px; }
+.mod li { margin: 0; }
+.mod.new { border-color: var(--ink); background: var(--soft); }
+.badge { display: inline-block; font-family: 'Barlow', sans-serif; font-size: 7.5pt; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: var(--ink); color: #fff; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: 2px; }
+.callout { margin-top: 18px; border-left: 3px solid var(--accent); background: var(--soft); padding: 10px 14px; border-radius: 0 6px 6px 0; }
+.callout strong { font-family: 'Barlow Condensed', sans-serif; font-size: 12pt; text-transform: uppercase; letter-spacing: .03em; }
+
+/* Capturas */
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; margin-top: 6px; }
+.shots figure { margin: 0; break-inside: avoid; }
+.shots img { width: 100%; border: 1px solid var(--line); border-radius: 4px; display: block; }
+.shots figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 3px; }
+
+/* Tablas */
+table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+th { text-align: left; font-size: 8pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--ink); padding: 6px 8px; }
+td { padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+td small { display: block; color: var(--muted); font-size: 8.5pt; }
+tr.sub td { font-weight: 600; background: var(--soft); }
+tr.total td { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14pt; border-bottom: none; border-top: 2px solid var(--ink); padding-top: 10px; }
+.group td { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 11pt; letter-spacing: .05em; text-transform: uppercase; padding-top: 8px; border-bottom: 1px solid var(--ink); }
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.card { border: 1px solid var(--line); border-radius: 6px; padding: 11px 13px; break-inside: avoid; }
+.card .big { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18pt; }
+.card.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
+.card.dark .muted { color: #c9c1b6; }
+
+.terms { margin: 0; padding-left: 16px; }
+.terms li { margin: 3px 0; }
+.sign { break-inside: avoid; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 22px; font-size: 9.5pt; text-align: center; }
+.sign div { border-top: 1px solid var(--ink); padding-top: 5px; }
+</style>
+</head>
+<body>
+
+<!-- ───────── Página 1 ───────── -->
+<div class="head">
+  <img src="../../frontend/public/logo-monarca.png" alt="Monarca Hotel Boutique">
+  <div class="meta">
+    <div class="doc">COTIZACIÓN COT-2026-001</div>
+    <div>Fecha: 25 de septiembre de 2026</div>
+    <div>Válida hasta: 10 de octubre de 2026</div>
+  </div>
+</div>
+
+<div class="parties">
+  <div>
+    <div class="label">Preparado para</div>
+    <strong>Monarca Hotel Boutique</strong><br>
+    Atención: Dirección general
+  </div>
+  <div>
+    <div class="label">Preparado por</div>
+    <strong>Hugo del Valle</strong><br>
+    Tel. 4681 1851 · hugoaledelvallec@gmail.com
+  </div>
+</div>
+
+<div class="hero">
+  <h1>Sistema de punto de venta<br>y gestión hotelera Monarca</h1>
+  <p>
+    Un solo sistema para el restaurante, el hotel y los eventos: desde tomar la orden en la mesa hasta cerrar la caja
+    del día, con reportes que puede consultar desde su teléfono. Hecho a la medida del hotel y funcionando en sus
+    propias instalaciones, con facturación en quetzales (IVA 12 % e INGUAT 10 %) y factura con NIT o CF.
+  </p>
+</div>
+
+<section>
+  <h2>Qué incluye el sistema</h2>
+  <div class="modules">
+    <div class="mod">
+      <h3>Restaurante</h3>
+      <ul>
+        <li>Mapa de mesas por zona (salón, terraza) y órdenes para llevar</li>
+        <li>Pedidos desde tablet con notas para cocina</li>
+        <li>Comanda impresa en cocina al enviar el pedido</li>
+        <li>Precuenta, cuenta dividida y cambio de mesa</li>
+        <li>Cobro en efectivo, tarjeta, transferencia o cargo a la habitación</li>
+        <li>Propina sugerida y descuentos autorizados por gerencia</li>
+      </ul>
+    </div>
+    <div class="mod">
+      <h3>Hotel</h3>
+      <ul>
+        <li>Calendario de reservas por habitación</li>
+        <li>Check-in y check-out con datos del huésped</li>
+        <li>Estado de cuenta con consumos, cargos extra y anticipos</li>
+        <li>Factura de salida con IVA e INGUAT desglosados</li>
+        <li>Control de limpieza y habitaciones fuera de servicio</li>
+        <li>Canales: directo, teléfono, WhatsApp, Booking, Expedia</li>
+      </ul>
+    </div>
+    <div class="mod new">
+      <h3>Eventos <span class="badge">A su medida</span></h3>
+      <ul>
+        <li>Dos salones, cada uno con su propio precio</li>
+        <li>Menús especiales para eventos, separados del menú normal</li>
+        <li>Paquetes con precio especial, como la cena de parejas</li>
+        <li>Agenda de eventos y cobro de anticipos</li>
+      </ul>
+    </div>
+    <div class="mod new">
+      <h3>Tarifas mensuales <span class="badge">A su medida</span></h3>
+      <ul>
+        <li>Estancias largas con tarifa mensual</li>
+        <li>Pagos parciales durante el mes</li>
+        <li>Saldo pendiente siempre visible</li>
+        <li>Recibo por cada abono</li>
+      </ul>
+    </div>
+    <div class="mod new">
+      <h3>Inventario del restaurante <span class="badge">A su medida</span></h3>
+      <ul>
+        <li>Control de insumos y material del restaurante</li>
+        <li>Registro de entradas, salidas y mermas</li>
+        <li>Aviso cuando un producto está por agotarse</li>
+      </ul>
+    </div>
+    <div class="mod new">
+      <h3>Dashboard en su teléfono <span class="badge">A su medida</span></h3>
+      <ul>
+        <li>Dominio web propio del hotel</li>
+        <li>Ventas, ocupación y caja del día desde el celular</li>
+        <li>Dominio y hosting incluidos el primer año</li>
+      </ul>
+    </div>
+    <div class="mod">
+      <h3>Caja y reportes</h3>
+      <ul>
+        <li>Apertura de turno, entradas y salidas de efectivo</li>
+        <li>Arqueo por billetes y monedas con faltante o sobrante</li>
+        <li>Reporte diario de producción: ventas, ocupación, ADR y RevPAR</li>
+        <li>Platillos más vendidos, descuentos y anulaciones</li>
+      </ul>
+    </div>
+    <div class="mod">
+      <h3>Control y seguridad</h3>
+      <ul>
+        <li>Usuarios con PIN por rol: mesero, recepción y gerente</li>
+        <li>Anulaciones y descuentos solo con autorización del gerente</li>
+        <li>Menú, precios, mesas y habitaciones editables por el hotel</li>
+        <li>Respaldos de la información</li>
+      </ul>
+    </div>
+  </div>
+
+</section>
+
+<!-- ───────── Página 2 ───────── -->
+<section class="page-break">
+  <h2>Así se ve el sistema</h2>
+  <div class="shots">
+    <figure><img src="img/mesas.png"><figcaption>Mapa de mesas del restaurante</figcaption></figure>
+    <figure><img src="img/pedido.png"><figcaption>Toma de pedido y cuenta de la mesa</figcaption></figure>
+    <figure><img src="img/reservas.png"><figcaption>Calendario de reservas del hotel</figcaption></figure>
+    <figure><img src="img/reporte.png"><figcaption>Reporte diario de producción</figcaption></figure>
+  </div>
+  <div class="callout">
+    <strong>¿Necesita algo que no está en la lista?</strong>
+    <p style="margin:4px 0 0">
+      El sistema es propio y se adapta a la operación del hotel. Si surge una necesidad nueva, la implementamos.
+      Los módulos marcados como <em>A su medida</em> fueron diseñados a partir de lo conversado en nuestra primera reunión.
+    </p>
+  </div>
+</section>
+
+<section class="page-break">
+  <h2>Inversión</h2>
+  <table>
+    <thead>
+      <tr><th>Descripción</th><th class="num">Cant.</th><th class="num">Precio unitario</th><th class="num">Total</th></tr>
+    </thead>
+    <tbody>
+      <tr class="group"><td colspan="4">Equipo</td></tr>
+      <tr><td>Mini PC Intel NUC<small>Servidor del sistema</small></td><td class="num">1</td><td class="num">Q 1,200.00</td><td class="num">Q 1,200.00</td></tr>
+      <tr><td>Pantalla táctil 3nstar<small>Caja principal</small></td><td class="num">1</td><td class="num">Q 1,600.00</td><td class="num">Q 1,600.00</td></tr>
+      <tr><td>Impresora térmica 3nstar RPT006S LAN<small>Cocina: impresión de comandas</small></td><td class="num">1</td><td class="num">Q 650.00</td><td class="num">Q 650.00</td></tr>
+      <tr><td>Impresora térmica 3nstar RPT006S LAN<small>Caja: tickets y facturas para el cliente</small></td><td class="num">1</td><td class="num">Q 650.00</td><td class="num">Q 650.00</td></tr>
+      <tr><td>Tablet<small>Toma de pedidos de los meseros</small></td><td class="num">2</td><td class="num">Q 1,500.00</td><td class="num">Q 3,000.00</td></tr>
+      <tr><td>Periféricos<small>Teclado y mouse</small></td><td class="num">1</td><td class="num">Q 300.00</td><td class="num">Q 300.00</td></tr>
+      <tr class="sub"><td colspan="3">Subtotal equipo</td><td class="num">Q 7,400.00</td></tr>
+
+      <tr class="group"><td colspan="4">Sistema</td></tr>
+      <tr><td>Implementación del sistema POS y gestión hotelera<small>Todos los módulos descritos, instalación y configuración (menú, mesas, habitaciones, tarifas y usuarios), capacitación inicial al personal, dominio web y hosting por el primer año</small></td><td class="num">1</td><td class="num">Q 4,500.00</td><td class="num">Q 4,500.00</td></tr>
+
+      <tr class="total"><td colspan="3">Inversión inicial</td><td class="num">Q 11,900.00</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cards">
+    <div class="card dark">
+      <div class="muted">Mensualidad de soporte</div>
+      <div class="big">Q 200.00 / mes</div>
+      <div class="muted">Soporte técnico, mantenimiento y actualizaciones del sistema.</div>
+    </div>
+    <div class="card">
+      <div class="muted">Opción para reducir la inversión</div>
+      <div class="big">Pantalla LCD · Q 1,000.00</div>
+      <div class="muted">En lugar de la pantalla táctil (Q 1,600.00). La inversión inicial queda en <strong style="color:var(--ink)">Q 11,300.00</strong>.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Condiciones</h2>
+  <ul class="terms">
+    <li><strong>Forma de pago:</strong> 50 % de anticipo al aceptar la cotización (Q 5,950.00) y 50 % a la entrega (Q 5,950.00).</li>
+    <li><strong>Mensualidad:</strong> Q 200.00 mensuales desde la entrega del sistema.</li>
+    <li><strong>Dominio y hosting:</strong> incluidos el primer año; a partir del segundo año se renuevan de forma anual.</li>
+    <li><strong>Vigencia:</strong> 15 días, hasta el 10 de octubre de 2026. Los precios del equipo pueden variar después de esa fecha.</li>
+    <li>Precios en quetzales.</li>
+  </ul>
+
+  <div class="sign">
+    <div>Hugo del Valle<br><span class="muted">Proveedor</span></div>
+    <div>Monarca Hotel Boutique<br><span class="muted">Aceptación del cliente</span></div>
+  </div>
+</section>
+
+</body>
+</html>
