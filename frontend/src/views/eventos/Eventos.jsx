@@ -200,7 +200,7 @@ function EventPanel({ ev, onEdit }) {
     update((d) => A.addEventPayment(d, ev.id, sale));
     setPay(null);
     ui.notify(`Pago registrado · ${fmt(sale.grand)}`);
-    ui.preview(final ? 'Factura del evento' : 'Recibo', <TicketDoc sale={sale} />);
+    ui.preview(final ? 'Comprobante del evento' : 'Recibo', <TicketDoc sale={sale} />);
   };
 
   const setStatus = (status, msg) => {
@@ -227,8 +227,6 @@ function EventPanel({ ev, onEdit }) {
         <strong>{ev.client.name}</strong>
         <span>Teléfono</span>
         <strong>{ev.client.phone || '—'}</strong>
-        <span>NIT</span>
-        <strong>{ev.client.nit}</strong>
         {ev.notes && (
           <>
             <span>Notas</span>
@@ -360,7 +358,7 @@ function EventPanel({ ev, onEdit }) {
         <Cobro
           title={pay >= t.balance - 0.004 ? 'Liquidar evento' : 'Anticipo del evento'}
           amount={pay}
-          invoice={{ nit: ev.client.nit, name: ev.client.nit === 'CF' ? 'Consumidor Final' : ev.client.name }}
+          invoice={{ name: ev.client.name }}
           onCancel={() => setPay(null)}
           onConfirm={(r) => registerPayment(pay, r)}
         />

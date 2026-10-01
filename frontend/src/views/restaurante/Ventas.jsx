@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import DataTable from '../../components/DataTable.jsx';
+import DataTable, { rowClass } from '../../components/DataTable.jsx';
+import Tabs from '../../components/Tabs.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { METHOD_LABELS } from '../../data.js';
@@ -11,6 +12,27 @@ import { useStore } from '../../store/store.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
 
 export default function Ventas() {
+  const { state, user } = useStore();
+  const [tab, setTab] = usePersisted('ventas.pestana', 'cobros');
+  const pending = state.sales.filter((s) => s.status === 'ok' && s.invoice && !s.invoice.number).length;
+  // Las facturas pendientes son solo para la gerencia, que factura a mano
+  if (user.role !== 'gerente') return <Cobros />;
+  return (
+    <div className="page gap-20">
+      <Tabs
+        tabs={[
+          ['cobros', 'Cobros'],
+          ['facturas', `Facturas pendientes${pending ? ` · ${pending}` : ''}`],
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
+      {tab === 'facturas' ? <Facturas /> : <Cobros embedded />}
+    </div>
+  );
+}
+
+function Cobros({ embedded = false }) {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
   const [scope, setScope] = usePersisted('ventas.alcance', 'turno');
@@ -30,16 +52,16 @@ export default function Ventas() {
 
   const doVoid = () => {
     const s = voiding;
-    ui.authorize(`Anular la factura #${s.number}`, (mgr) => {
+    ui.authorize(`Anular el comprobante #${s.number}`, (mgr) => {
       update((d) => A.voidSale(d, s.id, { reason: reason.trim(), authId: mgr.id }));
       setVoiding(null);
       setReason('');
-      ui.notify(`Factura #${s.number} anulada`);
+      ui.notify(`Comprobante #${s.number} anulado`);
     });
   };
 
   return (
-    <div className="page gap-20">
+    <div className={embedded ? 'stack gap-20' : 'page gap-20'}>
       <div className="row items-center">
         <div className="segmented row two" style={{ width: 280 }}>
           <button className={'seg-btn' + (scope === 'turno' ? ' active' : '')} onClick={() => setScope('turno')}>
@@ -68,12 +90,17 @@ export default function Ventas() {
               {s.kind === 'hotel' && <span className="tag">Hotel</span>}
               {s.kind === 'evento' && <span className="tag">Evento</span>}
               {s.kind === 'tienda' && <span className="tag">Tienda</span>}
+              {s.status === 'ok' && s.invoice && (
+                <span className={'tag' + (s.invoice.number ? '' : ' status-cotizado')}>
+                  {s.invoice.number ? 'Facturada' : 'Por facturar'}
+                </span>
+              )}
             </span>
             <span>{s.payments.map((p) => METHOD_LABELS[p.method]).join(' + ') || '—'}</span>
             <span className="panel-sub">{userName(s.cashierId)}</span>
             <strong>{fmt(s.grand)}</strong>
             <span className="row-actions">
-              <button className="link" onClick={() => ui.preview(`Factura #${s.number}`, <TicketDoc sale={s} />)}>
+              <button className="link" onClick={() => ui.preview(`Comprobante #${s.number}`, <TicketDoc sale={s} />)}>
                 Ver
               </button>
               {s.status === 'ok' && (s.kind === 'restaurante' || s.kind === 'tienda') && (
@@ -107,7 +134,7 @@ export default function Ventas() {
 
       {voiding && (
         <Modal
-          title={`Anular factura #${voiding.number}`}
+          title={`Anular comprobante #${voiding.number}`}
           aside={fmt(voiding.grand)}
           onClose={() => setVoiding(null)}
           width={460}
@@ -117,13 +144,13 @@ export default function Ventas() {
                 Cancelar
               </button>
               <button className="btn btn-primary btn-danger" disabled={!reason.trim()} onClick={doVoid}>
-                Anular factura
+                Anular comprobante
               </button>
             </>
           }
         >
           <div className="note-box">
-            La factura queda marcada como anulada y sale de los totales del turno.
+            El comprobante queda marcado como anulado y sale de los totales del turno.
             {voiding.payments.some((p) => p.method === 'habitacion') &&
               ' El cargo a la habitación también se elimina del folio.'}
             {voiding.kind === 'tienda' && ' Los productos regresan a la existencia de la tienda.'}
@@ -140,5 +167,127 @@ export default function Ventas() {
         </Modal>
       )}
     </div>
+  );
+}
+
+// Ventas en las que el cliente pidió factura: la gerencia la emite fuera del sistema y anota el número
+function Facturas() {
+  const { state, user, fmt, update } = useStore();
+  const ui = useUI();
+  const [show, setShow] = usePersisted('ventas.facturas.vista', 'pendientes');
+  const [marking, setMarking] = useState(null);
+  const [number, setNumber] = useState('');
+  const userName = (id) => state.users.find((u) => u.id === id)?.name || '—';
+
+  const all = state.sales.filter((s) => s.status === 'ok' && s.invoice).sort((a, b) => b.ts - a.ts);
+  const list = all.filter((s) => (show === 'pendientes' ? !s.invoice.number : !!s.invoice.number));
+  const pendingTotal = sum(
+    all.filter((s) => !s.invoice.number),
+    (s) => s.grand,
+  );
+
+  const save = () => {
+    update((d) => A.markInvoiced(d, marking.id, { number: number.trim(), userId: user.id }));
+    ui.notify(`Comprobante #${marking.number} marcado como facturado`);
+    setMarking(null);
+    setNumber('');
+  };
+
+  return (
+    <>
+      <div className="row items-center">
+        <div className="segmented row two" style={{ width: 280 }}>
+          <button
+            className={'seg-btn' + (show === 'pendientes' ? ' active' : '')}
+            onClick={() => setShow('pendientes')}
+          >
+            Pendientes
+          </button>
+          <button
+            className={'seg-btn' + (show === 'facturadas' ? ' active' : '')}
+            onClick={() => setShow('facturadas')}
+          >
+            Facturadas
+          </button>
+        </div>
+        <div className="header-stats">
+          <span className="pill">Por facturar {fmt(pendingTotal)}</span>
+        </div>
+      </div>
+
+      <DataTable
+        variant="invoices"
+        columns={['No.', 'Fecha', 'Cuenta', 'NIT', 'Nombre', 'Total', show === 'pendientes' ? '' : 'Factura']}
+        empty={show === 'pendientes' ? 'No hay ventas pendientes de facturar.' : 'Aún no hay ventas facturadas.'}
+      >
+        {list.map((s) => (
+          <div key={s.id} className={rowClass('invoices')}>
+            <span className="panel-sub">#{s.number}</span>
+            <span className="panel-sub">{fmtDateTime(s.ts)}</span>
+            <span>{s.ref}</span>
+            <strong>{s.invoice.nit}</strong>
+            <span>
+              {s.invoice.name}
+              {s.invoice.email && <span className="panel-sub"> · {s.invoice.email}</span>}
+            </span>
+            <strong>{fmt(s.grand)}</strong>
+            <span className="row-actions">
+              <button className="link" onClick={() => ui.preview(`Comprobante #${s.number}`, <TicketDoc sale={s} />)}>
+                Ver
+              </button>
+              {s.invoice.number ? (
+                <span title={`Por ${userName(s.invoice.invoicedBy)}`}>No. {s.invoice.number}</span>
+              ) : (
+                <button className="link" onClick={() => setMarking(s)}>
+                  Marcar facturada
+                </button>
+              )}
+            </span>
+          </div>
+        ))}
+      </DataTable>
+
+      {marking && (
+        <Modal
+          title={`Factura del comprobante #${marking.number}`}
+          aside={fmt(marking.grand)}
+          onClose={() => setMarking(null)}
+          width={460}
+          footer={
+            <>
+              <button className="btn" onClick={() => setMarking(null)}>
+                Cancelar
+              </button>
+              <button className="btn btn-primary" disabled={!number.trim()} onClick={save}>
+                Guardar
+              </button>
+            </>
+          }
+        >
+          <div className="kv">
+            <span>NIT</span>
+            <strong>{marking.invoice.nit}</strong>
+            <span>Nombre</span>
+            <strong>{marking.invoice.name}</strong>
+            {marking.invoice.email && (
+              <>
+                <span>Correo</span>
+                <strong>{marking.invoice.email}</strong>
+              </>
+            )}
+          </div>
+          <Field label="Número de la factura emitida">
+            <input
+              className="input"
+              autoFocus
+              value={number}
+              onChange={(e) => setNumber(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && number.trim() && save()}
+              placeholder="Ej. A-10459"
+            />
+          </Field>
+        </Modal>
+      )}
+    </>
   );
 }

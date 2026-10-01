@@ -43,18 +43,19 @@ export function TicketDoc({ sale }) {
     <div className="doc">
       <Header />
       <div className="doc-title">
-        {sale.docType === 'recibo' ? 'Recibo' : 'Factura'} No. {String(sale.number).padStart(6, '0')}
+        {sale.docType === 'recibo' ? 'Recibo' : 'Comprobante de venta'} No. {String(sale.number).padStart(6, '0')}
       </div>
-      <div className="doc-center doc-small">
-        {sale.docType === 'recibo'
-          ? 'Se aplicará en la factura de salida'
-          : 'Documento Tributario Electrónico (demostración)'}
-      </div>
+      {sale.docType === 'recibo' && <div className="doc-center doc-small">Se aplicará en el comprobante de salida</div>}
       {sale.status === 'anulada' && <div className="doc-void">ANULADA · {sale.voidReason}</div>}
       <div className="doc-sep" />
       <Row l="Fecha" r={fmtDateTime(sale.ts)} />
-      <Row l="NIT" r={sale.invoice.nit} />
-      <Row l="Nombre" r={sale.invoice.name} />
+      {sale.invoice && (
+        <>
+          <Row l="Factura a nombre de" r={sale.invoice.name} />
+          <Row l="NIT" r={sale.invoice.nit} />
+          <Row l="Factura" r={sale.invoice.number ? `No. ${sale.invoice.number}` : 'Pendiente de emitir'} />
+        </>
+      )}
       <Row l={refLabel} r={sale.ref} />
       {sale.kind === 'restaurante' && <Row l="Atendió" r={userName(state.users, sale.waiterId)} />}
       <div className="doc-sep" />
@@ -218,7 +219,7 @@ export function ReportDoc({ report: r, shift }) {
           <Row l="Descuentos" r={fmt(r.discounts)} />
           <Row l="Propinas" r={fmt(r.tips)} />
           <Row l={`Anulaciones de platillos (${r.voids.lines})`} r={fmt(r.voids.linesAmount)} />
-          <Row l={`Cuentas anuladas (${r.voids.sales})`} r={fmt(r.voids.salesAmount)} />
+          <Row l={`Comprobantes anulados (${r.voids.sales})`} r={fmt(r.voids.salesAmount)} />
           <h4>Ventas por categoría</h4>
           {r.byCategory.map((c) => (
             <Row key={c.cat} l={c.cat} r={fmt(c.amount)} />
@@ -281,7 +282,6 @@ export function EventDoc({ ev }) {
       <div className="doc-sep" />
       <Row l="Evento" r={ev.name} />
       <Row l="Cliente" r={ev.client.name} />
-      <Row l="NIT" r={ev.client.nit} />
       <Row l="Fecha" r={fmtDate(ev.date, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })} />
       <Row l="Horario" r={`${ev.start} – ${ev.end}`} />
       <Row l="Lugar" r={t.venue?.name || 'Restaurante / terraza'} />

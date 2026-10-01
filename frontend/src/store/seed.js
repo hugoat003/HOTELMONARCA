@@ -2,7 +2,7 @@ import { addDays, addMonths, today } from '../lib/dates.js';
 import { linesTotal, round2 } from '../lib/money.js';
 import { buildReport } from '../lib/report.js';
 
-export const VERSION = 5;
+export const VERSION = 6;
 
 const CATEGORIES = ['Desayunos', 'Entradas', 'Platos fuertes', 'Postres', 'Bebidas', 'Bar', 'Especiales'];
 
@@ -109,7 +109,6 @@ export function seed() {
     phone,
     email: '',
     doc,
-    nit: 'CF',
     nationality: 'Guatemala',
     ...extra,
   });
@@ -155,15 +154,9 @@ export function seed() {
       'hospedado',
       { channel: 'Booking.com' },
     ),
-    R(
-      'r4',
-      '204',
-      guest('Roberto Salas', '3300 1122', 'DPI 3012 44556 0108', { nit: '4587123-5' }),
-      d0,
-      addDays(d0, 2),
-      'hospedado',
-      { adults: 1 },
-    ),
+    R('r4', '204', guest('Roberto Salas', '3300 1122', 'DPI 3012 44556 0108'), d0, addDays(d0, 2), 'hospedado', {
+      adults: 1,
+    }),
     R('r5', '103', guest('Carlos Ruiz', '5890 7766', 'DPI 2233 11009 0101'), d0, addDays(d0, 3), 'reservada', {
       channel: 'Teléfono',
     }),
@@ -188,7 +181,7 @@ export function seed() {
     R(
       'r8',
       '201',
-      guest('Ing. Mariela Gómez', '5566 1234', 'DPI 2780 11223 0101', { nit: '6021458-3' }),
+      guest('Ing. Mariela Gómez', '5566 1234', 'DPI 2780 11223 0101'),
       addDays(d0, -12),
       addMonths(addDays(d0, -12), 2),
       'hospedado',
@@ -281,7 +274,7 @@ export function seed() {
       grand,
       payments: [{ method, amount: grand, ...(opts.pay || {}) }],
       change: 0,
-      invoice: opts.invoice || { nit: 'CF', name: 'Consumidor Final' },
+      invoice: opts.invoice || null,
       waiterId: opts.waiter || 'u3',
       cashierId: 'u2',
       shiftId,
@@ -311,7 +304,19 @@ export function seed() {
         ['m5', 1],
       ],
       'tarjeta',
-      { tip: true, waiter: 'u4' },
+      {
+        tip: true,
+        waiter: 'u4',
+        // Factura ya emitida por la gerencia
+        invoice: {
+          nit: '1234567-8',
+          name: 'Agencia de Viajes Maya',
+          email: '',
+          number: 'A-10458',
+          invoicedAt: at(y, '18:00'),
+          invoicedBy: 'u1',
+        },
+      },
     ),
     sale(
       shiftY.id,
@@ -350,7 +355,16 @@ export function seed() {
         ['m14', 4],
       ],
       'tarjeta',
-      { tip: true, waiter: 'u4', invoice: { nit: '8765432-1', name: 'Transportes del Sur, S.A.' } },
+      {
+        tip: true,
+        waiter: 'u4',
+        invoice: {
+          nit: '8765432-1',
+          name: 'Transportes del Sur, S.A.',
+          email: 'contabilidad@transportesdelsur.gt',
+          number: null,
+        },
+      },
     ),
     sale(
       shift.id,
@@ -465,7 +479,7 @@ export function seed() {
       grand: total,
       payments: [{ method, amount: total, ...(extra.pay || {}) }],
       change: 0,
-      invoice: { nit: 'CF', name: 'Consumidor Final' },
+      invoice: null,
       cashierId: 'u2',
       shiftId: shift.id,
       status: 'ok',
@@ -621,7 +635,7 @@ export function seed() {
       70,
       70,
       'confirmado',
-      { name: 'Andrea Castillo', phone: '5512 8890', nit: 'CF' },
+      { name: 'Andrea Castillo', phone: '5512 8890' },
       {
         extras: [
           { id: 'x1', desc: 'Decoración', amt: 1200 },
@@ -643,7 +657,7 @@ export function seed() {
       25,
       25,
       'cotizado',
-      { name: 'Banco Industrial, S.A.', phone: '2420 3000', nit: '549-1' },
+      { name: 'Banco Industrial, S.A.', phone: '2420 3000' },
       { extras: [{ id: 'x3', desc: 'Proyector y sonido', amt: 400 }] },
     ),
     E(
@@ -657,7 +671,7 @@ export function seed() {
       35,
       0,
       'cotizado',
-      { name: 'Editorial Cholsamaj', phone: '2232 5959', nit: '3124567-8' },
+      { name: 'Editorial Cholsamaj', phone: '2232 5959' },
       { notes: 'Solo uso del salón; el cliente trae su propio brindis.' },
     ),
     E(
@@ -671,7 +685,7 @@ export function seed() {
       24,
       12,
       'confirmado',
-      { name: 'Venta abierta (restaurante)', phone: '', nit: 'CF' },
+      { name: 'Venta abierta (restaurante)', phone: '' },
       { notes: 'Cupo de 12 parejas en terraza con música en vivo.' },
     ),
   ];

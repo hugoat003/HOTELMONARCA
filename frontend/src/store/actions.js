@@ -137,6 +137,10 @@ export const A = {
       if (!o.lines.length) d.orders = d.orders.filter((x) => x.id !== orderId);
     }
   },
+  // La factura se emite fuera del sistema; aquí solo se anota su número
+  markInvoiced(d, saleId, { number, userId }) {
+    Object.assign(byId(d.sales, saleId).invoice, { number, invoicedAt: Date.now(), invoicedBy: userId });
+  },
   voidSale(d, saleId, { reason, authId }) {
     const s = byId(d.sales, saleId);
     s.status = 'anulada';

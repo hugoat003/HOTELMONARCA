@@ -25,7 +25,7 @@ export default function EventoForm({ ev, onClose, onSave }) {
           guests: 20,
           menuQty: 20,
           status: 'cotizado',
-          client: { name: '', phone: '', nit: 'CF' },
+          client: { name: '', phone: '' },
           extras: [],
           payments: [],
           notes: '',
@@ -136,7 +136,7 @@ export default function EventoForm({ ev, onClose, onSave }) {
             onChange={(e) => set({ menuQty: Math.max(0, parseInt(e.target.value) || 0) })}
           />
         </Field>
-        <Field label="Cliente">
+        <Field label="Cliente" className="span-2">
           <input
             className="input"
             value={f.client.name}
@@ -146,9 +146,6 @@ export default function EventoForm({ ev, onClose, onSave }) {
         </Field>
         <Field label="Teléfono">
           <input className="input" value={f.client.phone} onChange={(e) => setClient({ phone: e.target.value })} />
-        </Field>
-        <Field label="NIT">
-          <input className="input" value={f.client.nit} onChange={(e) => setClient({ nit: e.target.value })} />
         </Field>
         <Field label="Notas" className="span-3">
           <input

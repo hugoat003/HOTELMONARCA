@@ -30,7 +30,7 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
           charges: [],
           payments: [],
           createdAt: Date.now(),
-          guest: { name: '', phone: '', email: '', doc: '', nit: 'CF', nationality: 'Guatemala' },
+          guest: { name: '', phone: '', email: '', doc: '', nationality: 'Guatemala' },
         },
   );
   const set = (patch) => setF((x) => ({ ...x, ...patch }));
@@ -120,9 +120,6 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
             value={f.guest.nationality}
             onChange={(e) => setGuest({ nationality: e.target.value })}
           />
-        </Field>
-        <Field label="NIT para factura">
-          <input className="input" value={f.guest.nit} onChange={(e) => setGuest({ nit: e.target.value })} />
         </Field>
         <Field label="Canal">
           <select className="input" value={f.channel} onChange={(e) => set({ channel: e.target.value })}>

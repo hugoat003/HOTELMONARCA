@@ -142,7 +142,7 @@ export default function Reporte({ go }) {
             <strong>{fmt(r.voids.linesAmount)}</strong>
           </div>
           <div className="row text-md">
-            <span>Facturas anuladas · {r.voids.sales}</span>
+            <span>Comprobantes anulados · {r.voids.sales}</span>
             <strong>{fmt(r.voids.salesAmount)}</strong>
           </div>
           <div className="row text-md">

@@ -27,7 +27,7 @@ test('venta con cargo a habitación, existencias y anulación', async ({ page })
   await nav(page, 'Ventas');
   await page.locator('.tx-row.sales', { hasText: 'Hab. 201' }).first().getByRole('button', { name: 'Anular' }).click();
   await page.locator('.modal input').fill('Cobro equivocado');
-  await modalClick(page, 'Anular factura');
+  await modalClick(page, 'Anular comprobante');
   await typePin(page, '1111');
   s = await state(page);
   expect(s.shopItems.find((x) => x.id === 't1').stock).toBe(agua0);

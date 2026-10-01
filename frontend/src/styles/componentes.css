@@ -679,3 +679,16 @@ button.pill {
 .pinpad.locked .pin-keys button {
   opacity: 0.35;
 }
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ink);
+}

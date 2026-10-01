@@ -14,7 +14,7 @@ async function start(page, user = 'Marta Gerente') {
   await page.reload();
   await login(page, user);
 }
-const snap = (page, name) => expect(page).toHaveScreenshot(name + '.png', { fullPage: true, maxDiffPixels: 0 });
+const snap = (page, name) => expect.soft(page).toHaveScreenshot(name + '.png', { fullPage: true, maxDiffPixels: 0 });
 
 test('pantallas de gerencia', async ({ page }) => {
   await start(page);

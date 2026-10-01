@@ -16,7 +16,9 @@ const newRow = (method, amount = '') => ({
 });
 
 // Pantalla de cobro compartida por restaurante y recepción.
-// onConfirm recibe { discount, total, tip, grand, payments, change, invoice }
+// onConfirm recibe { discount, total, tip, grand, payments, change, invoice }.
+// invoice es null salvo que el cliente pida factura; la factura la emite la gerencia a mano.
+// La prop invoice solo sugiere el nombre del cliente.
 export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoom, invoice, onCancel, onConfirm }) {
   const { state, fmt } = useStore();
   const ui = useUI();
@@ -27,8 +29,10 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
   const [tipMode, setTipMode] = useState(allowTip ? 'sugerida' : 'none');
   const [tipCustom, setTipCustom] = useState('');
   const [rows, setRows] = useState([newRow('efectivo')]);
-  const [nit, setNit] = useState(invoice?.nit || 'CF');
-  const [name, setName] = useState(invoice?.name || 'Consumidor Final');
+  const [wantsInvoice, setWantsInvoice] = useState(false);
+  const [nit, setNit] = useState('');
+  const [name, setName] = useState(invoice?.name || '');
+  const [email, setEmail] = useState('');
 
   const discountAmount = discount
     ? round2(Math.min(amount, discount.type === 'pct' ? (amount * discount.value) / 100 : discount.value))
@@ -57,6 +61,8 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
     else if (remaining > 0.004) problem = `Faltan ${fmt(remaining)}`;
     else if (change > cashTotal + 0.004) problem = 'El excedente solo se permite en efectivo';
   }
+  if (!problem && wantsInvoice && !nit.trim()) problem = 'Falta el NIT para la factura';
+  if (!problem && wantsInvoice && !name.trim()) problem = 'Falta el nombre para la factura';
 
   const setRow = (id, patch) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   const changeMethod = (row, method) => {
@@ -117,7 +123,9 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
       grand,
       payments: grand > 0 ? payments : [],
       change,
-      invoice: { nit: nit.trim().toUpperCase() || 'CF', name: name.trim() || 'Consumidor Final' },
+      invoice: wantsInvoice
+        ? { nit: nit.trim().toUpperCase(), name: name.trim(), email: email.trim(), number: null }
+        : null,
     });
   };
 
@@ -324,21 +332,25 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
         </div>
       </div>
 
-      <div className="form-grid two">
-        <Field label="NIT">
-          <input
-            className="input"
-            value={nit}
-            onChange={(e) => {
-              setNit(e.target.value);
-              if (e.target.value.trim().toUpperCase() === 'CF') setName('Consumidor Final');
-            }}
-          />
-        </Field>
-        <Field label="Nombre en factura">
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
-        </Field>
-      </div>
+      <label className="check">
+        <input type="checkbox" checked={wantsInvoice} onChange={(e) => setWantsInvoice(e.target.checked)} />
+        <span>
+          Requiere factura <span className="panel-sub">· la gerencia la emite después</span>
+        </span>
+      </label>
+      {wantsInvoice && (
+        <div className="form-grid">
+          <Field label="NIT">
+            <input className="input" autoFocus value={nit} onChange={(e) => setNit(e.target.value)} />
+          </Field>
+          <Field label="Nombre">
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="Correo" hint="opcional">
+            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </Field>
+        </div>
+      )}
 
       <div className="modal-actions">
         <button className="btn" onClick={onCancel}>

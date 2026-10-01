@@ -83,7 +83,7 @@ export default function ReservaPanel({ res }) {
     update((d) => A.checkOutWith(d, res.id, sale));
     setCheckout(false);
     ui.notify(`Check-out · Habitación ${res.roomN}`);
-    if (sale) ui.preview('Factura de salida', <TicketDoc sale={sale} />);
+    if (sale) ui.preview('Comprobante de salida', <TicketDoc sale={sale} />);
   };
 
   const startCheckout = () => {
@@ -355,7 +355,7 @@ export default function ReservaPanel({ res }) {
         <Cobro
           title={res.status === 'reservada' ? 'Anticipo' : 'Abono'}
           amount={abono}
-          invoice={{ nit: res.guest.nit, name: res.guest.nit === 'CF' ? 'Consumidor Final' : res.guest.name }}
+          invoice={{ name: res.guest.name }}
           onCancel={() => setAbono(null)}
           onConfirm={(r) => registerAbono(abono, r)}
         />
@@ -365,7 +365,7 @@ export default function ReservaPanel({ res }) {
           <Cobro
             title={`Check-out Hab. ${res.roomN}`}
             amount={f.balance}
-            invoice={{ nit: res.guest.nit, name: res.guest.nit === 'CF' ? 'Consumidor Final' : res.guest.name }}
+            invoice={{ name: res.guest.name }}
             onCancel={() => setCheckout(false)}
             onConfirm={finishCheckout}
           />

@@ -34,7 +34,13 @@ export default function Dashboard({ go, mobile = false }) {
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   const eventsDue = events.filter((e) => e.date <= addDays(d0, 7) && eventTotals(e, state).balance > 0.004);
 
+  const toInvoice = state.sales.filter((x) => x.status === 'ok' && x.invoice && !x.invoice.number);
   const alerts = [
+    toInvoice.length > 0 && {
+      text: `${toInvoice.length} venta${toInvoice.length === 1 ? '' : 's'} por facturar · ${fmt(toInvoice.reduce((a, x) => a + x.grand, 0))}`,
+      view: 'ventas',
+      level: 'mid',
+    },
     !state.shift && { text: 'La caja está cerrada: no se puede cobrar.', view: 'caja', level: 'high' },
     ...monthlyDue.map((x) => ({
       text: `Hab. ${x.res.roomN} · ${x.res.guest.name}: pendiente de su mensualidad ${fmt(x.due)}`,
