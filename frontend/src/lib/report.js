@@ -60,7 +60,7 @@ export function buildReport(state, shift) {
   );
 
   const inHouse = state.reservations.filter((r) => r.status === 'hospedado');
-  const lodgingRevenue = sum(inHouse, nightlyRate);
+  const lodgingRevenue = sum(inHouse, (r) => nightlyRate(r, state, day));
   const rooms = state.rooms.length;
 
   return {

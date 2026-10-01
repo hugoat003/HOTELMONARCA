@@ -8,6 +8,7 @@ const SCREENS = [
   'Inventario',
   'Habitaciones',
   'Reservas',
+  'Huéspedes',
   'Limpieza',
   'Tienda',
   'Eventos',

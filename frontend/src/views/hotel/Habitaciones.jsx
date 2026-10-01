@@ -162,7 +162,7 @@ export default function Habitaciones() {
         )}
 
         {room && (st.status === 'ocupada' || st.status === 'reservada') && (
-          <ReservaPanel key={st.res.id} res={st.res} />
+          <ReservaPanel key={st.res.id} res={st.res} onRoomChanged={setSelRoom} />
         )}
 
         {room && (st.status === 'libre' || st.status === 'limpieza' || st.status === 'fuera') && (

@@ -27,7 +27,7 @@ export default function Dashboard({ go, mobile = false }) {
   const dirty = state.rooms.filter((rm) => rm.hk === 'sucia' || rm.hk === 'limpiando');
   const monthlyDue = inHouse
     .filter((x) => x.rateType === 'mensual')
-    .map((x) => ({ res: x, due: folio(x, state.config).dueToday }))
+    .map((x) => ({ res: x, due: folio(x, state).dueToday }))
     .filter((x) => x.due > 0.004);
   const events = state.events
     .filter((e) => isActiveEvent(e) && e.date >= d0 && e.date <= addDays(d0, 30))

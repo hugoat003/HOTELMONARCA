@@ -54,3 +54,11 @@
   grid-template-columns: 1fr 2fr 1.2fr 80px 90px;
   align-items: center;
 }
+.tx-row.guests {
+  grid-template-columns: 1.6fr 1.2fr 1fr 80px 120px 110px;
+  align-items: center;
+}
+.tx-row.seasons {
+  grid-template-columns: 1.2fr 1.4fr 2fr 90px;
+  align-items: center;
+}

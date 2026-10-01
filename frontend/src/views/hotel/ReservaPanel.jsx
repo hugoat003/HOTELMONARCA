@@ -1,25 +1,29 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { EXTRA_CHARGES, METHOD_LABELS, RES_STATUS } from '../../data.js';
 import { fmtDate, fmtTime, nightsBetween, today, uid } from '../../lib/dates.js';
-import { folio as calcFolio } from '../../lib/hotel.js';
+import { folio as calcFolio, groupText } from '../../lib/hotel.js';
 import { FolioDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import Cobro, { AmountModal } from '../restaurante/Cobro.jsx';
 import ReservaForm from './ReservaForm.jsx';
+import { ChangeRoomModal, CloseReservationModal } from './ReservaModals.jsx';
 
 // Detalle y operaciones de una reserva: check-in, folio, cargos, abonos y check-out
-export default function ReservaPanel({ res }) {
+// onRoomChanged(roomN): avisa a la pantalla que el huésped cambió de habitación
+export default function ReservaPanel({ res, onRoomChanged }) {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
   const [form, setForm] = useState(null); // 'edit' | 'checkin'
   const [charging, setCharging] = useState(false);
   const [abono, setAbono] = useState(null); // null | 'monto' | número
   const [checkout, setCheckout] = useState(false);
+  const [changing, setChanging] = useState(false);
+  const [closing, setClosing] = useState(null); // 'noshow' | 'cancel'
 
-  const f = calcFolio(res, state.config);
+  const f = calcFolio(res, state);
   const room = state.rooms.find((r) => r.n === res.roomN);
   const type = state.roomTypes.find((t) => t.id === room?.typeId);
   const d0 = today();
@@ -66,12 +70,49 @@ export default function ReservaPanel({ res }) {
     ui.preview('Recibo', <TicketDoc sale={sale} />);
   };
 
+  const closeReservation = ({ reason, refund }) => {
+    if (refund && !state.shift) return ui.notify('Abre el turno de caja para registrar la devolución.');
+    const status = closing === 'noshow' ? 'noshow' : 'cancelada';
+    const sale = refund && {
+      id: uid('s'),
+      number: state.counters.doc + 1,
+      kind: 'hotel',
+      docType: 'devolucion',
+      ts: Date.now(),
+      ref: label,
+      resId: res.id,
+      lines: [{ name: 'Devolución de anticipo', qty: 1, price: -refund.amount, cat: 'Hospedaje' }],
+      subtotal: -refund.amount,
+      total: -refund.amount,
+      tip: 0,
+      grand: -refund.amount,
+      discount: null,
+      payments: [{ method: refund.method, amount: -refund.amount }],
+      change: 0,
+      invoice: null,
+      cashierId: user.id,
+      shiftId: state.shift?.id,
+      status: 'ok',
+    };
+    update((d) => A.closeReservation(d, res.id, { status, reason, refund: sale, userId: user.id }));
+    setClosing(null);
+    ui.notify(status === 'noshow' ? 'Reserva marcada como no-show' : 'Reserva cancelada');
+    if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />);
+  };
+
   const finishCheckout = (r) => {
     let sale = null;
     if (r) {
       sale = baseSale({
         lines: [
-          { name: `${f.label} × ${fmt(res.rate)}`, qty: 1, price: f.lodging.base, cat: 'Hospedaje' },
+          ...(f.groups
+            ? f.groups.map((g) => ({
+                name: `Hospedaje ${groupText(g, fmt)}`,
+                qty: 1,
+                price: g.amount,
+                cat: 'Hospedaje',
+              }))
+            : [{ name: `${f.label} × ${fmt(res.rate)}`, qty: 1, price: f.lodging.base, cat: 'Hospedaje' }]),
           ...res.charges.map((c) => ({ name: c.desc, qty: 1, price: c.amt, cat: 'Cargos' })),
         ],
         taxes: { iva: f.lodging.iva, inguat: f.lodging.inguat },
@@ -148,9 +189,17 @@ export default function ReservaPanel({ res }) {
             <strong>{res.notes}</strong>
           </>
         )}
+        {(res.roomHistory || []).map((h) => (
+          <Fragment key={h.until + h.roomN}>
+            <span>Cambio</span>
+            <strong>
+              Hab. {h.roomN} → siguiente el {fmtDate(h.until, { day: 'numeric', month: 'short' })}
+            </strong>
+          </Fragment>
+        ))}
         {res.cancelReason && (
           <>
-            <span>Cancelación</span>
+            <span>{res.status === 'noshow' ? 'No-show' : 'Cancelación'}</span>
             <strong>{res.cancelReason}</strong>
           </>
         )}
@@ -191,25 +240,16 @@ export default function ReservaPanel({ res }) {
               Anticipo
             </button>
           </div>
-          <button
-            className="btn btn-quiet"
-            onClick={() =>
-              ui.confirm(
-                {
-                  title: 'Cancelar reserva',
-                  message: `¿Cancelar la reserva de ${res.guest.name}?`,
-                  confirmLabel: 'Cancelar reserva',
-                  danger: true,
-                },
-                () => {
-                  update((d) => A.cancelReservation(d, res.id, 'Cancelada por recepción'));
-                  ui.notify('Reserva cancelada');
-                },
-              )
-            }
-          >
-            Cancelar reserva
-          </button>
+          <div className="btn-row">
+            {res.checkIn < d0 && (
+              <button className="btn btn-quiet" onClick={() => setClosing('noshow')}>
+                Marcar no-show
+              </button>
+            )}
+            <button className="btn btn-quiet" onClick={() => setClosing('cancel')}>
+              Cancelar reserva
+            </button>
+          </div>
         </>
       )}
 
@@ -217,26 +257,26 @@ export default function ReservaPanel({ res }) {
         <>
           <div className="eyebrow">Folio</div>
           <div>
-            {f.periods ? (
-              f.periods.map((p) => (
-                <div key={p.n} className={'folio-line' + (p.start > d0 ? ' muted' : '')}>
-                  <span>
-                    Mes {p.n} · {fmtDate(p.start, { day: 'numeric', month: 'short' })} –{' '}
-                    {fmtDate(p.end, { day: 'numeric', month: 'short' })}
-                    {p.frac < 1 ? ' (prorrateo)' : ''}
-                    {p.start > d0 ? ' · por iniciar' : ''}
-                  </span>
-                  <strong>{fmt(p.amount)}</strong>
-                </div>
-              ))
-            ) : (
-              <div className="folio-line">
-                <span>
-                  Hospedaje {f.nights} × {fmt(res.rate)}
-                </span>
-                <strong>{fmt(f.lodging.base)}</strong>
-              </div>
-            )}
+            {f.periods
+              ? f.periods.map((p) => (
+                  <div key={p.n} className={'folio-line' + (p.start > d0 ? ' muted' : '')}>
+                    <span>
+                      Mes {p.n} · {fmtDate(p.start, { day: 'numeric', month: 'short' })} –{' '}
+                      {fmtDate(p.end, { day: 'numeric', month: 'short' })}
+                      {p.frac < 1 ? ' (prorrateo)' : ''}
+                      {p.start > d0 ? ' · por iniciar' : ''}
+                    </span>
+                    <strong>{fmt(p.amount)}</strong>
+                  </div>
+                ))
+              : f.groups.map((g) => (
+                  <div key={g.from} className="folio-line">
+                    <span>
+                      {fmtDate(g.from, { day: 'numeric', month: 'short' })} · {groupText(g, fmt)}
+                    </span>
+                    <strong>{fmt(g.amount)}</strong>
+                  </div>
+                ))}
             <div className="folio-line muted">
               <span>
                 IVA {state.config.iva}% + INGUAT {state.config.inguat}%
@@ -307,6 +347,9 @@ export default function ReservaPanel({ res }) {
               Editar / extender
             </button>
           </div>
+          <button className="btn btn-quiet" onClick={() => setChanging(true)}>
+            Cambiar de habitación
+          </button>
           <button className="btn btn-primary" onClick={startCheckout}>
             {res.checkOut > d0 ? 'Check-out anticipado' : 'Check-out y cobrar'}
           </button>
@@ -329,6 +372,27 @@ export default function ReservaPanel({ res }) {
             setForm(null);
             ui.notify(form === 'checkin' ? `Check-in · ${r.guest.name} en la ${r.roomN}` : 'Reserva actualizada');
           }}
+        />
+      )}
+      {changing && (
+        <ChangeRoomModal
+          res={res}
+          onClose={() => setChanging(false)}
+          onConfirm={({ roomN, newRate }) => {
+            update((d) => A.changeRoom(d, res.id, { roomN, newRate, userId: user.id }));
+            setChanging(false);
+            onRoomChanged?.(roomN);
+            ui.notify(`${res.guest.name} pasó a la habitación ${roomN}`);
+          }}
+        />
+      )}
+      {closing && (
+        <CloseReservationModal
+          res={res}
+          mode={closing}
+          paid={f.paid}
+          onClose={() => setClosing(null)}
+          onConfirm={closeReservation}
         />
       )}
       {charging && (

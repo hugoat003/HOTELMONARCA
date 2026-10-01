@@ -235,10 +235,69 @@ export const A = {
   },
 
   // Hotel
+  // Guarda la reserva y mantiene al día la ficha del huésped (la crea si es nuevo)
   saveReservation(d, res) {
+    if (res.guest) {
+      d.guests ||= [];
+      let g = res.guestId && byId(d.guests, res.guestId);
+      if (!g) {
+        g = { id: uid('gst'), notes: '', createdAt: Date.now() };
+        d.guests.push(g);
+      }
+      const { name, phone, email, doc, nationality } = res.guest;
+      Object.assign(g, { name, phone, email, doc, nationality });
+      res = { ...res, guestId: g.id };
+    }
     const i = d.reservations.findIndex((r) => r.id === res.id);
     if (i >= 0) d.reservations[i] = { ...d.reservations[i], ...res };
     else d.reservations.push(res);
+  },
+  saveGuest(d, guest) {
+    A.upsert(d, 'guests', guest);
+    // Las reservas activas toman los datos actualizados de la ficha
+    for (const r of d.reservations)
+      if (r.guestId === guest.id && (r.status === 'reservada' || r.status === 'hospedado'))
+        Object.assign(r.guest, {
+          name: guest.name,
+          phone: guest.phone,
+          email: guest.email,
+          doc: guest.doc,
+          nationality: guest.nationality,
+        });
+  },
+  // Cambio de habitación de un huésped hospedado. La anterior queda sucia y en el historial.
+  // newRate (opcional): tarifa fija desde hoy; si la reserva es automática, el precio sigue al tipo de habitación.
+  changeRoom(d, resId, { roomN, newRate, userId }) {
+    const r = byId(d.reservations, resId);
+    const date = today();
+    r.roomHistory = [...(r.roomHistory || []), { roomN: r.roomN, until: date, userId }];
+    byId(d.rooms, r.roomN, 'n').hk = 'sucia';
+    r.roomN = roomN;
+    if (newRate && r.pricing !== 'auto') r.rateChanges = [...(r.rateChanges || []), { from: date, rate: newRate }];
+  },
+  // Mover o extender una reserva (arrastrar en el calendario)
+  moveReservation(d, resId, { roomN, checkIn, checkOut }) {
+    Object.assign(byId(d.reservations, resId), { roomN, checkIn, checkOut });
+  },
+  // No-show o cancelación: refund (opcional) es la venta de devolución del anticipo, con monto negativo
+  closeReservation(d, resId, { status, reason, refund, userId }) {
+    const r = byId(d.reservations, resId);
+    r.status = status;
+    r.cancelReason = reason;
+    r.closedBy = userId;
+    if (refund) {
+      d.counters.doc = refund.number;
+      d.sales.push(refund);
+      const p = refund.payments[0];
+      r.payments.push({
+        id: uid('p'),
+        ts: refund.ts,
+        method: p.method,
+        amount: p.amount,
+        desc: 'Devolución de anticipo',
+        saleId: refund.id,
+      });
+    }
   },
   // Guarda los datos confirmados al llegar y registra la entrada en una sola operación
   checkInWith(d, res) {

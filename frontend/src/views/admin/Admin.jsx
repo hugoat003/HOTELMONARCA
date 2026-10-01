@@ -11,6 +11,7 @@ import { A } from '../../store/actions.js';
 import { useStore, VERSION } from '../../store/store.jsx';
 import MapEditor from '../restaurante/MapEditor.jsx';
 import { MenuItemModal, ModifierGroups } from './MenuModals.jsx';
+import Seasons from './Seasons.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
 
 const TABS = [
@@ -246,6 +247,8 @@ function HabitacionesTab() {
   const [editRoom, setEditRoom] = useState(null);
   return (
     <>
+      <Seasons />
+
       <div className="row">
         <span className="card-label">Tipos y tarifas</span>
         <button

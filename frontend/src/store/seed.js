@@ -2,7 +2,7 @@ import { addDays, addMonths, today } from '../lib/dates.js';
 import { linesTotal, round2 } from '../lib/money.js';
 import { buildReport } from '../lib/report.js';
 
-export const VERSION = 7;
+export const VERSION = 8;
 
 const CATEGORIES = ['Desayunos', 'Entradas', 'Platos fuertes', 'Postres', 'Bebidas', 'Bar', 'Especiales'];
 
@@ -186,6 +186,8 @@ export function seed() {
     checkOut,
     channel: 'Directo',
     rate: RATE[roomN],
+    // 'auto': precio por noche según tipo, temporada y fin de semana; 'fija': tarifa pactada
+    pricing: 'auto',
     status,
     notes: '',
     charges: [],
@@ -283,6 +285,74 @@ export function seed() {
       addDays(d0, 6),
       'reservada',
     ),
+    // Estancias pasadas (historial de huéspedes)
+    R(
+      'h1',
+      '101',
+      guest('Laura Méndez', '5512 3344', 'DPI 2456 78901 0101'),
+      addDays(d0, -200),
+      addDays(d0, -198),
+      'salida',
+    ),
+    R(
+      'h2',
+      '102',
+      guest('Laura Méndez', '5512 3344', 'DPI 2456 78901 0101'),
+      addDays(d0, -120),
+      addDays(d0, -117),
+      'salida',
+    ),
+    R(
+      'h3',
+      '101',
+      guest('Laura Méndez', '5512 3344', 'DPI 2456 78901 0101'),
+      addDays(d0, -45),
+      addDays(d0, -43),
+      'salida',
+    ),
+    R(
+      'h4',
+      '204',
+      guest('Roberto Salas', '3300 1122', 'DPI 3012 44556 0108'),
+      addDays(d0, -90),
+      addDays(d0, -88),
+      'salida',
+      { adults: 1 },
+    ),
+  ];
+  // Las reservas de OTA llegan con tarifa pactada
+  for (const r of reservations) if (r.channel === 'Booking.com' || r.channel === 'Expedia') r.pricing = 'fija';
+  for (const r of reservations) if (r.status === 'salida') r.checkedOutOn = r.checkOut;
+
+  // Fichas de huésped: una por documento, enlazadas a sus reservas
+  const guests = [];
+  for (const r of reservations) {
+    let g = guests.find((x) => x.doc === r.guest.doc);
+    if (!g) {
+      g = { id: 'gst' + (guests.length + 1), ...r.guest, notes: '', createdAt: r.createdAt };
+      guests.push(g);
+    }
+    r.guestId = g.id;
+  }
+  guests.find((g) => g.name === 'Laura Méndez').notes = 'Prefiere habitación en primer piso, lejos del bar.';
+
+  // Temporadas: precio por tipo de habitación en esas fechas
+  const year = Number(d0.slice(0, 4));
+  const seasons = [
+    {
+      id: 't1',
+      name: 'Temporada alta de octubre',
+      from: addDays(d0, 5),
+      to: addDays(d0, 9),
+      rates: { std: 850, dlx: 1150, ste: 1750 },
+    },
+    {
+      id: 't2',
+      name: 'Fiestas de fin de año',
+      from: `${year}-12-20`,
+      to: `${year + 1}-01-02`,
+      rates: { std: 950, dlx: 1300, ste: 1950 },
+    },
   ];
   // Anticipos
   reservations
@@ -837,6 +907,9 @@ export function seed() {
       inguat: 10,
       tipPct: 10,
       lockMinutes: 5,
+      weekendPct: 15,
+      extraPersonFrom: 2,
+      extraPersonRate: 150,
     },
     users: USERS,
     categories: CATEGORIES,
@@ -847,6 +920,8 @@ export function seed() {
     roomTypes: ROOM_TYPES,
     rooms: ROOMS,
     reservations,
+    guests,
+    seasons,
     venues,
     eventMenus,
     events,

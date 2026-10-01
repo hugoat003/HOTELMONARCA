@@ -179,3 +179,34 @@
   color: #9b2c1f;
   font-weight: 600;
 }
+.cal-bar {
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+}
+.cal-bar.dragging {
+  z-index: 3;
+  opacity: 0.85;
+  cursor: grabbing;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+.cal-bar.salida {
+  cursor: pointer;
+}
+.cal-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  cursor: ew-resize;
+}
+.cal-resize::after {
+  content: '';
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  right: 4px;
+  border-right: 2px solid currentColor;
+  opacity: 0.45;
+}

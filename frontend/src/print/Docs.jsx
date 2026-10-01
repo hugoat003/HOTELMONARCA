@@ -2,7 +2,7 @@
 import { EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../data.js';
 import { fmtDate, fmtDateTime, fmtTime } from '../lib/dates.js';
 import { eventTotals } from '../lib/events.js';
-import { folio as calcFolio } from '../lib/hotel.js';
+import { folio as calcFolio, groupText } from '../lib/hotel.js';
 import { ivaIncluded, linesTotal, round2 } from '../lib/money.js';
 import { modsText } from '../lib/orders.js';
 import { useStore } from '../store/store.jsx';
@@ -44,7 +44,12 @@ export function TicketDoc({ sale }) {
     <div className="doc">
       <Header />
       <div className="doc-title">
-        {sale.docType === 'recibo' ? 'Recibo' : 'Comprobante de venta'} No. {String(sale.number).padStart(6, '0')}
+        {sale.docType === 'recibo'
+          ? 'Recibo'
+          : sale.docType === 'devolucion'
+            ? 'Comprobante de devolución'
+            : 'Comprobante de venta'}{' '}
+        No. {String(sale.number).padStart(6, '0')}
       </div>
       {sale.docType === 'recibo' && <div className="doc-center doc-small">Se aplicará en el comprobante de salida</div>}
       {sale.status === 'anulada' && <div className="doc-void">ANULADA · {sale.voidReason}</div>}
@@ -169,7 +174,7 @@ export function PrecuentaDoc({ label, lines, waiterId, guests }) {
 
 export function FolioDoc({ res }) {
   const { state, fmt } = useStore();
-  const f = calcFolio(res, state.config);
+  const f = calcFolio(res, state);
   return (
     <div className="doc">
       <Header />
@@ -178,17 +183,15 @@ export function FolioDoc({ res }) {
       <Row l="Huésped" r={res.guest.name} />
       <Row l="Estancia" r={`${fmtDate(res.checkIn)} → ${fmtDate(res.checkOut)}`} />
       <div className="doc-sep" />
-      {f.periods ? (
-        f.periods.map((p) => (
-          <Row
-            key={p.n}
-            l={`Mes ${p.n}: ${fmtDate(p.start, { day: 'numeric', month: 'short' })} – ${fmtDate(p.end, { day: 'numeric', month: 'short' })}${p.frac < 1 ? ' (prorrateo)' : ''}`}
-            r={fmt(p.amount)}
-          />
-        ))
-      ) : (
-        <Row l={`Hospedaje ${f.nights} noche(s) × ${fmt(res.rate)}`} r={fmt(f.lodging.base)} />
-      )}
+      {f.periods
+        ? f.periods.map((p) => (
+            <Row
+              key={p.n}
+              l={`Mes ${p.n}: ${fmtDate(p.start, { day: 'numeric', month: 'short' })} – ${fmtDate(p.end, { day: 'numeric', month: 'short' })}${p.frac < 1 ? ' (prorrateo)' : ''}`}
+              r={fmt(p.amount)}
+            />
+          ))
+        : f.groups.map((g) => <Row key={g.from} l={`Hospedaje ${groupText(g, fmt)}`} r={fmt(g.amount)} />)}
       <Row l={`IVA (${state.config.iva}%)`} r={fmt(f.lodging.iva)} />
       <Row l={`INGUAT (${state.config.inguat}%)`} r={fmt(f.lodging.inguat)} />
       {res.charges.map((c) => (

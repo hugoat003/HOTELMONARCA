@@ -9,6 +9,7 @@ export const NAV = [
   { key: 'inventario', label: 'Inventario' },
   { key: 'habitaciones', label: 'Habitaciones', group: 'Hotel' },
   { key: 'reservas', label: 'Reservas' },
+  { key: 'huespedes', label: 'Huéspedes' },
   { key: 'limpieza', label: 'Limpieza' },
   { key: 'tienda', label: 'Tienda' },
   { key: 'eventos', label: 'Eventos', group: 'Eventos' },
@@ -24,6 +25,7 @@ export const TITLES = {
   inventario: 'Inventario',
   habitaciones: 'Habitaciones',
   reservas: 'Reservas',
+  huespedes: 'Huéspedes',
   limpieza: 'Limpieza',
   tienda: 'Tienda de recepción',
   eventos: 'Eventos',
@@ -41,6 +43,7 @@ export const ROLES = {
     'inventario',
     'habitaciones',
     'reservas',
+    'huespedes',
     'limpieza',
     'tienda',
     'eventos',
@@ -81,6 +84,7 @@ export const RES_STATUS = {
   hospedado: 'Hospedado',
   salida: 'Salió',
   cancelada: 'Cancelada',
+  noshow: 'No se presentó',
 };
 export const CHANNELS = ['Directo', 'Teléfono', 'WhatsApp', 'Booking.com', 'Expedia', 'Agencia'];
 

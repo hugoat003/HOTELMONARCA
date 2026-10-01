@@ -13,6 +13,7 @@ import Inventario from './views/restaurante/Inventario.jsx';
 import Caja from './views/caja/Caja.jsx';
 import Reporte from './views/caja/Reporte.jsx';
 import Habitaciones from './views/hotel/Habitaciones.jsx';
+import Huespedes from './views/hotel/Huespedes.jsx';
 import Limpieza from './views/hotel/Limpieza.jsx';
 import Tienda from './views/hotel/Tienda.jsx';
 import Reservas from './views/hotel/Reservas.jsx';
@@ -203,6 +204,7 @@ function Shell() {
             {view === 'eventos' && <Eventos />}
             {view === 'habitaciones' && <Habitaciones />}
             {view === 'reservas' && <Reservas />}
+            {view === 'huespedes' && <Huespedes />}
             {view === 'limpieza' && <Limpieza />}
             {view === 'tienda' && <Tienda />}
             {view === 'caja' && <Caja />}
