@@ -1,13 +1,23 @@
 // Recetas para store.update(d => A.algo(d, ...)). Modifican el borrador directamente.
 import { today, uid } from '../lib/dates.js';
+import { sameLine, unitPrice } from '../lib/orders.js';
 import { placed } from '../lib/tablemap.js';
 
 const byId = (arr, id, key = 'id') => arr.find((x) => x[key] === id);
 
-export const orderLabel = (order, tables) =>
-  order.type === 'mesa'
-    ? byId(tables, order.tableId)?.name || 'Mesa'
-    : `Para llevar #${order.number}${order.customer ? ' · ' + order.customer : ''}`;
+export { orderLabel } from '../lib/orders.js';
+
+// Movimiento de inventario por la receta de un platillo (consumo al enviar a cocina o devolución)
+function applyRecipe(d, mid, qty, sign, { type, note, userId }) {
+  const m = byId(d.menu, mid);
+  for (const r of m?.recipe || []) {
+    const it = byId(d.inventory, r.itemId);
+    if (!it) continue;
+    const q = Math.round(r.qty * qty * 1000) / 1000;
+    it.stock = Math.max(0, Math.round((it.stock + sign * q) * 1000) / 1000);
+    d.invMoves.push({ id: uid('im'), ts: Date.now(), itemId: it.id, type, qty: q, note, userId, after: it.stock });
+  }
+}
 
 export const A = {
   // Sesión
@@ -39,9 +49,10 @@ export const A = {
   closeOrder(d, orderId) {
     d.orders = d.orders.filter((o) => o.id !== orderId);
   },
-  addItem(d, orderId, m) {
+  // mods: modificadores elegidos [{ group, name, price }]
+  addItem(d, orderId, m, mods = []) {
     const o = byId(d.orders, orderId);
-    const ex = o.lines.find((l) => l.mid === m.id && !l.sent && !l.note);
+    const ex = o.lines.find((l) => sameLine(l, m.id, mods));
     if (ex) ex.qty++;
     else
       o.lines.push({
@@ -49,11 +60,53 @@ export const A = {
         mid: m.id,
         name: m.name,
         cat: m.cat,
-        price: m.price,
+        basePrice: m.price,
+        mods,
+        price: unitPrice(m.price, mods),
         qty: 1,
         note: '',
         sent: false,
       });
+  },
+  // Cortesía: el platillo se cobra en Q0; queda registrado el motivo y quién autorizó
+  setCourtesy(d, orderId, lineId, courtesy) {
+    const l = byId(byId(d.orders, orderId).lines, lineId);
+    if (courtesy) {
+      l.courtesy = { ...courtesy, price: l.courtesy?.price ?? l.price, ts: Date.now() };
+      l.price = 0;
+    } else if (l.courtesy) {
+      l.price = l.courtesy.price;
+      delete l.courtesy;
+    }
+  },
+  setOrderWaiter(d, orderId, waiterId) {
+    byId(d.orders, orderId).waiterId = waiterId;
+  },
+  // Une la cuenta de otra mesa a esta: pasan sus platillos y personas, y su mesa queda unida
+  joinOrders(d, targetId, sourceId) {
+    const t = byId(d.orders, targetId);
+    const s = byId(d.orders, sourceId);
+    t.lines.push(...s.lines);
+    t.guests += s.guests;
+    t.joined = [...(t.joined || []), s.tableId, ...(s.joined || [])];
+    d.orders = d.orders.filter((o) => o.id !== sourceId);
+  },
+  // Pasa platillos a otra mesa. qtys: { lineId: cantidad }. Si la mesa está libre, se abre.
+  transferLines(d, fromId, qtys, { toOrderId, newOrder }) {
+    const from = byId(d.orders, fromId);
+    if (newOrder) {
+      byId(d.tables, newOrder.tableId).reservedAt = null;
+      d.orders.push({ type: 'mesa', openedAt: Date.now(), lines: [], ...newOrder });
+    }
+    const to = byId(d.orders, toOrderId || newOrder.id);
+    for (const l of from.lines) {
+      const q = qtys[l.id] || 0;
+      if (!q) continue;
+      to.lines.push({ ...l, id: uid('l'), qty: q });
+      l.qty -= q;
+    }
+    from.lines = from.lines.filter((l) => l.qty > 0);
+    if (!from.lines.length) d.orders = d.orders.filter((o) => o.id !== fromId);
   },
   changeQty(d, orderId, lineId, delta) {
     const o = byId(d.orders, orderId);
@@ -65,7 +118,8 @@ export const A = {
     const o = byId(d.orders, orderId);
     byId(o.lines, lineId).note = note;
   },
-  voidLine(d, { orderId, lineId, qty, reason, userId, authId, label }) {
+  // returnStock: el platillo no se preparó, sus insumos regresan al inventario
+  voidLine(d, { orderId, lineId, qty, reason, userId, authId, label, returnStock = false }) {
     const o = byId(d.orders, orderId);
     const l = byId(o.lines, lineId);
     d.voids.push({
@@ -80,12 +134,23 @@ export const A = {
       userId,
       authId,
     });
+    if (returnStock && l.sent)
+      applyRecipe(d, l.mid, qty, +1, { type: 'devolucion', note: `Anulado sin preparar · ${label}`, userId });
     l.qty -= qty;
     o.lines = o.lines.filter((x) => x.qty > 0);
   },
-  sendKitchen(d, orderId) {
+  // Envía lo pendiente a cocina y descuenta los insumos de las recetas
+  sendKitchen(d, orderId, { userId, label } = {}) {
     d.counters.comanda++;
-    for (const l of byId(d.orders, orderId).lines) l.sent = true;
+    for (const l of byId(d.orders, orderId).lines) {
+      if (l.sent) continue;
+      l.sent = true;
+      applyRecipe(d, l.mid, l.qty, -1, {
+        type: 'consumo',
+        note: `Comanda #${d.counters.comanda} · ${label || ''}`,
+        userId,
+      });
+    }
   },
   moveOrder(d, orderId, tableId) {
     byId(d.tables, tableId).reservedAt = null;
@@ -296,6 +361,10 @@ export const A = {
   },
   setConfig(d, patch) {
     Object.assign(d.config, patch);
+  },
+  removeModifierGroup(d, id) {
+    d.modifierGroups = d.modifierGroups.filter((g) => g.id !== id);
+    for (const m of d.menu) m.modGroups = (m.modGroups || []).filter((g) => g !== id);
   },
   addCategory(d, name) {
     if (!d.categories.includes(name)) d.categories.push(name);

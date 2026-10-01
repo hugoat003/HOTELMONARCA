@@ -327,3 +327,7 @@
 .sheet-bar {
   display: none;
 }
+.line-mods {
+  font-size: 13px;
+  color: var(--muted);
+}

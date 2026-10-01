@@ -5,7 +5,8 @@ import { TABLE_COLORS } from '../../data.js';
 import { fmtTime, uid } from '../../lib/dates.js';
 import { linesTotal } from '../../lib/money.js';
 import { placed } from '../../lib/tablemap.js';
-import { A, orderLabel } from '../../store/actions.js';
+import { orderLabel, tableOrder } from '../../lib/orders.js';
+import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import MapEditor from './MapEditor.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
@@ -38,7 +39,7 @@ export default function Mesas({ go }) {
 
   const tables = state.tables.map(placed);
   const zones = [...new Set([...tables.map((t) => t.zone), ...state.mapDecor.map((d) => d.zone)])];
-  const orderFor = (tableId) => state.orders.find((o) => o.type === 'mesa' && o.tableId === tableId);
+  const orderFor = (tableId) => tableOrder(state.orders, tableId);
   const waiters = state.users.filter((u) => u.active && (u.role === 'mesero' || u.id === user.id));
   const open = [...state.orders].sort((a, b) => a.openedAt - b.openedAt);
   const occupied = state.orders.filter((o) => o.type === 'mesa').length;
@@ -61,18 +62,23 @@ export default function Mesas({ go }) {
     const o = orderFor(t.id);
     const status = o ? 'ocupada' : t.reservedAt ? 'reservada' : 'libre';
     const [bg, fg, border, sub] = TABLE_COLORS[status];
-    const lines = o
-      ? [fmt(linesTotal(o.lines)), `${firstName(state.users, o.waiterId)} · ${shortMinutes(o.openedAt)}`]
-      : t.reservedAt
-        ? [`Reservada ${t.reservedAt}`]
-        : [`${t.seats} pers.`];
+    // Mesa unida a la cuenta de otra: muestra a cuál pertenece
+    const joinedTo = o && o.tableId !== t.id ? state.tables.find((x) => x.id === o.tableId) : null;
+    const lines = joinedTo
+      ? [`Unida a ${joinedTo.name.replace('Mesa ', '')}`]
+      : o
+        ? [fmt(linesTotal(o.lines)), `${firstName(state.users, o.waiterId)} · ${shortMinutes(o.openedAt)}`]
+        : t.reservedAt
+          ? [`Reservada ${t.reservedAt}`]
+          : [`${t.seats} pers.`];
     return {
       bg,
       fg,
       border,
       sub,
       lines,
-      strong: status === 'reservada',
+      strong: status === 'reservada' || !!o?.joined?.length,
+      joined: !!o?.joined?.length,
       chair: o ? '#6F675E' : '#D6CFC4',
       pulse: o && o.lines.some((l) => !l.sent),
     };

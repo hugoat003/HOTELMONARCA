@@ -108,7 +108,7 @@ export default function TableMap({ tables, decor, edit = false, selected, getLoo
                 rx={t.w / 2}
                 ry={t.h / 2}
                 fill={look.bg}
-                stroke={look.border}
+                stroke={look.joined ? 'var(--accent)' : look.border}
                 strokeWidth={look.strong ? 3 : 1.5}
               />
             ) : (
@@ -117,7 +117,7 @@ export default function TableMap({ tables, decor, edit = false, selected, getLoo
                 height={t.h}
                 rx="10"
                 fill={look.bg}
-                stroke={look.border}
+                stroke={look.joined ? 'var(--accent)' : look.border}
                 strokeWidth={look.strong ? 3 : 1.5}
               />
             )}

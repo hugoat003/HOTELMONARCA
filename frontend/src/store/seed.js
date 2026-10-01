@@ -2,7 +2,7 @@ import { addDays, addMonths, today } from '../lib/dates.js';
 import { linesTotal, round2 } from '../lib/money.js';
 import { buildReport } from '../lib/report.js';
 
-export const VERSION = 6;
+export const VERSION = 7;
 
 const CATEGORIES = ['Desayunos', 'Entradas', 'Platos fuertes', 'Postres', 'Bebidas', 'Bar', 'Especiales'];
 
@@ -31,6 +31,68 @@ const MENU = [
   ['m22', 'Especiales', 'Copa de vino tinto', 55],
 ].map(([id, cat, name, price]) => ({ id, cat, name, price, active: true }));
 MENU.find((m) => m.id === 'm7').active = false; // agotado, para mostrarlo en la demo
+
+// Modificadores: grupos que se eligen al pedir un platillo
+const MODIFIER_GROUPS = [
+  {
+    id: 'g1',
+    name: 'Término',
+    required: true,
+    multiple: false,
+    options: [
+      { id: 'o1', name: 'Rojo', price: 0 },
+      { id: 'o2', name: 'Término medio', price: 0 },
+      { id: 'o3', name: 'Tres cuartos', price: 0 },
+      { id: 'o4', name: 'Bien cocido', price: 0 },
+    ],
+  },
+  {
+    id: 'g2',
+    name: 'Extras',
+    required: false,
+    multiple: true,
+    options: [
+      { id: 'o5', name: 'Aguacate', price: 10 },
+      { id: 'o6', name: 'Queso', price: 8 },
+      { id: 'o7', name: 'Tocino', price: 12 },
+    ],
+  },
+  {
+    id: 'g3',
+    name: 'Preparación',
+    required: false,
+    multiple: false,
+    options: [
+      { id: 'o8', name: 'Con hielo', price: 0 },
+      { id: 'o9', name: 'Sin hielo', price: 0 },
+    ],
+  },
+];
+const MODS = { m1: ['g2'], m2: ['g2'], m9: ['g1', 'g2'], m15: ['g3'], m16: ['g3'] };
+
+// Recetas: insumos de Inventario que consume cada platillo (por porción)
+const RECIPES = {
+  m1: [
+    ['i5', 0.08],
+    ['i1', 0.1],
+  ],
+  m5: [['i4', 2]],
+  m8: [
+    ['i1', 0.35],
+    ['i5', 0.05],
+  ],
+  m9: [['i2', 0.3]],
+  m10: [['i3', 0.25]],
+  m14: [['i6', 0.04]],
+  m17: [['i9', 1]],
+  m19: [['i10', 0.06]],
+  m20: [['i8', 1]],
+  m22: [['i12', 0.2]],
+};
+for (const m of MENU) {
+  m.modGroups = MODS[m.id] || [];
+  m.recipe = (RECIPES[m.id] || []).map(([itemId, qty]) => ({ itemId, qty }));
+}
 const BYID = Object.fromEntries(MENU.map((m) => [m.id, m]));
 
 const USERS = [
@@ -86,14 +148,16 @@ const ROOMS = [
 const RATE = Object.fromEntries(ROOMS.map((r) => [r.n, ROOM_TYPES.find((t) => t.id === r.typeId).rate]));
 
 const at = (day, time) => new Date(`${day}T${time}:00`).getTime();
-const line = (mid, qty, sent = true, note = '') => {
+const line = (mid, qty, sent = true, note = '', mods = []) => {
   const m = BYID[mid];
   return {
     id: 'l_' + mid + '_' + qty + Math.random().toString(36).slice(2, 6),
     mid,
     name: m.name,
     cat: m.cat,
-    price: m.price,
+    basePrice: m.price,
+    mods,
+    price: m.price + mods.reduce((a, x) => a + x.price, 0),
     qty,
     note,
     sent,
@@ -548,7 +612,12 @@ export function seed() {
       guests: 4,
       waiterId: 'u4',
       openedAt: at(d0, '13:25'),
-      lines: [line('m9', 1), line('m18', 2), line('m5', 1), line('m11', 2, true, 'Sin chile')],
+      lines: [
+        line('m9', 1, true, '', [{ group: 'Término', name: 'Término medio', price: 0 }]),
+        line('m18', 2),
+        line('m5', 1),
+        line('m11', 2, true, 'Sin chile'),
+      ],
     },
     {
       id: 'o3',
@@ -772,6 +841,7 @@ export function seed() {
     users: USERS,
     categories: CATEGORIES,
     menu: MENU,
+    modifierGroups: MODIFIER_GROUPS,
     tables: TABLES,
     mapDecor: MAP_DECOR,
     roomTypes: ROOM_TYPES,

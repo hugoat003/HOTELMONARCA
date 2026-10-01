@@ -3,7 +3,7 @@ import DataTable, { rowClass } from '../../components/DataTable.jsx';
 import KpiCard from '../../components/KpiCard.jsx';
 import { ItemModal, MoveModal, StockMoves, StockTag } from '../../components/Stock.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { INV_CATS, INV_MOVES } from '../../data.js';
+import { INV_CATS, INV_MOVE_LABELS, INV_MOVES } from '../../data.js';
 import { uid } from '../../lib/dates.js';
 import { qtyFmt, stockStatus } from '../../lib/inventory.js';
 import { sum } from '../../lib/money.js';
@@ -132,7 +132,7 @@ export default function Inventario() {
         })}
       </DataTable>
 
-      <StockMoves moves={state.invMoves} items={state.inventory} users={state.users} labels={INV_MOVES} />
+      <StockMoves moves={state.invMoves} items={state.inventory} users={state.users} labels={INV_MOVE_LABELS} />
 
       {move && (
         <MoveModal

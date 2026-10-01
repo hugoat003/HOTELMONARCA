@@ -124,6 +124,8 @@ export const EVENT_EXTRAS = [
 export const INV_CATS = ['Insumos', 'Bebidas', 'Desechables', 'Utensilios', 'Limpieza'];
 export const INV_UNITS = ['unidad', 'kg', 'lb', 'litro', 'galón', 'botella', 'paquete', 'caja', 'ciento'];
 export const INV_MOVES = { entrada: 'Entrada', salida: 'Salida', merma: 'Merma', ajuste: 'Ajuste de conteo' };
+// Etiquetas del historial: incluye los movimientos automáticos de las recetas
+export const INV_MOVE_LABELS = { ...INV_MOVES, consumo: 'Consumo (receta)', devolucion: 'Devolución' };
 
 // Tienda de recepción
 export const SHOP_CATS = ['Snacks', 'Bebidas', 'Higiene personal', 'Limpieza', 'Souvenirs'];

@@ -134,6 +134,10 @@ export default function Reporte({ go }) {
             <strong>{fmt(r.discounts)}</strong>
           </div>
           <div className="row text-md">
+            <span>Cortesías · {r.courtesies?.count || 0}</span>
+            <strong>{fmt(r.courtesies?.amount)}</strong>
+          </div>
+          <div className="row text-md">
             <span>Propinas</span>
             <strong>{fmt(r.tips)}</strong>
           </div>

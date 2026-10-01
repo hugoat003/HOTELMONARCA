@@ -4,6 +4,7 @@ import { fmtDate, fmtDateTime, fmtTime } from '../lib/dates.js';
 import { eventTotals } from '../lib/events.js';
 import { folio as calcFolio } from '../lib/hotel.js';
 import { ivaIncluded, linesTotal, round2 } from '../lib/money.js';
+import { modsText } from '../lib/orders.js';
 import { useStore } from '../store/store.jsx';
 
 const userName = (users, id) => users.find((u) => u.id === id)?.name || '—';
@@ -63,7 +64,9 @@ export function TicketDoc({ sale }) {
         <div key={i} className="doc-line">
           <span>
             {l.qty} × {l.name}
+            {l.mods?.length ? <em> · {modsText(l.mods)}</em> : null}
             {l.note ? <em> ({l.note})</em> : null}
+            {l.courtesy ? <em> · cortesía</em> : null}
           </span>
           <span>{fmt(l.price * l.qty)}</span>
         </div>
@@ -123,6 +126,9 @@ export function ComandaDoc({ label, lines, number, waiterId, guests }) {
           <strong>
             {l.qty} × {l.name}
           </strong>
+          {l.mods?.map((m) => (
+            <div key={m.name}>+ {m.name}</div>
+          ))}
           {l.note && <div>→ {l.note}</div>}
         </div>
       ))}
@@ -147,6 +153,8 @@ export function PrecuentaDoc({ label, lines, waiterId, guests }) {
         <div key={l.id} className="doc-line">
           <span>
             {l.qty} × {l.name}
+            {l.mods?.length ? <em> · {modsText(l.mods)}</em> : null}
+            {l.courtesy ? <em> · cortesía</em> : null}
           </span>
           <span>{fmt(l.price * l.qty)}</span>
         </div>
@@ -217,6 +225,7 @@ export function ReportDoc({ report: r, shift }) {
           <Row l="Cuentas cobradas" r={r.restCount} />
           <Row l="Ticket promedio" r={fmt(r.avgTicket)} />
           <Row l="Descuentos" r={fmt(r.discounts)} />
+          <Row l={`Cortesías (${r.courtesies?.count || 0})`} r={fmt(r.courtesies?.amount)} />
           <Row l="Propinas" r={fmt(r.tips)} />
           <Row l={`Anulaciones de platillos (${r.voids.lines})`} r={fmt(r.voids.linesAmount)} />
           <Row l={`Comprobantes anulados (${r.voids.sales})`} r={fmt(r.voids.salesAmount)} />

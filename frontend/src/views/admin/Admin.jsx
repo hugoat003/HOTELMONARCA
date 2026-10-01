@@ -10,6 +10,7 @@ import { isActiveRes } from '../../lib/hotel.js';
 import { A } from '../../store/actions.js';
 import { useStore, VERSION } from '../../store/store.jsx';
 import MapEditor from '../restaurante/MapEditor.jsx';
+import { MenuItemModal, ModifierGroups } from './MenuModals.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
 
 const TABS = [
@@ -168,19 +169,14 @@ function MenuTab() {
         ))}
       </DataTable>
 
+      <ModifierGroups />
+
       {edit && (
-        <FormModal
-          title={edit.isNew ? 'Nuevo platillo' : 'Editar platillo'}
-          initial={edit}
+        <MenuItemModal
+          item={edit}
           onClose={() => setEdit(null)}
-          fields={[
-            { key: 'name', label: 'Nombre', span: true },
-            { key: 'cat', label: 'Categoría', type: 'select', options: state.categories.map((c) => [c, c]) },
-            { key: 'price', label: 'Precio', type: 'number', hint: 'IVA incluido' },
-          ]}
-          validate={(v) => (!v.name.trim() ? 'Falta el nombre' : !(parseFloat(v.price) > 0) ? 'Precio inválido' : '')}
           onSave={({ isNew, ...v }) => {
-            update((d) => A.upsert(d, 'menu', { ...v, name: v.name.trim(), price: parseFloat(v.price) }));
+            update((d) => A.upsert(d, 'menu', v));
             setEdit(null);
             ui.notify(isNew ? 'Platillo agregado' : 'Platillo actualizado');
           }}

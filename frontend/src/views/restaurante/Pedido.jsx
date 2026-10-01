@@ -1,25 +1,38 @@
 import { useState } from 'react';
-import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { QUICK_NOTES } from '../../data.js';
 import { fmtTime, uid } from '../../lib/dates.js';
+import { canMake } from '../../lib/inventory.js';
 import { ivaIncluded, linesTotal } from '../../lib/money.js';
+import { modsText, orderLabel } from '../../lib/orders.js';
 import { ComandaDoc, PrecuentaDoc, TicketDoc } from '../../print/Docs.jsx';
-import { A, orderLabel } from '../../store/actions.js';
+import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
-import Cobro from './Cobro.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
+import Cobro from './Cobro.jsx';
+import { LineModal, ModifierModal, OrderOptionsModal, SplitModal, VoidModal } from './PedidoModals.jsx';
 
-const VOID_REASONS = ['Error de captura', 'Cliente cambió de opinión', 'Platillo devuelto', 'Demora en cocina'];
+// Campos de la línea que pasan al comprobante
+const saleLine = ({ mid, name, cat, basePrice, mods, price, qty, note, courtesy }) => ({
+  mid,
+  name,
+  cat,
+  basePrice,
+  mods,
+  price,
+  qty,
+  note,
+  courtesy,
+});
 
 export default function Pedido({ orderId, go }) {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
   const [cat, setCat] = usePersisted('pedido.categoria', 'Todos');
   const [search, setSearch] = usePersisted('pedido.busqueda', '');
-  const [noteLine, setNoteLine] = useState(null);
+  const [lineMenu, setLineMenu] = useState(null); // línea con nota / cortesía abierta
   const [voidLine, setVoidLine] = useState(null);
-  const [moving, setMoving] = useState(false);
+  const [options, setOptions] = useState(false);
+  const [picking, setPicking] = useState(null); // platillo con modificadores
   const [splitting, setSplitting] = useState(false);
   const [paying, setPaying] = useState(null); // { lines, paidQty }
   const [sheetOpen, setSheetOpen] = useState(false); // cuenta desplegada en tablet vertical
@@ -56,10 +69,15 @@ export default function Pedido({ orderId, go }) {
   const items = state.menu.filter(
     (m) => (cat === 'Todos' || m.cat === cat) && (!q || m.name.toLowerCase().includes(q)),
   );
+  const menuItem = (mid) => state.menu.find((m) => m.id === mid);
+  const groupsFor = (m) =>
+    (m.modGroups || []).map((id) => state.modifierGroups.find((g) => g.id === id)).filter(Boolean);
+
+  const addItem = (m) => (groupsFor(m).length ? setPicking(m) : update((d) => A.addItem(d, order.id, m)));
 
   const sendKitchen = () => {
     const number = state.counters.comanda + 1;
-    update((d) => A.sendKitchen(d, order.id));
+    update((d) => A.sendKitchen(d, order.id, { userId: user.id, label }));
     ui.preview(
       'Comanda enviada a cocina',
       <ComandaDoc label={label} lines={pending} number={number} waiterId={order.waiterId} guests={order.guests} />,
@@ -81,7 +99,7 @@ export default function Pedido({ orderId, go }) {
       kind: 'restaurante',
       ts: Date.now(),
       ref: label,
-      lines: paying.lines.map(({ mid, name, cat, price, qty, note }) => ({ mid, name, cat, price, qty, note })),
+      lines: paying.lines.map(saleLine),
       subtotal: linesTotal(paying.lines),
       ...res,
       waiterId: order.waiterId,
@@ -103,7 +121,7 @@ export default function Pedido({ orderId, go }) {
   return (
     <div className="split pedido-split" style={{ '--side': '420px' }}>
       <div className="split-main pedido-main">
-        <div className="row" style={{ gap: 12 }}>
+        <div className="row gap-12">
           <input
             className="input search"
             placeholder="Buscar platillo…"
@@ -119,20 +137,32 @@ export default function Pedido({ orderId, go }) {
           ))}
         </div>
         <div className="menu-grid">
-          {items.map((m) => (
-            <button
-              key={m.id}
-              className={'menu-item' + (m.active ? '' : ' soldout')}
-              disabled={!m.active}
-              onClick={() => update((d) => A.addItem(d, order.id, m))}
-            >
-              <span className="menu-item-name">{m.name}</span>
-              <span className="menu-item-foot">
-                <span className="menu-item-cat">{m.active ? m.cat : 'Agotado'}</span>
-                <span className="menu-item-price">{fmt(m.price)}</span>
-              </span>
-            </button>
-          ))}
+          {items.map((m) => {
+            const enough = canMake(m, state.inventory);
+            const available = m.active && enough;
+            return (
+              <button
+                key={m.id}
+                className={'menu-item' + (available ? '' : ' soldout')}
+                disabled={!available}
+                onClick={() => addItem(m)}
+              >
+                <span className="menu-item-name">{m.name}</span>
+                <span className="menu-item-foot">
+                  <span className="menu-item-cat">
+                    {!m.active
+                      ? 'Agotado'
+                      : !enough
+                        ? 'Sin insumos'
+                        : m.modGroups?.length
+                          ? `${m.cat} · opciones`
+                          : m.cat}
+                  </span>
+                  <span className="menu-item-price">{fmt(m.price)}</span>
+                </span>
+              </button>
+            );
+          })}
           {!items.length && <div className="panel-sub">No hay platillos que coincidan.</div>}
         </div>
       </div>
@@ -154,11 +184,9 @@ export default function Pedido({ orderId, go }) {
               {order.guests} pers. · {waiter?.name} · desde {fmtTime(order.openedAt)}
             </div>
           </div>
-          {order.type === 'mesa' && (
-            <button className="btn-small" onClick={() => setMoving(true)}>
-              Cambiar mesa
-            </button>
-          )}
+          <button className="btn-small" onClick={() => setOptions(true)}>
+            Opciones
+          </button>
         </div>
 
         <div className="ticket-lines">
@@ -174,7 +202,12 @@ export default function Pedido({ orderId, go }) {
                   onClick={() =>
                     update((d) =>
                       l.sent
-                        ? A.addItem(d, order.id, { id: l.mid, name: l.name, cat: l.cat, price: l.price })
+                        ? A.addItem(
+                            d,
+                            order.id,
+                            menuItem(l.mid) || { id: l.mid, name: l.name, cat: l.cat, price: l.basePrice ?? l.price },
+                            l.mods || [],
+                          )
                         : A.changeQty(d, order.id, l.id, 1),
                     )
                   }
@@ -182,18 +215,18 @@ export default function Pedido({ orderId, go }) {
                   +
                 </button>
               </div>
-              <button
-                className="line-body"
-                onClick={() => !l.sent && setNoteLine(l)}
-                title={l.sent ? '' : 'Agregar nota'}
-              >
+              <button className="line-body" onClick={() => setLineMenu(l)} title="Nota y cortesía">
                 <div className="line-name">{l.name}</div>
+                {l.mods?.length > 0 && <div className="line-mods">{modsText(l.mods)}</div>}
                 {l.note && <div className="line-note">{l.note}</div>}
                 <div className={'line-tag' + (l.sent ? '' : ' new')}>
+                  {l.courtesy ? 'Cortesía · ' : ''}
                   {l.sent ? 'En cocina' : 'Nuevo · toca para nota'}
                 </div>
               </button>
-              <div className="line-amt">{fmt(l.price * l.qty)}</div>
+              <div className="line-amt">
+                {l.courtesy && <s className="panel-sub">{fmt(l.courtesy.price * l.qty)}</s>} {fmt(l.price * l.qty)}
+              </div>
             </div>
           ))}
         </div>
@@ -262,13 +295,37 @@ export default function Pedido({ orderId, go }) {
         </div>
       </div>
 
-      {noteLine && (
-        <NoteModal
-          line={noteLine}
-          onClose={() => setNoteLine(null)}
-          onSave={(note) => {
-            update((d) => A.setNote(d, order.id, noteLine.id, note));
-            setNoteLine(null);
+      {picking && (
+        <ModifierModal
+          item={picking}
+          groups={groupsFor(picking)}
+          fmt={fmt}
+          onClose={() => setPicking(null)}
+          onAdd={(mods) => {
+            update((d) => A.addItem(d, order.id, picking, mods));
+            setPicking(null);
+          }}
+        />
+      )}
+      {lineMenu && (
+        <LineModal
+          line={order.lines.find((l) => l.id === lineMenu.id) || lineMenu}
+          fmt={fmt}
+          onClose={() => setLineMenu(null)}
+          onNote={(note) => {
+            update((d) => A.setNote(d, order.id, lineMenu.id, note));
+            setLineMenu(null);
+          }}
+          onCourtesy={(reason) =>
+            ui.authorize(`Cortesía de ${lineMenu.name}`, (mgr) => {
+              update((d) => A.setCourtesy(d, order.id, lineMenu.id, { reason, authId: mgr.id, userId: user.id }));
+              setLineMenu(null);
+              ui.notify(`Cortesía aplicada · ${lineMenu.name}`);
+            })
+          }
+          onRemoveCourtesy={() => {
+            update((d) => A.setCourtesy(d, order.id, lineMenu.id, null));
+            setLineMenu(null);
           }}
         />
       )}
@@ -276,8 +333,9 @@ export default function Pedido({ orderId, go }) {
         <VoidModal
           line={voidLine}
           fmt={fmt}
+          hasRecipe={!!menuItem(voidLine.mid)?.recipe?.length}
           onClose={() => setVoidLine(null)}
-          onConfirm={(qty, reason) =>
+          onConfirm={(qty, reason, returnStock) =>
             ui.authorize(`Anular ${qty} × ${voidLine.name} (ya enviado a cocina)`, (mgr) => {
               update((d) =>
                 A.voidLine(d, {
@@ -288,6 +346,7 @@ export default function Pedido({ orderId, go }) {
                   userId: user.id,
                   authId: mgr.id,
                   label,
+                  returnStock,
                 }),
               );
               setVoidLine(null);
@@ -296,14 +355,36 @@ export default function Pedido({ orderId, go }) {
           }
         />
       )}
-      {moving && (
-        <MoveModal
-          tables={state.tables.filter((t) => !state.orders.some((o) => o.type === 'mesa' && o.tableId === t.id))}
-          onClose={() => setMoving(false)}
+      {options && (
+        <OrderOptionsModal
+          order={order}
+          state={state}
+          fmt={fmt}
+          onClose={() => setOptions(false)}
           onMove={(t) => {
             update((d) => A.moveOrder(d, order.id, t.id));
-            setMoving(false);
-            ui.notify(`Orden movida a ${t.name}`);
+            setOptions(false);
+            ui.notify(`Cuenta movida a ${t.name}`);
+          }}
+          onJoin={(other) => {
+            update((d) => A.joinOrders(d, order.id, other.id));
+            setOptions(false);
+            ui.notify(`${orderLabel(other, state.tables)} unida a esta cuenta`);
+          }}
+          onTransfer={(qtys, t, targetOrder) => {
+            const target = targetOrder
+              ? { toOrderId: targetOrder.id }
+              : { newOrder: { id: uid('o'), tableId: t.id, guests: 1, waiterId: order.waiterId } };
+            update((d) => A.transferLines(d, order.id, qtys, target));
+            setOptions(false);
+            ui.notify(`Platillos pasados a ${t.name}`);
+            const all = Object.values(qtys).reduce((a, b) => a + b, 0) === order.lines.reduce((a, l) => a + l.qty, 0);
+            if (all) go('mesas');
+          }}
+          onWaiter={(w) => {
+            update((d) => A.setOrderWaiter(d, order.id, w.id));
+            setOptions(false);
+            ui.notify(`Ahora atiende ${w.name}`);
           }}
         />
       )}
@@ -332,184 +413,5 @@ export default function Pedido({ orderId, go }) {
         />
       )}
     </div>
-  );
-}
-
-function NoteModal({ line, onClose, onSave }) {
-  const [note, setNote] = useState(line.note);
-  const toggle = (n) =>
-    setNote((cur) =>
-      cur.includes(n)
-        ? cur
-            .replace(n, '')
-            .replace(/^[,\s]+|[,\s]+$/g, '')
-            .replace(/,\s*,/g, ',')
-        : cur
-          ? cur + ', ' + n
-          : n,
-    );
-  return (
-    <Modal
-      title={line.name}
-      onClose={onClose}
-      width={460}
-      footer={
-        <>
-          <button className="btn" onClick={onClose}>
-            Cancelar
-          </button>
-          <button className="btn btn-primary" onClick={() => onSave(note.trim())}>
-            Guardar nota
-          </button>
-        </>
-      }
-    >
-      <Field label="Nota para cocina">
-        <input
-          className="input"
-          autoFocus
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSave(note.trim())}
-          placeholder="Ej. sin cebolla"
-        />
-      </Field>
-      <div className="chips">
-        {QUICK_NOTES.map((n) => (
-          <button key={n} className={'chip small' + (note.includes(n) ? ' active' : '')} onClick={() => toggle(n)}>
-            {n}
-          </button>
-        ))}
-      </div>
-    </Modal>
-  );
-}
-
-function VoidModal({ line, fmt, onClose, onConfirm }) {
-  const [qty, setQty] = useState(1);
-  const [reason, setReason] = useState('');
-  return (
-    <Modal
-      title="Anular platillo"
-      onClose={onClose}
-      width={460}
-      footer={
-        <>
-          <button className="btn" onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary btn-danger"
-            disabled={!reason.trim()}
-            onClick={() => onConfirm(qty, reason.trim())}
-          >
-            Anular {fmt(line.price * qty)}
-          </button>
-        </>
-      }
-    >
-      <div className="note-box">
-        {line.name} ya fue enviado a cocina. La anulación queda registrada en el reporte y requiere autorización de un
-        gerente.
-      </div>
-      {line.qty > 1 && (
-        <Field as="div" label="Cantidad a anular">
-          <div className="stepper big">
-            <button onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
-            <span>{qty}</span>
-            <button onClick={() => setQty(Math.min(line.qty, qty + 1))}>+</button>
-          </div>
-        </Field>
-      )}
-      <Field as="div" label="Motivo">
-        <div className="chips">
-          {VOID_REASONS.map((r) => (
-            <button key={r} className={'chip small' + (reason === r ? ' active' : '')} onClick={() => setReason(r)}>
-              {r}
-            </button>
-          ))}
-        </div>
-        <input
-          className="input"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          placeholder="Otro motivo…"
-        />
-      </Field>
-    </Modal>
-  );
-}
-
-function MoveModal({ tables, onClose, onMove }) {
-  return (
-    <Modal title="Cambiar a otra mesa" onClose={onClose} width={520}>
-      {tables.length ? (
-        <div className="tile-grid small">
-          {tables.map((t) => (
-            <button key={t.id} className="chip" onClick={() => onMove(t)}>
-              {t.name} · {t.zone} · {t.seats} pers.
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="panel-sub">No hay mesas libres.</div>
-      )}
-      <button className="btn btn-quiet" onClick={onClose}>
-        Cancelar
-      </button>
-    </Modal>
-  );
-}
-
-function SplitModal({ lines, fmt, onClose, onPay }) {
-  const [sel, setSel] = useState({});
-  const set = (id, v) => setSel((s) => ({ ...s, [id]: v }));
-  const amount = lines.reduce((a, l) => a + l.price * (sel[l.id] || 0), 0);
-  const any = Object.values(sel).some((v) => v > 0);
-  return (
-    <Modal
-      title="Dividir cuenta"
-      aside={fmt(amount)}
-      onClose={onClose}
-      width={520}
-      footer={
-        <>
-          <button className="btn" onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary"
-            disabled={!any}
-            onClick={() => onPay(Object.fromEntries(Object.entries(sel).filter(([, v]) => v > 0)))}
-          >
-            Cobrar selección
-          </button>
-        </>
-      }
-    >
-      <div className="panel-sub text-sm">
-        Elige qué platillos paga esta persona. Lo que no se cobre queda en la mesa. Para partes iguales usa “Dividir en”
-        dentro del cobro.
-      </div>
-      <div className="stack-tight">
-        {lines.map((l) => (
-          <div key={l.id} className="line" style={{ gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
-            <div className="stepper">
-              <button onClick={() => set(l.id, Math.max(0, (sel[l.id] || 0) - 1))}>−</button>
-              <span>{sel[l.id] || 0}</span>
-              <button onClick={() => set(l.id, Math.min(l.qty, (sel[l.id] || 0) + 1))}>+</button>
-            </div>
-            <div>
-              <div className="line-name">{l.name}</div>
-              <div className="line-tag">de {l.qty}</div>
-            </div>
-            <div className="line-amt">{fmt(l.price * (sel[l.id] || 0))}</div>
-          </div>
-        ))}
-      </div>
-      <button className="link" onClick={() => setSel(Object.fromEntries(lines.map((l) => [l.id, l.qty])))}>
-        Seleccionar todo
-      </button>
-    </Modal>
   );
 }

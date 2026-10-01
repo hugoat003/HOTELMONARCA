@@ -5,6 +5,7 @@ import Tabs from '../../components/Tabs.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { uid } from '../../lib/dates.js';
 import { clampPos, freeSpot, MAP_H, MAP_W, placed, SHAPES, sizeFor } from '../../lib/tablemap.js';
+import { tableOrder } from '../../lib/orders.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 
@@ -21,7 +22,7 @@ export default function MapEditor({ onDone }) {
   const decor = state.mapDecor.filter((d) => d.zone === zone);
   const table = sel?.kind === 'table' ? state.tables.map(placed).find((t) => t.id === sel.id) : null;
   const item = sel?.kind === 'decor' ? state.mapDecor.find((d) => d.id === sel.id) : null;
-  const hasOrder = (id) => state.orders.some((o) => o.type === 'mesa' && o.tableId === id);
+  const hasOrder = (id) => !!tableOrder(state.orders, id);
 
   const saveTable = (patch) => update((d) => A.upsert(d, 'tables', { ...table, ...patch }));
   const saveDecor = (patch) => update((d) => A.upsert(d, 'mapDecor', { ...item, ...patch }));

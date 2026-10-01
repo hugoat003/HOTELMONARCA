@@ -21,6 +21,11 @@ export function buildReport(state, shift) {
   const restTotal = sum(rest, (s) => s.total);
   const tips = sum(rest, (s) => s.tip);
   const discounts = sum(rest, (s) => s.discount?.amount);
+  const courtesyLines = rest.flatMap((s) => s.lines).filter((l) => l.courtesy);
+  const courtesies = {
+    count: courtesyLines.reduce((a, l) => a + l.qty, 0),
+    amount: sum(courtesyLines, (l) => l.courtesy.price * l.qty),
+  };
 
   const byMethod = Object.keys(METHOD_LABELS).map((k) => {
     const pays = ok.flatMap((s) => s.payments).filter((p) => p.method === k);
@@ -65,6 +70,7 @@ export function buildReport(state, shift) {
     avgTicket: rest.length ? round2(restTotal / rest.length) : 0,
     tips,
     discounts,
+    courtesies,
     byMethod,
     byCategory,
     topItems,
