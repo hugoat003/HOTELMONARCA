@@ -149,7 +149,7 @@ export default function Habitaciones() {
       {form && (
         <ReservaForm mode={form.mode} roomN={form.roomN} onClose={() => setForm(null)}
           onSave={(r) => {
-            update((d) => { A.saveReservation(d, r); if (form.mode === 'walkin') A.checkIn(d, r.id); });
+            update((d) => (form.mode === 'walkin' ? A.checkInWith(d, r) : A.saveReservation(d, r)));
             setForm(null);
             setSelRoom(r.roomN);
             ui.notify(form.mode === 'walkin' ? `Check-in · ${r.guest.name} en la ${r.roomN}` : `Reserva creada · ${r.guest.name}, Hab. ${r.roomN}`);

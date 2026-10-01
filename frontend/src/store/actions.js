@@ -1,5 +1,6 @@
 // Recetas para store.update(d => A.algo(d, ...)). Modifican el borrador directamente.
 import { today, uid } from '../lib/dates.js';
+import { placed } from '../lib/tablemap.js';
 
 const byId = (arr, id, key = 'id') => arr.find((x) => x[key] === id);
 
@@ -106,6 +107,11 @@ export const A = {
     if (i >= 0) d.reservations[i] = { ...d.reservations[i], ...res };
     else d.reservations.push(res);
   },
+  // Guarda los datos confirmados al llegar y registra la entrada en una sola operación
+  checkInWith(d, res) {
+    A.saveReservation(d, res);
+    A.checkIn(d, res.id);
+  },
   checkIn(d, resId) {
     const r = byId(d.reservations, resId);
     r.status = 'hospedado';
@@ -136,6 +142,11 @@ export const A = {
     r.checkedOutAt = Date.now();
     r.checkedOutOn = today();
     byId(d.rooms, r.roomN, 'n').hk = 'sucia';
+  },
+  // Check-out con su cobro final (sale puede ser null si la cuenta ya está saldada)
+  checkOutWith(d, resId, sale) {
+    if (sale) A.addFolioPayment(d, resId, sale);
+    A.checkOut(d, resId);
   },
   setHk(d, roomN, hk) { byId(d.rooms, roomN, 'n').hk = hk; },
 
@@ -184,6 +195,24 @@ export const A = {
   },
   remove(d, coll, value, key = 'id') { d[coll] = d[coll].filter((x) => x[key] !== value); },
   setConfig(d, patch) { Object.assign(d.config, patch); },
+  addCategory(d, name) { if (!d.categories.includes(name)) d.categories.push(name); },
+  removeCategory(d, name) { d.categories = d.categories.filter((c) => c !== name); },
+  saveRoom(d, room) {
+    A.upsert(d, 'rooms', room, 'n');
+    d.rooms.sort((a, b) => a.n.localeCompare(b.n));
+  },
+
+  // Mapa de mesas
+  addTable(d, table) { d.tables.push(table); },
+  addMapDecor(d, item) { d.mapDecor.push(item); },
+  moveMapItem(d, kind, id, x, y) {
+    if (kind === 'table') {
+      const i = d.tables.findIndex((t) => t.id === id);
+      d.tables[i] = { ...placed(d.tables[i], i), x, y };
+    } else {
+      Object.assign(byId(d.mapDecor, id), { x, y });
+    }
+  },
   renameCategory(d, from, to) {
     d.categories = d.categories.map((c) => (c === from ? to : c));
     for (const m of d.menu) if (m.cat === from) m.cat = to;

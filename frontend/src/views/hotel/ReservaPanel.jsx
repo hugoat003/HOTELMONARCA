@@ -54,9 +54,8 @@ export default function ReservaPanel({ res }) {
         ],
         taxes: { iva: f.lodging.iva, inguat: f.lodging.inguat }, credits: f.paid, subtotal: f.total, ...r,
       });
-      update((d) => A.addFolioPayment(d, res.id, sale));
     }
-    update((d) => A.checkOut(d, res.id));
+    update((d) => A.checkOutWith(d, res.id, sale));
     setCheckout(false);
     ui.notify(`Check-out · Habitación ${res.roomN}`);
     if (sale) ui.preview('Factura de salida', <TicketDoc sale={sale} />);
@@ -166,7 +165,7 @@ export default function ReservaPanel({ res }) {
       {form && (
         <ReservaForm mode={form} res={res} onClose={() => setForm(null)}
           onSave={(r) => {
-            update((d) => { A.saveReservation(d, r); if (form === 'checkin') A.checkIn(d, r.id); });
+            update((d) => (form === 'checkin' ? A.checkInWith(d, r) : A.saveReservation(d, r)));
             setForm(null);
             ui.notify(form === 'checkin' ? `Check-in · ${r.guest.name} en la ${r.roomN}` : 'Reserva actualizada');
           }} />

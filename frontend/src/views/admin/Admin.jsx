@@ -108,14 +108,14 @@ function MenuTab() {
             {catEdit.from && (
               <button className="btn btn-quiet" onClick={() => {
                 if (state.menu.some((m) => m.cat === catEdit.from)) return ui.notify('Mueve o elimina sus platillos primero');
-                update((d) => { d.categories = d.categories.filter((c) => c !== catEdit.from); });
+                update((d) => A.removeCategory(d, catEdit.from));
                 setCatEdit(null); setFilter('Todos');
               }}>Eliminar</button>
             )}
             <button className="btn btn-primary" disabled={!catEdit.name.trim() || (catEdit.name.trim() !== catEdit.from && state.categories.includes(catEdit.name.trim()))}
               onClick={() => {
                 const name = catEdit.name.trim();
-                update((d) => (catEdit.from ? A.renameCategory(d, catEdit.from, name) : d.categories.push(name)));
+                update((d) => (catEdit.from ? A.renameCategory(d, catEdit.from, name) : A.addCategory(d, name)));
                 setCatEdit(null); setFilter(name);
               }}>Guardar</button>
           </>}>
@@ -183,7 +183,7 @@ function HabitacionesTab() {
           ]}
           validate={(v) => (!/^\d{3}$/.test(v.n) ? 'Usa 3 dígitos, ej. 105' : v.isNew && state.rooms.some((r) => r.n === v.n) ? 'Ya existe' : '')}
           onSave={({ isNew, ...v }) => {
-            update((d) => { A.upsert(d, 'rooms', v, 'n'); d.rooms.sort((a, b) => a.n.localeCompare(b.n)); });
+            update((d) => A.saveRoom(d, v));
             setEditRoom(null); ui.notify(isNew ? `Habitación ${v.n} agregada` : 'Habitación actualizada');
           }} />
       )}

@@ -29,13 +29,13 @@ export default function MapEditor({ onDone }) {
     const id = Math.max(0, ...state.tables.map((t) => t.id)) + 1;
     const { w, h } = sizeFor('cuadrada', 4);
     const spot = freeSpot([...tables, ...decor], w, h);
-    update((d) => d.tables.push({ id, name: 'Mesa ' + id, zone, seats: 4, shape: 'cuadrada', w, h, ...spot, reservedAt: null }));
+    update((d) => A.addTable(d, { id, name: 'Mesa ' + id, zone, seats: 4, shape: 'cuadrada', w, h, ...spot, reservedAt: null }));
     setSel({ kind: 'table', id });
   };
   const addDecor = () => {
     const id = uid('d');
     const spot = freeSpot([...tables, ...decor], 160, 60);
-    update((d) => d.mapDecor.push({ id, zone, label: 'Nuevo elemento', w: 160, h: 60, ...spot }));
+    update((d) => A.addMapDecor(d, { id, zone, label: 'Nuevo elemento', w: 160, h: 60, ...spot }));
     setSel({ kind: 'decor', id });
   };
   const changeShapeOrSeats = (shape, seats) => {
@@ -68,7 +68,7 @@ export default function MapEditor({ onDone }) {
         </div>
         <TableMap tables={tables} decor={decor} edit selected={sel}
           onSelect={(kind, id) => setSel(kind ? { kind, id } : null)}
-          onMove={(kind, id, x, y) => update((d) => A.upsert(d, kind === 'table' ? 'tables' : 'mapDecor', { ...(kind === 'table' ? d.tables.map(placed).find((t) => t.id === id) : {}), id, x, y }))} />
+          onMove={(kind, id, x, y) => update((d) => A.moveMapItem(d, kind, id, x, y))} />
         <div className="panel-sub" style={{ fontSize: 14 }}>
           Arrastra las mesas y elementos para acomodarlos como en el local. Toca uno para editarlo. {!tables.length && !decor.length && 'Esta zona está vacía: agrega mesas para crearla.'}
         </div>
