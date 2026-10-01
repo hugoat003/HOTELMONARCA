@@ -1,0 +1,16 @@
+/* Eventos */
+
+.event-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 16px; align-items: center; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; font: inherit; color: inherit; }
+.event-row:hover { border-color: var(--ink); }
+.event-row.selected { box-shadow: 0 0 0 3px var(--ink); border-color: var(--ink); }
+.event-date { display: flex; flex-direction: column; align-items: center; border-right: 1px solid var(--line); padding-right: 12px; }
+.event-date strong { font-family: var(--condensed); font-size: 28px; line-height: 1; }
+.event-date span { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.event-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.event-main strong { font-size: 16px; }
+.event-money { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.tag.status-confirmado, .badge.status-confirmado { background: var(--ink); color: #fff; }
+.tag.status-cotizado, .badge.status-cotizado { background: #F3E3D9; color: #8A3A1B; }
+.tag.status-realizado, .badge.status-realizado { background: #E3EDE4; color: #2F5E38; }
+.tag.status-cancelado, .badge.status-cancelado { background: var(--line-soft); color: var(--faint); text-decoration: line-through; }
+.event-money .tag { margin-left: 0; }

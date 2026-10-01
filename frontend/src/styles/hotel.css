@@ -1,0 +1,38 @@
+/* Hotel */
+
+.room-panel { padding: 22px; gap: 16px; overflow: auto; }
+.room-panel .panel-title { font-size: 28px; }
+.folio-line { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.folio-line strong { white-space: nowrap; }
+.segmented.hk-seg { display: grid; grid-template-columns: repeat(4, 1fr); padding: 3px; }
+.hk-seg .seg-btn { padding: 7px 4px; font-size: 13px; text-align: center; }
+.calendar { background: #fff; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.cal-row { display: grid; grid-template-columns: 110px repeat(var(--days), minmax(0, 1fr)); border-bottom: 1px solid var(--line-soft); min-height: 46px; }
+.cal-row:last-child { border-bottom: none; }
+.cal-row > * { grid-row: 1; }
+.cal-room { grid-column: 1; display: flex; flex-direction: column; justify-content: center; padding: 6px 12px; border-right: 1px solid var(--line); }
+.cal-room strong { font-family: var(--condensed); font-size: 18px; }
+.cal-room span { font-size: 12px; color: var(--muted); }
+.cal-head { background: var(--surface); border-bottom: 1px solid var(--line); }
+.cal-head .cal-room { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.cal-day { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 0; font-size: 12px; color: var(--muted); border-left: 1px solid var(--line-soft); }
+.cal-day strong { font-size: 16px; color: var(--ink); }
+.cal-day em { font-style: normal; font-size: 11px; }
+.cal-day.weekend { background: #F3F0EB; }
+.cal-day.today { background: var(--ink); color: var(--faint); }
+.cal-day.today strong { color: #fff; }
+.cal-cell { border: none; border-left: 1px solid var(--line-soft); background: transparent; }
+.cal-cell:hover { background: var(--line-soft); }
+.cal-cell.today { background: #F7F4EF; }
+.cal-cell.blocked { background: repeating-linear-gradient(45deg, #F3F0EB 0 6px, #fff 6px 12px); cursor: not-allowed; }
+.cal-bar { z-index: 1; margin: 7px 3px; border-radius: 4px; border: 1.5px solid var(--ink); background: #fff; color: var(--ink); font-size: 13px; font-weight: 600; text-align: left; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-bar.hospedado { background: var(--ink); color: #fff; }
+.cal-bar.salida { background: var(--line); border-color: var(--line); color: var(--muted); }
+.cal-bar.selected { box-shadow: 0 0 0 3px var(--accent); }
+.cal-bar.monthly { border-style: dashed; }
+.cal-bar.hospedado.monthly { border-style: solid; background: repeating-linear-gradient(135deg, #1b1917 0 10px, #2c2926 10px 20px); }
+.cal-tag { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; background: var(--accent); color: #fff; border-radius: 3px; padding: 1px 5px; margin-right: 6px; }
+.shop-split { grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; height: auto; }
+.shop-cart { position: sticky; top: 0; gap: 10px; }
+.shop-lines { max-height: 46vh; overflow: auto; }
+.menu-item-cat.urgent { color: #9B2C1F; font-weight: 600; }

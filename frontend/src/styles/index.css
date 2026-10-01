@@ -1,0 +1,12 @@
+/* Orden de carga: de lo general a lo específico; utilidades al final para que tengan prioridad */
+@import './base.css';
+@import './layout.css';
+@import './componentes.css';
+@import './tablas.css';
+@import './restaurante.css';
+@import './hotel.css';
+@import './eventos.css';
+@import './caja.css';
+@import './dashboard.css';
+@import './docs.css';
+@import './utilidades.css';

@@ -14,6 +14,10 @@ export default defineConfig({
     actionTimeout: 6_000,
     screenshot: 'only-on-failure',
   },
+  projects: [
+    { name: 'funcional', testIgnore: /visual\.spec\.js/ },
+    { name: 'visual', testMatch: /visual\.spec\.js/ },
+  ],
   webServer: {
     command: 'npx vite --port 4180 --strictPort',
     url: 'http://localhost:4180',
