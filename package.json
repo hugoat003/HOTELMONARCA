@@ -3,10 +3,10 @@
   "private": true,
   "description": "POS y gestión hotelera para Monarca Hotel Boutique",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
+    "dev": "npm --prefix frontend run dev --",
     "dev:red": "npm --prefix frontend run dev -- --host",
     "build": "npm --prefix frontend run build",
-    "preview": "npm --prefix frontend run preview",
+    "preview": "npm --prefix frontend run preview --",
     "install:frontend": "npm --prefix frontend install"
   }
 }
