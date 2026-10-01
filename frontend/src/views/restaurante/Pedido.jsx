@@ -22,6 +22,7 @@ export default function Pedido({ orderId, go }) {
   const [moving, setMoving] = useState(false);
   const [splitting, setSplitting] = useState(false);
   const [paying, setPaying] = useState(null); // { lines, paidQty }
+  const [sheetOpen, setSheetOpen] = useState(false); // cuenta desplegada en tablet vertical
 
   const order = state.orders.find((o) => o.id === orderId);
 
@@ -100,8 +101,8 @@ export default function Pedido({ orderId, go }) {
   const payAll = () => startPay(order.lines, Object.fromEntries(order.lines.map((l) => [l.id, l.qty])));
 
   return (
-    <div className="split" style={{ gridTemplateColumns: 'minmax(0,1fr) 420px' }}>
-      <div className="split-main" style={{ padding: '20px 24px', gap: 16 }}>
+    <div className="split pedido-split" style={{ '--side': '420px' }}>
+      <div className="split-main pedido-main">
         <div className="row" style={{ gap: 12 }}>
           <input
             className="input search"
@@ -136,7 +137,15 @@ export default function Pedido({ orderId, go }) {
         </div>
       </div>
 
-      <div className="side-panel">
+      <div className={'side-panel' + (sheetOpen ? ' open' : '')}>
+        {/* En tablet vertical la cuenta es una hoja inferior; esta barra la abre y la cierra */}
+        <button className="sheet-bar" onClick={() => setSheetOpen(!sheetOpen)} aria-expanded={sheetOpen}>
+          <span>
+            {sheetOpen ? '▼ Ocultar cuenta' : `▲ ${label} · ${order.lines.reduce((a, l) => a + l.qty, 0)} productos`}
+            {!sheetOpen && pendingQty > 0 ? ` · ${pendingQty} sin enviar` : ''}
+          </span>
+          <span className="sheet-total">{fmt(total)}</span>
+        </button>
         <div className="ticket-head">
           <div>
             <div className="panel-title">{label}</div>

@@ -87,7 +87,7 @@ export default function Mesas({ go }) {
   }
 
   return (
-    <div className="split" style={{ gridTemplateColumns: 'minmax(0,1fr) 360px' }}>
+    <div className="split" style={{ '--side': '360px' }}>
       <div className="split-main gap-18">
         <div className="row items-center">
           <div className="legend">

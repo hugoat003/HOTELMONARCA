@@ -110,6 +110,7 @@ function Shell() {
   const [savedView, setView] = usePersisted('vista', allowed[0]);
   const view = allowed.includes(savedView) ? savedView : allowed[0];
   const [orderId, setOrderId] = usePersisted('pedido.orden', null);
+  const [navOpen, setNavOpen] = useState(false); // menú en cajón (tablet)
 
   useIdleLock(state.config.lockMinutes ?? 5, () => {
     update((d) => A.logout(d));
@@ -120,6 +121,7 @@ function Shell() {
     if (!allowed.includes(v)) return;
     if (params.orderId !== undefined) setOrderId(params.orderId);
     setView(v);
+    setNavOpen(false);
   };
 
   const d0 = today();
@@ -127,7 +129,8 @@ function Shell() {
   const occRooms = state.rooms.filter((r) => roomState(r, state.reservations, d0).status === 'ocupada').length;
 
   return (
-    <div className="app">
+    <div className={'app' + (navOpen ? ' nav-open' : '')}>
+      <button className="nav-backdrop" aria-label="Cerrar menú" onClick={() => setNavOpen(false)} />
       <aside className="sidebar">
         <img src="/logo-monarca.png" alt="Monarca Hotel Boutique" className="sidebar-logo" />
         <nav className="nav">
@@ -170,6 +173,9 @@ function Shell() {
       <main className="main">
         <header className="header">
           <div className="header-title">
+            <button className="menu-toggle" aria-label="Abrir menú" onClick={() => setNavOpen(true)}>
+              ☰
+            </button>
             <h1>{TITLES[view]}</h1>
             <span className="header-date">{fmtLongDate()}</span>
           </div>

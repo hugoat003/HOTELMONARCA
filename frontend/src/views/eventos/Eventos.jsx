@@ -40,7 +40,7 @@ export default function Eventos() {
       .sort((a, b) => a.date.localeCompare(b.date))[0];
 
   return (
-    <div className="split" style={{ gridTemplateColumns: 'minmax(0,1fr) 400px' }}>
+    <div className="split" style={{ '--side': '400px' }}>
       <div className="split-main gap-18">
         <div className="report-grid" style={{ gridTemplateColumns: `repeat(${state.venues.length || 1}, 1fr)` }}>
           {state.venues.map((v) => {

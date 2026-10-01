@@ -96,7 +96,11 @@
 }
 .split {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--side, 400px);
   height: 100%;
+}
+.split.no-side {
+  grid-template-columns: minmax(0, 1fr);
 }
 .split-main {
   padding: 24px 28px;

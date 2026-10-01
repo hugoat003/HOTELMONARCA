@@ -34,7 +34,7 @@ export default function Reservas() {
   };
 
   return (
-    <div className="split" style={{ gridTemplateColumns: sel ? 'minmax(0,1fr) 380px' : 'minmax(0,1fr)' }}>
+    <div className={'split' + (sel ? '' : ' no-side')} style={{ '--side': '380px' }}>
       <div className="split-main gap-16">
         <div className="row items-center">
           <div className="chips">

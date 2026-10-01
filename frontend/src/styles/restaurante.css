@@ -318,3 +318,12 @@
   stroke: var(--accent);
   stroke-width: 3;
 }
+
+.pedido-main {
+  padding: 20px 24px;
+  gap: 16px;
+}
+/* Barra de la cuenta: solo se ve en tablet vertical (ver tablet.css) */
+.sheet-bar {
+  display: none;
+}

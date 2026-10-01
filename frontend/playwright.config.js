@@ -18,10 +18,14 @@ export default defineConfig({
     { name: 'funcional', testIgnore: /visual\.spec\.js/ },
     { name: 'visual', testMatch: /visual\.spec\.js/ },
   ],
+  // Se prueba la versión compilada (como la que se instala), no el servidor de desarrollo:
+  // así no hay recargas en caliente a mitad de una prueba.
   webServer: {
-    command: 'npx vite --port 4180 --strictPort',
+    command:
+      'npx vite build --outDir .test-dist --emptyOutDir && npx vite preview --outDir .test-dist --port 4180 --strictPort',
     url: 'http://localhost:4180',
     reuseExistingServer: false,
+    timeout: 120_000,
     env: { VITE_DEMO: '1' },
   },
 });

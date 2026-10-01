@@ -40,7 +40,7 @@ export default function Habitaciones() {
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn))[0];
 
   return (
-    <div className="split" style={{ gridTemplateColumns: 'minmax(0,1fr) 400px' }}>
+    <div className="split" style={{ '--side': '400px' }}>
       <div className="split-main">
         <div className="row items-center gap-12">
           <div className="chips gap-10">
