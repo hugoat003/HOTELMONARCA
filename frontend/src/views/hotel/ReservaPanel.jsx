@@ -76,7 +76,7 @@ export default function ReservaPanel({ res }) {
   };
 
   return (
-    <div className="stack" style={{ gap: 16 }}>
+    <div className="stack gap-16">
       <div className="stack-tight">
         <div className="panel-title">{res.guest.name}</div>
         <div className="panel-sub">Hab. {res.roomN} · {type?.name} · {fmt(res.rate)} / {f.periods ? 'mes' : 'noche'}{f.periods && <span className="tag">Mensual</span>}</div>
@@ -127,7 +127,7 @@ export default function ReservaPanel({ res }) {
             {res.charges.map((c) => (
               <div key={c.id} className="folio-line">
                 <span>{c.desc}<span className="panel-sub"> · {fmtTime(c.ts)}</span>
-                  {c.type === 'extra' && <button className="link danger" style={{ marginLeft: 8 }} onClick={() => ui.authorize('Eliminar un cargo del folio', () => update((d) => A.removeCharge(d, res.id, c.id)))}>quitar</button>}
+                  {c.type === 'extra' && <button className="link danger ml-8" onClick={() => ui.authorize('Eliminar un cargo del folio', () => update((d) => A.removeCharge(d, res.id, c.id)))}>quitar</button>}
                 </span>
                 <strong>{fmt(c.amt)}</strong>
               </div>
@@ -136,7 +136,7 @@ export default function ReservaPanel({ res }) {
               <div key={p.id} className="folio-line muted"><span>{p.desc} · {METHOD_LABELS[p.method]}</span><strong>− {fmt(p.amount)}</strong></div>
             ))}
           </div>
-          <div className="row" style={{ fontSize: 20, fontWeight: 600 }}><span>{f.periods ? 'Saldo de la estancia' : 'Saldo'}</span><span>{fmt(f.balance)}</span></div>
+          <div className="row text-total"><span>{f.periods ? 'Saldo de la estancia' : 'Saldo'}</span><span>{fmt(f.balance)}</span></div>
           {f.dueToday !== null && (
             <div className={'note-box' + (f.dueToday > 0.004 ? ' warn' : '')}>
               {f.dueToday > 0.004
@@ -188,7 +188,7 @@ export default function ReservaPanel({ res }) {
       ) : (
         <Modal title={`Check-out Hab. ${res.roomN}`} onClose={() => setCheckout(false)} width={420}
           footer={<><button className="btn" onClick={() => setCheckout(false)}>Cancelar</button><button className="btn btn-primary" onClick={() => finishCheckout(null)}>Hacer check-out</button></>}>
-          <div className="panel-sub" style={{ fontSize: 15 }}>La cuenta está saldada. La habitación pasará a limpieza.</div>
+          <div className="panel-sub text-md">La cuenta está saldada. La habitación pasará a limpieza.</div>
         </Modal>
       ))}
     </div>

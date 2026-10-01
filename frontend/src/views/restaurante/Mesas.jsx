@@ -66,13 +66,13 @@ export default function Mesas({ go }) {
   };
 
   if (mode === 'editar') {
-    return <div className="page" style={{ gap: 16 }}><MapEditor onDone={() => setMode('mapa')} /></div>;
+    return <div className="page gap-16"><MapEditor onDone={() => setMode('mapa')} /></div>;
   }
 
   return (
     <div className="split" style={{ gridTemplateColumns: 'minmax(0,1fr) 360px' }}>
-      <div className="split-main" style={{ gap: 18 }}>
-        <div className="row" style={{ alignItems: 'center' }}>
+      <div className="split-main gap-18">
+        <div className="row items-center">
           <div className="legend">
             <span><span className="swatch" style={{ border: '1px solid #D6CFC4' }} />Libre</span>
             <span><span className="swatch" style={{ background: '#1B1917' }} />Ocupada</span>
@@ -110,7 +110,7 @@ export default function Mesas({ go }) {
                         </span>
                         <span className="tile-status">
                           {label}{t.reservedAt && !o ? ' ' + t.reservedAt : ''}
-                          {o && <span className="tile-sub" style={{ fontWeight: 500 }}> · {firstName(state.users, o.waiterId)}</span>}
+                          {o && <span className="tile-sub fw-500"> · {firstName(state.users, o.waiterId)}</span>}
                         </span>
                         <span className="tile-foot">
                           <span>{o ? 'Desde ' + fmtTime(o.openedAt) : ''}</span>

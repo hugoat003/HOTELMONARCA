@@ -31,7 +31,7 @@ export default function Inventario() {
   const moves = [...state.invMoves].sort((a, b) => b.ts - a.ts).slice(0, 12);
 
   return (
-    <div className="page" style={{ gap: 20 }}>
+    <div className="page gap-20">
       <div className="kpis">
         <div className="card kpi"><div className="card-label">Productos</div><div className="kpi-value">{state.inventory.length}</div><div className="kpi-note">{INV_CATS.length} categorías</div></div>
         <div className={'card kpi' + (low.length ? ' alert' : '')}><div className="card-label">Bajo mínimo</div><div className="kpi-value">{low.length}</div><div className="kpi-note">{((n) => `${n} agotado${n === 1 ? '' : 's'}`)(low.filter((i) => i.stock <= 0).length)}</div></div>
@@ -39,7 +39,7 @@ export default function Inventario() {
         <div className="card kpi"><div className="card-label">Mermas registradas</div><div className="kpi-value">{fmt(sum(state.invMoves.filter((m) => m.type === 'merma'), (m) => m.qty * (state.inventory.find((i) => i.id === m.itemId)?.cost || 0)))}</div><div className="kpi-note">Histórico</div></div>
       </div>
 
-      <div className="row" style={{ alignItems: 'center', gap: 12 }}>
+      <div className="row items-center gap-12">
         <div className="chips">
           {['Todas', ...INV_CATS].map((c) => <button key={c} className={'chip small' + (cat === c ? ' active' : '')} onClick={() => setCat(c)}>{c}</button>)}
           <button className={'chip small' + (onlyLow ? ' active' : '')} onClick={() => setOnlyLow(!onlyLow)}>Solo bajo mínimo</button>
@@ -71,7 +71,7 @@ export default function Inventario() {
             </div>
           );
         })}
-        {!items.length && <div className="panel-sub" style={{ padding: 12 }}>Sin productos en esta vista.</div>}
+        {!items.length && <div className="panel-sub pad-12">Sin productos en esta vista.</div>}
       </div>
 
       <div className="card tx-card">
@@ -155,7 +155,7 @@ export function ItemModal({ item, cats = INV_CATS, withPrice = false, onClose, o
         <button className="btn btn-primary" disabled={!!problem} onClick={() => onSave(v)}>{problem || 'Guardar'}</button>
       </>}>
       <div className="form-grid two">
-        <Field label="Nombre" style={{ gridColumn: 'span 2' }}><input className="input" autoFocus value={v.name} onChange={set('name')} /></Field>
+        <Field label="Nombre" className="span-2"><input className="input" autoFocus value={v.name} onChange={set('name')} /></Field>
         <Field label="Categoría"><select className="input" value={v.cat} onChange={set('cat')}>{cats.map((c) => <option key={c}>{c}</option>)}</select></Field>
         <Field label="Unidad"><select className="input" value={v.unit} onChange={set('unit')}>{INV_UNITS.map((u) => <option key={u}>{u}</option>)}</select></Field>
         <Field label="Existencia" hint={item.isNew ? 'inicial' : 'usa Ajuste para corregir'}><input className="input" type="number" value={v.stock} disabled={!item.isNew} onChange={set('stock')} /></Field>

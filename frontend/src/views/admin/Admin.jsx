@@ -62,7 +62,7 @@ function MenuTab() {
 
   return (
     <>
-      <div className="row" style={{ alignItems: 'center' }}>
+      <div className="row items-center">
         <div className="chips">
           {['Todos', ...state.categories].map((c) => (
             <button key={c} className={'chip' + (filter === c ? ' active' : '')} onClick={() => setFilter(c)}>
@@ -314,8 +314,8 @@ function NegocioTab() {
         <Field label="Razón social"><input className="input" value={c.legalName} onChange={set('legalName')} /></Field>
         <Field label="NIT"><input className="input" value={c.nit} onChange={set('nit')} /></Field>
         <Field label="Teléfono"><input className="input" value={c.phone} onChange={set('phone')} /></Field>
-        <Field label="Dirección" style={{ gridColumn: 'span 2' }}><input className="input" value={c.address} onChange={set('address')} /></Field>
-        <Field label="Leyenda al pie del ticket" style={{ gridColumn: 'span 2' }}><input className="input" value={c.footer} onChange={set('footer')} /></Field>
+        <Field label="Dirección" className="span-2"><input className="input" value={c.address} onChange={set('address')} /></Field>
+        <Field label="Leyenda al pie del ticket" className="span-2"><input className="input" value={c.footer} onChange={set('footer')} /></Field>
       </div>
       <div className="form-grid four">
         <Field label="Moneda"><input className="input" value={c.currency} onChange={set('currency')} /></Field>
@@ -323,7 +323,7 @@ function NegocioTab() {
         <Field label="INGUAT %" hint="hospedaje"><input className="input" type="number" value={c.inguat} onChange={set('inguat')} /></Field>
         <Field label="Propina sugerida %"><input className="input" type="number" value={c.tipPct} onChange={set('tipPct')} /></Field>
       </div>
-      <div className="panel-sub" style={{ fontSize: 14 }}>
+      <div className="panel-sub text-sm">
         Los precios del restaurante incluyen IVA. La tarifa de hospedaje es sin impuestos: al cobrar se suman IVA e INGUAT.
       </div>
       <div><button className="btn btn-primary" onClick={save}>Guardar cambios</button></div>
@@ -362,7 +362,7 @@ function DatosTab() {
     <div className="card" style={{ maxWidth: 760, gap: 18 }}>
       <div>
         <div className="report-title" style={{ fontSize: 20 }}>Datos de la demostración</div>
-        <div className="panel-sub" style={{ fontSize: 15 }}>
+        <div className="panel-sub text-md">
           Todo se guarda en este navegador. Antes de presentar, restaura los datos de ejemplo para empezar con mesas, reservas y ventas del día.
         </div>
       </div>

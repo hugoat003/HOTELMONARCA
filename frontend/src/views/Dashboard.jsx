@@ -98,7 +98,7 @@ export default function Dashboard({ go, mobile = false }) {
           <div className="card-label">Cobros del turno por forma de pago</div>
           {r ? r.byMethod.map((m, i) => (
             <div key={m.key} className="stack-tight" style={{ gap: 5 }}>
-              <div className="row" style={{ fontSize: 15 }}><span>{m.label} <span className="panel-sub">· {m.count}</span></span><strong>{fmt(m.amount)}</strong></div>
+              <div className="row text-md"><span>{m.label} <span className="panel-sub">· {m.count}</span></span><strong>{fmt(m.amount)}</strong></div>
               <div className="bar"><div style={{ background: ['#1B1917', '#6F675E', '#B8B0A6', '#D6CFC4'][i], width: (m.amount / methodTotal) * 100 + '%' }} /></div>
             </div>
           )) : <div className="panel-sub">No hay turno abierto.</div>}

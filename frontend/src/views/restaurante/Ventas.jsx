@@ -33,8 +33,8 @@ export default function Ventas() {
   };
 
   return (
-    <div className="page" style={{ gap: 20 }}>
-      <div className="row" style={{ alignItems: 'center' }}>
+    <div className="page gap-20">
+      <div className="row items-center">
         <div className="segmented row two" style={{ width: 280 }}>
           <button className={'seg-btn' + (scope === 'turno' ? ' active' : '')} onClick={() => setScope('turno')}>Turno actual</button>
           <button className={'seg-btn' + (scope === 'todas' ? ' active' : '')} onClick={() => setScope('todas')}>Todas</button>
@@ -64,7 +64,7 @@ export default function Ventas() {
             </span>
           </div>
         ))}
-        {!sales.length && <div className="panel-sub" style={{ padding: 12 }}>Sin cobros todavía.</div>}
+        {!sales.length && <div className="panel-sub pad-12">Sin cobros todavía.</div>}
       </div>
 
       {voids.length > 0 && (

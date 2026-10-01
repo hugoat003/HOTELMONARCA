@@ -458,3 +458,27 @@ button.pill { cursor: pointer; font-weight: 600; font-family: inherit; color: va
 .shop-lines { max-height: 46vh; overflow: auto; }
 .menu-item-cat.urgent { color: #9B2C1F; font-weight: 600; }
 .tx-row.shop { grid-template-columns: 1.6fr 1.1fr 90px 90px 70px 120px 110px 170px; align-items: center; }
+
+/* ───────── Utilidades (al final para que tengan prioridad) ───────── */
+.text-md { font-size: 15px; }
+.text-sm { font-size: 14px; }
+.text-xs { font-size: 13px; }
+.text-total { font-size: 20px; font-weight: 600; }
+.text-center { text-align: center; }
+.fw-500 { font-weight: 500; }
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+.items-center { align-items: center; }
+.grow { flex: 1; }
+.ml-8 { margin-left: 8px; }
+.mt-8 { margin-top: 8px; }
+.mb-4 { margin-bottom: 4px; }
+.pad-12 { padding: 12px; }
+.pad-16 { padding: 16px; }
+.gap-6 { gap: 6px; }
+.gap-8 { gap: 8px; }
+.gap-10 { gap: 10px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.gap-18 { gap: 18px; }
+.gap-20 { gap: 20px; }

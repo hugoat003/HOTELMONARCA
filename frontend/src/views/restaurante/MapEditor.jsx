@@ -47,8 +47,8 @@ export default function MapEditor({ onDone }) {
   return (
     <div className="map-editor">
       <div className="map-editor-main">
-        <div className="row" style={{ alignItems: 'center', gap: 12 }}>
-          <div className="tabs" style={{ flex: 1 }}>
+        <div className="row items-center gap-12">
+          <div className="tabs grow">
             {zones.map((z) => <button key={z} className={'tab' + (zone === z ? ' active' : '')} onClick={() => { setZone(z); setSel(null); }}>{z}</button>)}
             {newZone === null
               ? <button className="tab" onClick={() => setNewZone('')}>+ Zona</button>
@@ -69,7 +69,7 @@ export default function MapEditor({ onDone }) {
         <TableMap tables={tables} decor={decor} edit selected={sel}
           onSelect={(kind, id) => setSel(kind ? { kind, id } : null)}
           onMove={(kind, id, x, y) => update((d) => A.moveMapItem(d, kind, id, x, y))} />
-        <div className="panel-sub" style={{ fontSize: 14 }}>
+        <div className="panel-sub text-sm">
           Arrastra las mesas y elementos para acomodarlos como en el local. Toca uno para editarlo. {!tables.length && !decor.length && 'Esta zona está vacía: agrega mesas para crearla.'}
         </div>
       </div>

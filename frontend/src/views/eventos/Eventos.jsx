@@ -30,7 +30,7 @@ export default function Eventos() {
 
   return (
     <div className="split" style={{ gridTemplateColumns: 'minmax(0,1fr) 400px' }}>
-      <div className="split-main" style={{ gap: 18 }}>
+      <div className="split-main gap-18">
         <div className="report-grid" style={{ gridTemplateColumns: `repeat(${state.venues.length || 1}, 1fr)` }}>
           {state.venues.map((v) => {
             const next = nextIn(v.id);
@@ -46,14 +46,14 @@ export default function Eventos() {
           })}
         </div>
 
-        <div className="row" style={{ alignItems: 'center' }}>
+        <div className="row items-center">
           <div className="chips">
             {FILTERS.map(([k, l]) => <button key={k} className={'chip small' + (filter === k ? ' active' : '')} onClick={() => setFilter(k)}>{l}</button>)}
           </div>
           <button className="btn btn-primary small" onClick={() => setForm('new')}>+ Nuevo evento</button>
         </div>
 
-        <div className="stack-tight" style={{ gap: 10 }}>
+        <div className="stack-tight gap-10">
           {list.map((e) => {
             const t = eventTotals(e, state);
             return (
@@ -131,7 +131,7 @@ function EventPanel({ ev, onEdit }) {
   const setStatus = (status, msg) => { update((d) => A.setEventStatus(d, ev.id, status)); ui.notify(msg); };
 
   return (
-    <div className="stack" style={{ gap: 16 }}>
+    <div className="stack gap-16">
       <div className="stack-tight">
         <div className="panel-title">{ev.name}</div>
         <div className="panel-sub">{fmtDate(ev.date, { weekday: 'long', day: 'numeric', month: 'long' })} · {ev.start}–{ev.end}</div>
@@ -148,7 +148,7 @@ function EventPanel({ ev, onEdit }) {
       </div>
 
       <div>
-        <div className="eyebrow" style={{ marginBottom: 4 }}>Cotización</div>
+        <div className="eyebrow mb-4">Cotización</div>
         {t.venue && (
           <div className="folio-line">
             <span>Renta {t.venue.name}{t.venueWaived && <span className="panel-sub"> · incluida con el menú</span>}</span>
@@ -162,7 +162,7 @@ function EventPanel({ ev, onEdit }) {
           <div key={p.id} className="folio-line muted"><span>{p.desc} · {METHOD_LABELS[p.method]} · {fmtDate(dateOf(p.ts), { day: 'numeric', month: 'short' })} {fmtTime(p.ts)}</span><strong>− {fmt(p.amount)}</strong></div>
         ))}
       </div>
-      <div className="row" style={{ fontSize: 20, fontWeight: 600 }}><span>Saldo</span><span>{fmt(t.balance)}</span></div>
+      <div className="row text-total"><span>Saldo</span><span>{fmt(t.balance)}</span></div>
 
       {isActiveEvent(ev) && (
         <>

@@ -14,10 +14,10 @@ export default function Login() {
     <div className="login">
       <div className="login-card">
         <img src="/logo-monarca.png" alt="Monarca Hotel Boutique" className="login-logo" />
-        <div className="panel-sub" style={{ textAlign: 'center' }}>{fmtLongDate().replace(/^./, (c) => c.toUpperCase())}</div>
+        <div className="panel-sub text-center">{fmtLongDate().replace(/^./, (c) => c.toUpperCase())}</div>
         {!sel ? (
           <>
-            <div className="eyebrow" style={{ textAlign: 'center' }}>¿Quién eres?</div>
+            <div className="eyebrow text-center">¿Quién eres?</div>
             <div className="login-users">
               {users.map((u) => (
                 <button key={u.id} className="login-user" onClick={() => setSel(u)}>
@@ -31,7 +31,7 @@ export default function Login() {
           </>
         ) : (
           <>
-            <div style={{ textAlign: 'center' }}>
+            <div className="text-center">
               <div className="panel-title">{sel.name}</div>
               <div className="panel-sub">Ingresa tu PIN</div>
             </div>

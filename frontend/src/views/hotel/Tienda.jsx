@@ -91,7 +91,7 @@ function Vender() {
       </div>
 
       <div className="card shop-cart">
-        <div className="row" style={{ alignItems: 'center' }}>
+        <div className="row items-center">
           <div className="panel-title" style={{ fontSize: 22 }}>Venta</div>
           {lines.length > 0 && <button className="link" onClick={() => setCart({})}>Vaciar</button>}
         </div>
@@ -116,7 +116,7 @@ function Vender() {
         <div className="row grand"><span>Total</span><span>{fmt(total)}</span></div>
         <button className="btn btn-primary" disabled={!lines.length}
           onClick={() => (state.shift ? setPaying(true) : ui.notify('Abre el turno de caja para cobrar.'))}>Cobrar</button>
-        <div className="panel-sub" style={{ fontSize: 13 }}>Se puede cobrar en efectivo, tarjeta, transferencia o cargar a la habitación del huésped.</div>
+        <div className="panel-sub text-xs">Se puede cobrar en efectivo, tarjeta, transferencia o cargar a la habitación del huésped.</div>
       </div>
 
       {paying && <Cobro title="Cobrar venta de tienda" amount={total} allowDiscount allowRoom onCancel={() => setPaying(false)} onConfirm={confirm} />}
@@ -162,7 +162,7 @@ function Existencias() {
         <div className="card kpi"><div className="card-label">Valor en existencia</div><div className="kpi-value">{fmt(sum(state.shopItems, (i) => i.stock * i.cost))}</div><div className="kpi-note">A costo de compra</div></div>
       </div>
 
-      <div className="row" style={{ alignItems: 'center' }}>
+      <div className="row items-center">
         <div className="chips">
           {['Todas', ...SHOP_CATS].map((c) => <button key={c} className={'chip small' + (cat === c ? ' active' : '')} onClick={() => setCat(c)}>{c}</button>)}
           <button className={'chip small' + (onlyLow ? ' active' : '')} onClick={() => setOnlyLow(!onlyLow)}>Solo bajo mínimo</button>

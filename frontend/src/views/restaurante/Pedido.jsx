@@ -258,7 +258,7 @@ function SplitModal({ lines, fmt, onClose, onPay }) {
   return (
     <Modal title="Dividir cuenta" aside={fmt(amount)} onClose={onClose} width={520}
       footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn btn-primary" disabled={!any} onClick={() => onPay(Object.fromEntries(Object.entries(sel).filter(([, v]) => v > 0)))}>Cobrar selección</button></>}>
-      <div className="panel-sub" style={{ fontSize: 14 }}>
+      <div className="panel-sub text-sm">
         Elige qué platillos paga esta persona. Lo que no se cobre queda en la mesa. Para partes iguales usa “Dividir en” dentro del cobro.
       </div>
       <div className="stack-tight">

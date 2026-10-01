@@ -24,9 +24,9 @@ export default function Modal({ title, aside, onClose, width = 480, children, fo
 }
 
 // as="div" cuando el contenido son botones (chips, stepper) y no un solo input
-export function Field({ label, hint, children, style, as: Tag = 'label' }) {
+export function Field({ label, hint, children, style, className = '', as: Tag = 'label' }) {
   return (
-    <Tag className="field" style={style}>
+    <Tag className={'field ' + className} style={style}>
       <span>{label}{hint && <span className="field-hint"> · {hint}</span>}</span>
       {children}
     </Tag>

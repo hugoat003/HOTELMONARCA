@@ -43,7 +43,7 @@ export default function EventoForm({ ev, onClose, onSave }) {
       footer={<><button className="btn" onClick={onClose}>Cancelar</button>
         <button className="btn btn-primary" disabled={!!problem} onClick={() => onSave({ ...f, name: f.name.trim(), client: { ...f.client, name: f.client.name.trim() } })}>{problem || 'Guardar evento'}</button></>}>
       <div className="form-grid">
-        <Field label="Nombre del evento" style={{ gridColumn: 'span 2' }}>
+        <Field label="Nombre del evento" className="span-2">
           <input className="input" autoFocus value={f.name} onChange={(e) => set({ name: e.target.value })} placeholder="Ej. Boda López – Pérez" />
         </Field>
         <Field label="Fecha" hint={fmtDate(f.date, { weekday: 'long' })}>
@@ -57,7 +57,7 @@ export default function EventoForm({ ev, onClose, onSave }) {
         </Field>
         <Field label="Inicio"><input className="input" type="time" value={f.start} onChange={(e) => set({ start: e.target.value })} /></Field>
         <Field label="Fin"><input className="input" type="time" value={f.end} onChange={(e) => set({ end: e.target.value })} /></Field>
-        <Field label="Menú o paquete" style={{ gridColumn: 'span 2' }}>
+        <Field label="Menú o paquete" className="span-2">
           <select className="input" value={f.menuId} onChange={(e) => changeMenu(e.target.value)}>
             {state.eventMenus.map((m) => <option key={m.id} value={m.id}>{m.name} · {fmt(m.price)} {EVENT_UNITS[m.unit]}</option>)}
             <option value="">Sin menú</option>
@@ -72,29 +72,29 @@ export default function EventoForm({ ev, onClose, onSave }) {
         <Field label="Cliente"><input className="input" value={f.client.name} onChange={(e) => setClient({ name: e.target.value })} placeholder="Nombre o empresa" /></Field>
         <Field label="Teléfono"><input className="input" value={f.client.phone} onChange={(e) => setClient({ phone: e.target.value })} /></Field>
         <Field label="NIT"><input className="input" value={f.client.nit} onChange={(e) => setClient({ nit: e.target.value })} /></Field>
-        <Field label="Notas" style={{ gridColumn: 'span 3' }}>
+        <Field label="Notas" className="span-3">
           <input className="input" value={f.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Montaje, horario de proveedores, alergias…" />
         </Field>
       </div>
-      {menu?.description && <div className="panel-sub" style={{ fontSize: 14 }}>{menu.name}: {menu.description}</div>}
+      {menu?.description && <div className="panel-sub text-sm">{menu.name}: {menu.description}</div>}
       {venue && (t.venueWaived
         ? <div className="note-box">Renta del {venue.name} sin costo: el evento incluye comida del hotel para los {f.guests} invitados.</div>
         : <div className="note-box warn">Se cobra la renta del {venue.name} ({fmt(venue.price)}).{menu ? ` El menú cubre ${t.covered} de ${f.guests} invitados; con comida para todos, el salón no se cobra.` : ' Si el evento incluye comida del hotel para todos los invitados, el salón no se cobra.'}</div>)}
       {venue && f.guests > venue.capacity && <div className="note-box">Hay más invitados ({f.guests}) que la capacidad del {venue.name} ({venue.capacity}).</div>}
 
-      <div className="stack-tight" style={{ gap: 8 }}>
+      <div className="stack-tight gap-8">
         <div className="eyebrow">Extras</div>
         <div className="chips">
           {EVENT_EXTRAS.map(([d, a]) => <button key={d} className="chip small" onClick={() => addExtra(d, a)}>+ {d} · {fmt(a)}</button>)}
         </div>
         {f.extras.map((x) => (
-          <div key={x.id} className="row" style={{ fontSize: 15 }}>
-            <span>{x.desc} <button className="link danger" style={{ marginLeft: 8 }} onClick={() => set({ extras: f.extras.filter((y) => y.id !== x.id) })}>quitar</button></span>
+          <div key={x.id} className="row text-md">
+            <span>{x.desc} <button className="link danger ml-8" onClick={() => set({ extras: f.extras.filter((y) => y.id !== x.id) })}>quitar</button></span>
             <strong>{fmt(x.amt)}</strong>
           </div>
         ))}
         <div className="inline-form">
-          <input className="input" style={{ flex: 1 }} placeholder="Otro extra" value={extra.desc} onChange={(e) => setExtra({ ...extra, desc: e.target.value })} />
+          <input className="input grow" placeholder="Otro extra" value={extra.desc} onChange={(e) => setExtra({ ...extra, desc: e.target.value })} />
           <input className="input" style={{ width: 120 }} type="number" placeholder="Monto" value={extra.amt} onChange={(e) => setExtra({ ...extra, amt: e.target.value })} />
           <button className="btn small" disabled={!extra.desc.trim() || !(parseFloat(extra.amt) > 0)} onClick={() => { addExtra(extra.desc.trim(), extra.amt); setExtra({ desc: '', amt: '' }); }}>Agregar</button>
         </div>

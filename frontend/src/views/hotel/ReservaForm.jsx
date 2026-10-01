@@ -51,7 +51,7 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
       footer={<><button className="btn" onClick={onClose}>Cancelar</button>
         <button className="btn btn-primary" disabled={!!problem} onClick={() => onSave({ ...f, rate: Number(f.rate), guest: { ...f.guest, name: f.guest.name.trim() } })}>{problem || cta}</button></>}>
       <div className="form-grid">
-        <Field label="Huésped" style={{ gridColumn: 'span 2' }}>
+        <Field label="Huésped" className="span-2">
           <input className="input" autoFocus={mode !== 'checkin'} value={f.guest.name} onChange={(e) => setGuest({ name: e.target.value })} placeholder="Nombre completo" />
         </Field>
         <Field label="Teléfono"><input className="input" value={f.guest.phone} onChange={(e) => setGuest({ phone: e.target.value })} /></Field>
@@ -75,7 +75,7 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
         </Field>
         <Field label="Adultos"><input className="input" type="number" min="1" value={f.adults} onChange={(e) => set({ adults: Math.max(1, parseInt(e.target.value) || 1) })} /></Field>
         <Field label="Niños"><input className="input" type="number" min="0" value={f.children} onChange={(e) => set({ children: Math.max(0, parseInt(e.target.value) || 0) })} /></Field>
-        <Field label="Habitación" style={{ gridColumn: 'span 2' }}>
+        <Field label="Habitación" className="span-2">
           <select className="input" value={f.roomN} disabled={lockDates || mode === 'walkin'}
             onChange={(e) => set({ roomN: e.target.value, rate: typeRate(e.target.value, f.rateType) })}>
             <option value="">Elegir…</option>
@@ -96,7 +96,7 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
             ))}
           </div>
         </Field>
-        <Field label="Notas" style={{ gridColumn: 'span 2' }}>
+        <Field label="Notas" className="span-2">
           <input className="input" value={f.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Ej. llegada tarde, cama extra, aniversario" />
         </Field>
       </div>
@@ -109,7 +109,7 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
           <strong>Total {fmt(quote.lodging.total)}</strong>
         </div>
       )}
-      {monthly && <div className="panel-sub" style={{ fontSize: 14 }}>La estancia se cobra por mes. El huésped puede abonar en partes durante el mes y el último mes se prorratea por días.</div>}
+      {monthly && <div className="panel-sub text-sm">La estancia se cobra por mes. El huésped puede abonar en partes durante el mes y el último mes se prorratea por días.</div>}
     </Modal>
   );
 }

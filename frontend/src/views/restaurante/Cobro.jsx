@@ -129,18 +129,18 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
             ))}
           </div>
           <input className="input" type="number" value={discForm.value} onChange={(e) => setDiscForm({ ...discForm, value: e.target.value })} style={{ width: 90 }} />
-          <input className="input" placeholder="Motivo (ej. cortesía, cliente frecuente)" value={discForm.reason} onChange={(e) => setDiscForm({ ...discForm, reason: e.target.value })} style={{ flex: 1 }} />
+          <input className="input grow" placeholder="Motivo (ej. cortesía, cliente frecuente)" value={discForm.reason} onChange={(e) => setDiscForm({ ...discForm, reason: e.target.value })} />
           <button className="btn btn-primary small" disabled={num(discForm.value) <= 0 || !discForm.reason.trim()}
             onClick={() => { setDiscount({ ...discForm, value: num(discForm.value), reason: discForm.reason.trim() }); setDiscForm(null); }}>Aplicar</button>
           <button className="btn small" onClick={() => setDiscForm(null)}>×</button>
         </div>
       )}
 
-      <div className="stack-tight" style={{ gap: 8 }}>
+      <div className="stack-tight gap-8">
         <div className="row">
           <span className="eyebrow">Formas de pago</span>
-          <span className="chips" style={{ gap: 6 }}>
-            <span className="panel-sub" style={{ fontSize: 13 }}>Dividir en</span>
+          <span className="chips gap-6">
+            <span className="panel-sub text-xs">Dividir en</span>
             {[2, 3, 4].map((n) => <button key={n} className="chip small" onClick={() => splitEqual(n)}>{n}</button>)}
           </span>
         </div>

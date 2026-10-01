@@ -30,7 +30,7 @@ export default function Limpieza() {
   };
 
   return (
-    <div className="page" style={{ gap: 20 }}>
+    <div className="page gap-20">
       <div className="chips">
         {[['todas', 'Todas', state.rooms.length], ...Object.entries(HK_LABELS).map(([k, l]) => [k, l, count(k)])].map(([k, l, n]) => (
           <button key={k} className={'chip' + (filter === k ? ' active' : '')} onClick={() => setFilter(k)}>{l} · {n}</button>
@@ -54,7 +54,7 @@ export default function Limpieza() {
             </span>
           </div>
         ))}
-        {!rows.length && <div className="panel-sub" style={{ padding: 12 }}>No hay habitaciones en este estado.</div>}
+        {!rows.length && <div className="panel-sub pad-12">No hay habitaciones en este estado.</div>}
       </div>
     </div>
   );

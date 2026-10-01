@@ -35,8 +35,8 @@ export default function Habitaciones() {
   return (
     <div className="split" style={{ gridTemplateColumns: 'minmax(0,1fr) 400px' }}>
       <div className="split-main">
-        <div className="row" style={{ alignItems: 'center', gap: 12 }}>
-          <div className="chips" style={{ gap: 10 }}>
+        <div className="row items-center gap-12">
+          <div className="chips gap-10">
             {ROOM_STATUS_ORDER.map((k) => {
               const [bg, , border, , label] = ROOM_COLORS[k];
               const n = Object.values(states).filter((s) => s.status === k).length;
@@ -64,14 +64,14 @@ export default function Habitaciones() {
         )}
 
         <div className="report-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <div className="card" style={{ gap: 8, padding: 16 }}>
+          <div className="card gap-8 pad-16">
             <div className="card-label">Llegadas de hoy · {arrivals.length}</div>
             {arrivals.map((r) => (
               <button key={r.id} className="list-btn" onClick={() => setSelRoom(r.roomN)}><strong>{r.roomN}</strong> · {r.guest.name} <span className="panel-sub">· {r.channel}</span></button>
             ))}
             {!arrivals.length && <div className="panel-sub">No hay llegadas pendientes.</div>}
           </div>
-          <div className="card" style={{ gap: 8, padding: 16 }}>
+          <div className="card gap-8 pad-16">
             <div className="card-label">Salidas de hoy · {departures.length}</div>
             {departures.map((r) => (
               <button key={r.id} className="list-btn" onClick={() => setSelRoom(r.roomN)}><strong>{r.roomN}</strong> · {r.guest.name}</button>
@@ -94,7 +94,7 @@ export default function Habitaciones() {
                     <span className="tile-head"><span className="tile-name">{r.n}</span><span className="tile-sub">{type?.name}</span></span>
                     <span className="tile-status">
                       {label}
-                      {s.status === 'ocupada' && <span className="tile-sub" style={{ fontWeight: 500 }}> · sale {fmtDate(s.res.checkOut, { day: 'numeric', month: 'short' })}</span>}
+                      {s.status === 'ocupada' && <span className="tile-sub fw-500"> · sale {fmtDate(s.res.checkOut, { day: 'numeric', month: 'short' })}</span>}
                     </span>
                     <span className="tile-foot"><span>{s.res?.guest.name || ''}</span></span>
                   </button>
@@ -116,7 +116,7 @@ export default function Habitaciones() {
         {room && (st.status === 'ocupada' || st.status === 'reservada') && <ReservaPanel key={st.res.id} res={st.res} />}
 
         {room && (st.status === 'libre' || st.status === 'limpieza' || st.status === 'fuera') && (
-          <div className="stack" style={{ gap: 16 }}>
+          <div className="stack gap-16">
             <div className="stack-tight">
               <div className="panel-title">Habitación {room.n}</div>
               <div className="panel-sub">{state.roomTypes.find((t) => t.id === room.typeId)?.name} · {fmt(state.roomTypes.find((t) => t.id === room.typeId)?.rate)} / noche + impuestos</div>

@@ -33,7 +33,7 @@ export default function Caja() {
       {!shift && (
         <div className="card" style={{ maxWidth: 520 }}>
           <div className="report-title">Caja cerrada</div>
-          <div className="panel-sub" style={{ fontSize: 15 }}>Abre un turno para poder cobrar en restaurante y recepción.</div>
+          <div className="panel-sub text-md">Abre un turno para poder cobrar en restaurante y recepción.</div>
           <Field label="Fondo inicial en efectivo">
             <input className="input big" type="number" value={float} onChange={(e) => setFloat(e.target.value)} />
           </Field>
@@ -48,7 +48,7 @@ export default function Caja() {
           <div className="report-head">
             <div>
               <div className="report-title">Turno en curso</div>
-              <div className="panel-sub" style={{ fontSize: 15 }}>Abierto {fmtDateTime(shift.openedAt)} por {userName(shift.openedBy)}</div>
+              <div className="panel-sub text-md">Abierto {fmtDateTime(shift.openedAt)} por {userName(shift.openedBy)}</div>
             </div>
             <div className="report-actions">
               <button className="btn" onClick={() => setMovement('entrada')}>Entrada de efectivo</button>
@@ -76,7 +76,7 @@ export default function Caja() {
             <div className="card">
               <div className="card-label">Cobros por forma de pago</div>
               {report.byMethod.map((m) => (
-                <div key={m.key} className="row" style={{ fontSize: 15 }}><span>{m.label} <span className="panel-sub">· {m.count}</span></span><strong>{fmt(m.amount)}</strong></div>
+                <div key={m.key} className="row text-md"><span>{m.label} <span className="panel-sub">· {m.count}</span></span><strong>{fmt(m.amount)}</strong></div>
               ))}
             </div>
             <div className="card tx-card">
@@ -149,7 +149,7 @@ function ArqueoModal({ expected, fmt, onClose, onConfirm }) {
   return (
     <Modal title="Arqueo de caja" onClose={onClose} width={560}
       footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn btn-primary" onClick={() => onConfirm(counted, counts)}>Cerrar turno</button></>}>
-      <div className="panel-sub" style={{ fontSize: 14 }}>Cuenta el efectivo por denominación.</div>
+      <div className="panel-sub text-sm">Cuenta el efectivo por denominación.</div>
       <div className="denoms">
         {DENOMINATIONS.map((d) => (
           <label key={d} className="denom">

@@ -108,7 +108,7 @@ function Shell() {
             <span className="avatar">{user.name[0]}</span>
             <div>
               <strong>{user.name}</strong>
-              <div className="panel-sub" style={{ fontSize: 13 }}>{ROLE_LABELS[user.role]}</div>
+              <div className="panel-sub text-xs">{ROLE_LABELS[user.role]}</div>
             </div>
           </div>
           <button className="btn btn-quiet" onClick={() => ui.confirm({ title: 'Cerrar sesión', message: `¿Salir de la sesión de ${user.name}?`, confirmLabel: 'Cerrar sesión' }, () => update((d) => A.logout(d)))}>
