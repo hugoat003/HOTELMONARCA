@@ -2,8 +2,33 @@ import { expect, fresh, login, nav, test } from './helpers.js';
 
 const MENUS = {
   Juan: ['Mesas', 'Pedido', 'Ventas'],
-  'Luis Recepción': ['Mesas', 'Pedido', 'Ventas', 'Inventario', 'Habitaciones', 'Reservas', 'Limpieza', 'Tienda', 'Eventos', 'Caja'],
-  'Marta Gerente': ['Resumen', 'Mesas', 'Pedido', 'Ventas', 'Inventario', 'Habitaciones', 'Reservas', 'Limpieza', 'Tienda', 'Eventos', 'Caja', 'Reporte / RDP', 'Configuración'],
+  'Luis Recepción': [
+    'Mesas',
+    'Pedido',
+    'Ventas',
+    'Inventario',
+    'Habitaciones',
+    'Reservas',
+    'Limpieza',
+    'Tienda',
+    'Eventos',
+    'Caja',
+  ],
+  'Marta Gerente': [
+    'Resumen',
+    'Mesas',
+    'Pedido',
+    'Ventas',
+    'Inventario',
+    'Habitaciones',
+    'Reservas',
+    'Limpieza',
+    'Tienda',
+    'Eventos',
+    'Caja',
+    'Reporte / RDP',
+    'Configuración',
+  ],
 };
 
 for (const [user, views] of Object.entries(MENUS)) {

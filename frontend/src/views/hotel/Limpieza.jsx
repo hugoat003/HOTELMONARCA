@@ -33,9 +33,13 @@ export default function Limpieza() {
   return (
     <div className="page gap-20">
       <div className="chips">
-        {[['todas', 'Todas', state.rooms.length], ...Object.entries(HK_LABELS).map(([k, l]) => [k, l, count(k)])].map(([k, l, n]) => (
-          <button key={k} className={'chip' + (filter === k ? ' active' : '')} onClick={() => setFilter(k)}>{l} · {n}</button>
-        ))}
+        {[['todas', 'Todas', state.rooms.length], ...Object.entries(HK_LABELS).map(([k, l]) => [k, l, count(k)])].map(
+          ([k, l, n]) => (
+            <button key={k} className={'chip' + (filter === k ? ' active' : '')} onClick={() => setFilter(k)}>
+              {l} · {n}
+            </button>
+          ),
+        )}
       </div>
 
       <DataTable variant="hk" columns={['Hab.', 'Tipo', 'Ocupación', 'Próxima llegada', 'Limpieza']}>
@@ -49,7 +53,13 @@ export default function Limpieza() {
             </span>
             <span className="segmented row hk-seg">
               {Object.entries(HK_LABELS).map(([k, l]) => (
-                <button key={k} className={'seg-btn' + (room.hk === k ? ' active' : '')} onClick={() => room.hk !== k && setHk(room.n, k)}>{l.replace(' de servicio', '')}</button>
+                <button
+                  key={k}
+                  className={'seg-btn' + (room.hk === k ? ' active' : '')}
+                  onClick={() => room.hk !== k && setHk(room.n, k)}
+                >
+                  {l.replace(' de servicio', '')}
+                </button>
               ))}
             </span>
           </div>

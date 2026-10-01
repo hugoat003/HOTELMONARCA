@@ -1,32 +1,148 @@
 /* Docs */
 
-.doc-scroll { max-height: 62vh; overflow: auto; background: var(--line-soft); border-radius: 6px; padding: 18px; }
-.print-doc { background: #fff; margin: 0 auto; width: 320px; padding: 18px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-.print-doc.wide { width: 100%; max-width: 780px; padding: 28px; }
-.doc { font-size: 13px; line-height: 1.45; color: #000; display: flex; flex-direction: column; gap: 3px; }
-.doc-header { text-align: center; font-size: 12px; display: flex; flex-direction: column; align-items: center; margin-bottom: 6px; }
-.doc-header img { width: 96px; margin-bottom: 6px; }
-.doc-title { font-family: var(--condensed); font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-align: center; margin-top: 4px; }
-.doc-center { text-align: center; }
-.doc-small { font-size: 11px; color: #555; }
-.doc-void { text-align: center; font-weight: 700; color: #9B2C1F; border: 2px solid #9B2C1F; padding: 4px; margin: 4px 0; }
-.doc-sep { border-top: 1px dashed #999; margin: 6px 0; }
-.doc-row, .doc-line { display: flex; justify-content: space-between; gap: 10px; }
-.doc-row span:last-child, .doc-line span:last-child { white-space: nowrap; }
-.doc-row.strong { font-weight: 700; font-size: 14px; }
-.doc-line em { color: #555; }
-.comanda { font-size: 15px; }
-.comanda-line { padding: 4px 0; }
-.comanda-line div { padding-left: 14px; font-weight: 600; }
-.report-doc .doc-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 10px; }
-.report-doc h4 { margin: 12px 0 4px; font-family: var(--condensed); font-size: 15px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #000; }
-.doc-signatures { display: flex; justify-content: space-around; margin-top: 48px; }
-.doc-signatures span { border-top: 1px solid #000; padding-top: 4px; width: 200px; text-align: center; }
+.doc-scroll {
+  max-height: 62vh;
+  overflow: auto;
+  background: var(--line-soft);
+  border-radius: 6px;
+  padding: 18px;
+}
+.print-doc {
+  background: #fff;
+  margin: 0 auto;
+  width: 320px;
+  padding: 18px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.print-doc.wide {
+  width: 100%;
+  max-width: 780px;
+  padding: 28px;
+}
+.doc {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.doc-header {
+  text-align: center;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.doc-header img {
+  width: 96px;
+  margin-bottom: 6px;
+}
+.doc-title {
+  font-family: var(--condensed);
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  margin-top: 4px;
+}
+.doc-center {
+  text-align: center;
+}
+.doc-small {
+  font-size: 11px;
+  color: #555;
+}
+.doc-void {
+  text-align: center;
+  font-weight: 700;
+  color: #9b2c1f;
+  border: 2px solid #9b2c1f;
+  padding: 4px;
+  margin: 4px 0;
+}
+.doc-sep {
+  border-top: 1px dashed #999;
+  margin: 6px 0;
+}
+.doc-row,
+.doc-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.doc-row span:last-child,
+.doc-line span:last-child {
+  white-space: nowrap;
+}
+.doc-row.strong {
+  font-weight: 700;
+  font-size: 14px;
+}
+.doc-line em {
+  color: #555;
+}
+.comanda {
+  font-size: 15px;
+}
+.comanda-line {
+  padding: 4px 0;
+}
+.comanda-line div {
+  padding-left: 14px;
+  font-weight: 600;
+}
+.report-doc .doc-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-top: 10px;
+}
+.report-doc h4 {
+  margin: 12px 0 4px;
+  font-family: var(--condensed);
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #000;
+}
+.doc-signatures {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 48px;
+}
+.doc-signatures span {
+  border-top: 1px solid #000;
+  padding-top: 4px;
+  width: 200px;
+  text-align: center;
+}
 @media print {
-  @page { margin: 10mm; }
-  body * { visibility: hidden; }
-  .print-doc, .print-doc * { visibility: visible; }
-  .print-doc { position: absolute; left: 0; top: 0; box-shadow: none; padding: 0; }
-  .doc-scroll { max-height: none; overflow: visible; }
-  .overlay .modal { max-height: none; overflow: visible; }
+  @page {
+    margin: 10mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-doc,
+  .print-doc * {
+    visibility: visible;
+  }
+  .print-doc {
+    position: absolute;
+    left: 0;
+    top: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+  .doc-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+  .overlay .modal {
+    max-height: none;
+    overflow: visible;
+  }
 }

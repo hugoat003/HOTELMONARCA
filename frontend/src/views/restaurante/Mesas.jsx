@@ -61,12 +61,27 @@ export default function Mesas({ go }) {
     const [bg, fg, border, sub] = TABLE_COLORS[status];
     const lines = o
       ? [fmt(linesTotal(o.lines)), `${firstName(state.users, o.waiterId)} · ${shortMinutes(o.openedAt)}`]
-      : t.reservedAt ? [`Reservada ${t.reservedAt}`] : [`${t.seats} pers.`];
-    return { bg, fg, border, sub, lines, strong: status === 'reservada', chair: o ? '#6F675E' : '#D6CFC4', pulse: o && o.lines.some((l) => !l.sent) };
+      : t.reservedAt
+        ? [`Reservada ${t.reservedAt}`]
+        : [`${t.seats} pers.`];
+    return {
+      bg,
+      fg,
+      border,
+      sub,
+      lines,
+      strong: status === 'reservada',
+      chair: o ? '#6F675E' : '#D6CFC4',
+      pulse: o && o.lines.some((l) => !l.sent),
+    };
   };
 
   if (mode === 'editar') {
-    return <div className="page gap-16"><MapEditor onDone={() => setMode('mapa')} /></div>;
+    return (
+      <div className="page gap-16">
+        <MapEditor onDone={() => setMode('mapa')} />
+      </div>
+    );
   }
 
   return (
@@ -74,17 +89,47 @@ export default function Mesas({ go }) {
       <div className="split-main gap-18">
         <div className="row items-center">
           <div className="legend">
-            <span><span className="swatch" style={{ border: '1px solid #D6CFC4' }} />Libre</span>
-            <span><span className="swatch" style={{ background: '#1B1917' }} />Ocupada</span>
-            <span><span className="swatch" style={{ border: '2px solid #1B1917' }} />Reservada</span>
-            {mode === 'mapa' && <span><span className="swatch pulse-dot" />Pedido sin enviar</span>}
+            <span>
+              <span className="swatch" style={{ border: '1px solid #D6CFC4' }} />
+              Libre
+            </span>
+            <span>
+              <span className="swatch" style={{ background: '#1B1917' }} />
+              Ocupada
+            </span>
+            <span>
+              <span className="swatch" style={{ border: '2px solid #1B1917' }} />
+              Reservada
+            </span>
+            {mode === 'mapa' && (
+              <span>
+                <span className="swatch pulse-dot" />
+                Pedido sin enviar
+              </span>
+            )}
           </div>
           <div className="chips">
             <div className="segmented row two" style={{ width: 200, padding: 3 }}>
-              <button className={'seg-btn' + (mode === 'mapa' ? ' active' : '')} style={{ padding: '7px 4px' }} onClick={() => setMode('mapa')}>Mapa</button>
-              <button className={'seg-btn' + (mode === 'tarjetas' ? ' active' : '')} style={{ padding: '7px 4px' }} onClick={() => setMode('tarjetas')}>Tarjetas</button>
+              <button
+                className={'seg-btn' + (mode === 'mapa' ? ' active' : '')}
+                style={{ padding: '7px 4px' }}
+                onClick={() => setMode('mapa')}
+              >
+                Mapa
+              </button>
+              <button
+                className={'seg-btn' + (mode === 'tarjetas' ? ' active' : '')}
+                style={{ padding: '7px 4px' }}
+                onClick={() => setMode('tarjetas')}
+              >
+                Tarjetas
+              </button>
             </div>
-            {user.role === 'gerente' && <button className="btn small" onClick={() => setMode('editar')}>Editar mapa</button>}
+            {user.role === 'gerente' && (
+              <button className="btn small" onClick={() => setMode('editar')}>
+                Editar mapa
+              </button>
+            )}
           </div>
         </div>
 
@@ -93,9 +138,19 @@ export default function Mesas({ go }) {
           const busy = zt.filter((t) => orderFor(t.id)).length;
           return (
             <section key={zone} className="section">
-              <h2 className="section-title">{zone} <span className="zone-count">{busy} de {zt.length} ocupadas</span></h2>
+              <h2 className="section-title">
+                {zone}{' '}
+                <span className="zone-count">
+                  {busy} de {zt.length} ocupadas
+                </span>
+              </h2>
               {mode === 'mapa' ? (
-                <TableMap tables={zt} decor={state.mapDecor.filter((d) => d.zone === zone)} getLook={look} onTableClick={clickTable} />
+                <TableMap
+                  tables={zt}
+                  decor={state.mapDecor.filter((d) => d.zone === zone)}
+                  getLook={look}
+                  onTableClick={clickTable}
+                />
               ) : (
                 <div className="tile-grid">
                   {zt.map((t) => {
@@ -103,13 +158,19 @@ export default function Mesas({ go }) {
                     const status = o ? 'ocupada' : t.reservedAt ? 'reservada' : 'libre';
                     const [bg, fg, border, sub, label] = TABLE_COLORS[status];
                     return (
-                      <button key={t.id} className="tile" style={{ '--t-bg': bg, '--t-fg': fg, '--t-border': border, '--t-sub': sub }} onClick={() => clickTable(t)}>
+                      <button
+                        key={t.id}
+                        className="tile"
+                        style={{ '--t-bg': bg, '--t-fg': fg, '--t-border': border, '--t-sub': sub }}
+                        onClick={() => clickTable(t)}
+                      >
                         <span className="tile-head">
                           <span className="tile-name">{t.name}</span>
                           <span className="tile-sub">{o ? `${o.guests} de ${t.seats}` : `${t.seats} pers.`}</span>
                         </span>
                         <span className="tile-status">
-                          {label}{t.reservedAt && !o ? ' ' + t.reservedAt : ''}
+                          {label}
+                          {t.reservedAt && !o ? ' ' + t.reservedAt : ''}
                           {o && <span className="tile-sub fw-500"> · {firstName(state.users, o.waiterId)}</span>}
                         </span>
                         <span className="tile-foot">
@@ -130,9 +191,13 @@ export default function Mesas({ go }) {
         <div className="ticket-head">
           <div>
             <div className="panel-title">Cuentas abiertas</div>
-            <div className="panel-sub">{occupied} de {state.tables.length} mesas · {open.length} cuenta{open.length === 1 ? '' : 's'}</div>
+            <div className="panel-sub">
+              {occupied} de {state.tables.length} mesas · {open.length} cuenta{open.length === 1 ? '' : 's'}
+            </div>
           </div>
-          <button className="btn-small" onClick={() => setTakeout(true)}>+ Para llevar</button>
+          <button className="btn-small" onClick={() => setTakeout(true)}>
+            + Para llevar
+          </button>
         </div>
         <div className="ticket-lines">
           {open.map((o) => {
@@ -146,10 +211,13 @@ export default function Mesas({ go }) {
                   <strong>{fmt(linesTotal(o.lines))}</strong>
                 </span>
                 <span className="account-meta">
-                  {t ? t.zone + ' · ' : ''}{o.guests} pers. · {firstName(state.users, o.waiterId)} · {items} producto{items === 1 ? '' : 's'}
+                  {t ? t.zone + ' · ' : ''}
+                  {o.guests} pers. · {firstName(state.users, o.waiterId)} · {items} producto{items === 1 ? '' : 's'}
                 </span>
                 <span className="account-meta">
-                  <span className={minutesNum(o.openedAt) >= 90 ? 'urgent' : ''}>Abierta hace {minutes(o.openedAt)}</span>
+                  <span className={minutesNum(o.openedAt) >= 90 ? 'urgent' : ''}>
+                    Abierta hace {minutes(o.openedAt)}
+                  </span>
                   {pending > 0 && <span className="tag status-cotizado">{pending} sin enviar</span>}
                 </span>
               </button>
@@ -158,7 +226,10 @@ export default function Mesas({ go }) {
           {!open.length && <div className="ticket-empty">No hay cuentas abiertas.</div>}
         </div>
         <div className="ticket-totals">
-          <div className="row grand"><span>Total abierto</span><span>{fmt(state.orders.reduce((a, o) => a + linesTotal(o.lines), 0))}</span></div>
+          <div className="row grand">
+            <span>Total abierto</span>
+            <span>{fmt(state.orders.reduce((a, o) => a + linesTotal(o.lines), 0))}</span>
+          </div>
         </div>
       </div>
 
@@ -172,7 +243,10 @@ export default function Mesas({ go }) {
         />
       )}
       {takeout && (
-        <TakeoutModal onClose={() => setTakeout(false)} onOpen={(customer) => openOrder({ customer, waiterId: user.id })} />
+        <TakeoutModal
+          onClose={() => setTakeout(false)}
+          onOpen={(customer) => openOrder({ customer, waiterId: user.id })}
+        />
       )}
     </div>
   );
@@ -186,9 +260,22 @@ function OpenTableModal({ table, waiters, defaultWaiter, onClose, onOpen }) {
       title={`Abrir ${table.name}`}
       onClose={onClose}
       width={420}
-      footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn btn-primary" onClick={() => onOpen(guests, waiterId)}>Abrir mesa</button></>}
+      footer={
+        <>
+          <button className="btn" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn btn-primary" onClick={() => onOpen(guests, waiterId)}>
+            Abrir mesa
+          </button>
+        </>
+      }
     >
-      {table.reservedAt && <div className="note-box">Esta mesa está reservada para las {table.reservedAt}. Al abrirla se libera la reserva.</div>}
+      {table.reservedAt && (
+        <div className="note-box">
+          Esta mesa está reservada para las {table.reservedAt}. Al abrirla se libera la reserva.
+        </div>
+      )}
       <Field as="div" label="Comensales">
         <div className="stepper big">
           <button onClick={() => setGuests(Math.max(1, guests - 1))}>−</button>
@@ -199,7 +286,13 @@ function OpenTableModal({ table, waiters, defaultWaiter, onClose, onOpen }) {
       <Field as="div" label="Mesero">
         <div className="chips">
           {waiters.map((w) => (
-            <button key={w.id} className={'chip' + (waiterId === w.id ? ' active' : '')} onClick={() => setWaiterId(w.id)}>{w.name}</button>
+            <button
+              key={w.id}
+              className={'chip' + (waiterId === w.id ? ' active' : '')}
+              onClick={() => setWaiterId(w.id)}
+            >
+              {w.name}
+            </button>
           ))}
         </div>
       </Field>
@@ -214,11 +307,26 @@ function TakeoutModal({ onClose, onOpen }) {
       title="Orden para llevar"
       onClose={onClose}
       width={420}
-      footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn btn-primary" onClick={() => onOpen(customer.trim())}>Crear orden</button></>}
+      footer={
+        <>
+          <button className="btn" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn btn-primary" onClick={() => onOpen(customer.trim())}>
+            Crear orden
+          </button>
+        </>
+      }
     >
       <Field label="Nombre del cliente" hint="opcional">
-        <input className="input" autoFocus value={customer} onChange={(e) => setCustomer(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onOpen(customer.trim())} placeholder="Ej. Sr. López" />
+        <input
+          className="input"
+          autoFocus
+          value={customer}
+          onChange={(e) => setCustomer(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onOpen(customer.trim())}
+          placeholder="Ej. Sr. López"
+        />
       </Field>
     </Modal>
   );

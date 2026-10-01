@@ -38,7 +38,8 @@ export async function login(page, name) {
 }
 
 export const nav = (page, label) => page.locator('.nav').getByRole('button', { name: label, exact: true }).click();
-export const modalClick = (page, label) => page.locator('.modal').getByRole('button', { name: label, exact: true }).last().click();
+export const modalClick = (page, label) =>
+  page.locator('.modal').getByRole('button', { name: label, exact: true }).last().click();
 export const state = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('monarca-pos-v1')));
 
 // Paga lo que muestre la pantalla de cobro con la forma indicada

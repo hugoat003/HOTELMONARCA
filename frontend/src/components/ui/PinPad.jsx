@@ -34,12 +34,16 @@ export default function PinPad({ onSubmit, error: externalError }) {
   return (
     <div className="pinpad">
       <div className={'pin-dots' + (error ? ' error' : '')}>
-        {[0, 1, 2, 3].map((i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} className={i < pin.length ? 'on' : ''} />
+        ))}
       </div>
       <div className="pin-msg">{error ? externalError || 'PIN incorrecto' : ' '}</div>
       <div className="pin-keys">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map((k) => (
-          <button key={k} type="button" onClick={() => press(k)}>{k}</button>
+          <button key={k} type="button" onClick={() => press(k)}>
+            {k}
+          </button>
         ))}
       </div>
     </div>

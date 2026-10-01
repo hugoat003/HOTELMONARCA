@@ -36,35 +36,92 @@ export default function Dashboard({ go, mobile = false }) {
 
   const alerts = [
     !state.shift && { text: 'La caja está cerrada: no se puede cobrar.', view: 'caja', level: 'high' },
-    ...monthlyDue.map((x) => ({ text: `Hab. ${x.res.roomN} · ${x.res.guest.name}: pendiente de su mensualidad ${fmt(x.due)}`, view: 'habitaciones', level: 'high' })),
-    ...eventsDue.map((e) => ({ text: `${e.name} (${fmtDate(e.date)}): saldo ${fmt(eventTotals(e, state).balance)}`, view: 'eventos', level: 'mid' })),
-    ...lowStock.map((it) => ({ text: `${it.name}: ${it.stock <= 0 ? 'agotado' : `quedan ${it.stock} ${it.unit} (mínimo ${it.min})`}`, view: 'inventario', level: it.stock <= 0 ? 'high' : 'mid' })),
-    ...shopLow.map((it) => ({ text: `Tienda · ${it.name}: ${it.stock <= 0 ? 'agotado' : `quedan ${it.stock} (mínimo ${it.min})`}`, view: 'tienda', level: it.stock <= 0 ? 'high' : 'mid' })),
-    dirty.length > 0 && { text: `${dirty.length} habitación(es) por limpiar: ${dirty.map((x) => x.n).join(', ')}`, view: 'limpieza', level: 'low' },
+    ...monthlyDue.map((x) => ({
+      text: `Hab. ${x.res.roomN} · ${x.res.guest.name}: pendiente de su mensualidad ${fmt(x.due)}`,
+      view: 'habitaciones',
+      level: 'high',
+    })),
+    ...eventsDue.map((e) => ({
+      text: `${e.name} (${fmtDate(e.date)}): saldo ${fmt(eventTotals(e, state).balance)}`,
+      view: 'eventos',
+      level: 'mid',
+    })),
+    ...lowStock.map((it) => ({
+      text: `${it.name}: ${it.stock <= 0 ? 'agotado' : `quedan ${it.stock} ${it.unit} (mínimo ${it.min})`}`,
+      view: 'inventario',
+      level: it.stock <= 0 ? 'high' : 'mid',
+    })),
+    ...shopLow.map((it) => ({
+      text: `Tienda · ${it.name}: ${it.stock <= 0 ? 'agotado' : `quedan ${it.stock} (mínimo ${it.min})`}`,
+      view: 'tienda',
+      level: it.stock <= 0 ? 'high' : 'mid',
+    })),
+    dirty.length > 0 && {
+      text: `${dirty.length} habitación(es) por limpiar: ${dirty.map((x) => x.n).join(', ')}`,
+      view: 'limpieza',
+      level: 'low',
+    },
   ].filter(Boolean);
 
-  const methodTotal = r ? Math.max(1, sum(r.byMethod, (m) => m.amount)) : 1;
+  const methodTotal = r
+    ? Math.max(
+        1,
+        sum(r.byMethod, (m) => m.amount),
+      )
+    : 1;
 
   return (
     <div className={'dash' + (mobile ? ' mobile' : '')}>
       <div className="dash-head">
         <div>
           <div className="dash-hello">Hola, {user.name.split(' ')[0]}</div>
-          <div className="panel-sub">Actualizado a las {fmtTime(Date.now())}{r ? '' : ' · caja cerrada'}</div>
+          <div className="panel-sub">
+            Actualizado a las {fmtTime(Date.now())}
+            {r ? '' : ' · caja cerrada'}
+          </div>
         </div>
       </div>
 
       <div className="dash-kpis">
-        <KpiCard className="dash-kpi" label="Ventas restaurante" value={fmt(r?.restTotal || 0)} note={r ? `${r.restCount} cuentas · ticket ${fmt(r.avgTicket)}` : 'Sin turno abierto'} onClick={link('reporte')} />
-        <KpiCard className="dash-kpi" label="Ocupación" value={occ + '%'} note={`${occupied} de ${state.rooms.length} habitaciones`} onClick={link('habitaciones')} />
-        <KpiCard className="dash-kpi" label="Producción del día" value={fmt(r?.production || 0)} note="Restaurante, hospedaje, eventos y tienda" onClick={link('reporte')} />
-        <KpiCard className="dash-kpi" label="Efectivo en caja" value={r ? fmt(r.cash.expected) : 'Cerrada'} note={r ? `Fondo ${fmt(r.cash.float)}` : 'Abre el turno en Caja'} tone="dark" onClick={link('caja')} />
+        <KpiCard
+          className="dash-kpi"
+          label="Ventas restaurante"
+          value={fmt(r?.restTotal || 0)}
+          note={r ? `${r.restCount} cuentas · ticket ${fmt(r.avgTicket)}` : 'Sin turno abierto'}
+          onClick={link('reporte')}
+        />
+        <KpiCard
+          className="dash-kpi"
+          label="Ocupación"
+          value={occ + '%'}
+          note={`${occupied} de ${state.rooms.length} habitaciones`}
+          onClick={link('habitaciones')}
+        />
+        <KpiCard
+          className="dash-kpi"
+          label="Producción del día"
+          value={fmt(r?.production || 0)}
+          note="Restaurante, hospedaje, eventos y tienda"
+          onClick={link('reporte')}
+        />
+        <KpiCard
+          className="dash-kpi"
+          label="Efectivo en caja"
+          value={r ? fmt(r.cash.expected) : 'Cerrada'}
+          note={r ? `Fondo ${fmt(r.cash.float)}` : 'Abre el turno en Caja'}
+          tone="dark"
+          onClick={link('caja')}
+        />
       </div>
 
       <div className="dash-grid">
         <section className="card dash-card">
           <div className="card-label">En este momento</div>
-          <DashRow label="Mesas ocupadas" value={`${state.orders.filter((o) => o.type === 'mesa').length} / ${state.tables.length}`} onClick={link('mesas')} />
+          <DashRow
+            label="Mesas ocupadas"
+            value={`${state.orders.filter((o) => o.type === 'mesa').length} / ${state.tables.length}`}
+            onClick={link('mesas')}
+          />
           <DashRow label="Consumo abierto en mesas" value={fmt(openTotal)} onClick={link('mesas')} />
           <DashRow label="Huéspedes hospedados" value={inHouse.length} onClick={link('habitaciones')} />
           <DashRow label="Llegadas pendientes hoy" value={arrivals.length} onClick={link('habitaciones')} />
@@ -76,7 +133,9 @@ export default function Dashboard({ go, mobile = false }) {
         <section className="card dash-card">
           <div className="card-label">Alertas · {alerts.length}</div>
           {alerts.map((a, i) => (
-            <button key={i} className={'dash-alert ' + a.level} onClick={link(a.view)} disabled={!link(a.view)}>{a.text}</button>
+            <button key={i} className={'dash-alert ' + a.level} onClick={link(a.view)} disabled={!link(a.view)}>
+              {a.text}
+            </button>
           ))}
           {!alerts.length && <div className="panel-sub">Todo en orden.</div>}
         </section>
@@ -87,7 +146,13 @@ export default function Dashboard({ go, mobile = false }) {
             const t = eventTotals(e, state);
             return (
               <button key={e.id} className="dash-row" onClick={link('eventos')} disabled={!link('eventos')}>
-                <span><strong>{e.name}</strong><span className="panel-sub"> · {fmtDate(e.date)} {e.start} · {t.venue?.name || 'Restaurante'} · {EVENT_STATUS[e.status]}</span></span>
+                <span>
+                  <strong>{e.name}</strong>
+                  <span className="panel-sub">
+                    {' '}
+                    · {fmtDate(e.date)} {e.start} · {t.venue?.name || 'Restaurante'} · {EVENT_STATUS[e.status]}
+                  </span>
+                </span>
                 <strong>{fmt(t.total)}</strong>
               </button>
             );
@@ -97,12 +162,28 @@ export default function Dashboard({ go, mobile = false }) {
 
         <section className="card dash-card">
           <div className="card-label">Cobros del turno por forma de pago</div>
-          {r ? r.byMethod.map((m, i) => (
-            <div key={m.key} className="stack-tight" style={{ gap: 5 }}>
-              <div className="row text-md"><span>{m.label} <span className="panel-sub">· {m.count}</span></span><strong>{fmt(m.amount)}</strong></div>
-              <div className="bar"><div style={{ background: ['#1B1917', '#6F675E', '#B8B0A6', '#D6CFC4'][i], width: (m.amount / methodTotal) * 100 + '%' }} /></div>
-            </div>
-          )) : <div className="panel-sub">No hay turno abierto.</div>}
+          {r ? (
+            r.byMethod.map((m, i) => (
+              <div key={m.key} className="stack-tight" style={{ gap: 5 }}>
+                <div className="row text-md">
+                  <span>
+                    {m.label} <span className="panel-sub">· {m.count}</span>
+                  </span>
+                  <strong>{fmt(m.amount)}</strong>
+                </div>
+                <div className="bar">
+                  <div
+                    style={{
+                      background: ['#1B1917', '#6F675E', '#B8B0A6', '#D6CFC4'][i],
+                      width: (m.amount / methodTotal) * 100 + '%',
+                    }}
+                  />
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="panel-sub">No hay turno abierto.</div>
+          )}
         </section>
       </div>
     </div>
@@ -112,7 +193,8 @@ export default function Dashboard({ go, mobile = false }) {
 function DashRow({ label, value, onClick }) {
   return (
     <button className="dash-row" onClick={onClick} disabled={!onClick}>
-      <span>{label}</span><strong>{value}</strong>
+      <span>{label}</span>
+      <strong>{value}</strong>
     </button>
   );
 }

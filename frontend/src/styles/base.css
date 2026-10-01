@@ -1,16 +1,75 @@
 /* Base */
 
-@font-face { font-family: 'Barlow'; font-weight: 400; font-display: swap; src: url('/fonts/barlow-400.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow'; font-weight: 500; font-display: swap; src: url('/fonts/barlow-500.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow'; font-weight: 600; font-display: swap; src: url('/fonts/barlow-600.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow Condensed'; font-weight: 500; font-display: swap; src: url('/fonts/barlow-condensed-500.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow Condensed'; font-weight: 600; font-display: swap; src: url('/fonts/barlow-condensed-600.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow Condensed'; font-weight: 700; font-display: swap; src: url('/fonts/barlow-condensed-700.woff2') format('woff2'); }
-:root { --ink: #1b1917; --muted: #6f675e; --faint: #b8b0a6; --bg: #f5f4f2; --surface: #fafaf8; --line: #e4ded5; --line-soft: #f0ece5; --input-line: #d6cfc4; --accent: #c4552b; --condensed: 'Barlow Condensed', sans-serif; }
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); font-family: 'Barlow', sans-serif; color: var(--ink); }
-a { color: var(--accent); }
-a:hover { color: var(--ink); }
-button, input { font-family: inherit; }
-button { cursor: pointer; }
-button:disabled { cursor: default; }
+@font-face {
+  font-family: 'Barlow';
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/barlow-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow';
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/barlow-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow';
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/barlow-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/barlow-condensed-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/barlow-condensed-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/barlow-condensed-700.woff2') format('woff2');
+}
+:root {
+  --ink: #1b1917;
+  --muted: #6f675e;
+  --faint: #b8b0a6;
+  --bg: #f5f4f2;
+  --surface: #fafaf8;
+  --line: #e4ded5;
+  --line-soft: #f0ece5;
+  --input-line: #d6cfc4;
+  --accent: #c4552b;
+  --condensed: 'Barlow Condensed', sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: 'Barlow', sans-serif;
+  color: var(--ink);
+}
+a {
+  color: var(--accent);
+}
+a:hover {
+  color: var(--ink);
+}
+button,
+input {
+  font-family: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}

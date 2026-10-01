@@ -16,7 +16,18 @@ export function eventTotals(ev, state) {
   const extrasAmt = sum(ev.extras, (x) => x.amt);
   const total = round2(venueAmt + menuAmt + extrasAmt);
   const paid = sum(ev.payments, (p) => p.amount);
-  return { venue, menu, venueWaived, covered, venueAmt, menuAmt, extrasAmt, total, paid, balance: round2(total - paid) };
+  return {
+    venue,
+    menu,
+    venueWaived,
+    covered,
+    venueAmt,
+    menuAmt,
+    extrasAmt,
+    total,
+    paid,
+    balance: round2(total - paid),
+  };
 }
 
 export const isActiveEvent = (e) => e.status === 'cotizado' || e.status === 'confirmado';
@@ -24,7 +35,15 @@ export const isActiveEvent = (e) => e.status === 'cotizado' || e.status === 'con
 // Otro evento activo en el mismo salón, mismo día y horario traslapado
 export function venueConflict(events, ev) {
   if (!ev.venueId) return null;
-  return events.find(
-    (e) => e.id !== ev.id && isActiveEvent(e) && e.venueId === ev.venueId && e.date === ev.date && e.start < ev.end && ev.start < e.end
-  ) || null;
+  return (
+    events.find(
+      (e) =>
+        e.id !== ev.id &&
+        isActiveEvent(e) &&
+        e.venueId === ev.venueId &&
+        e.date === ev.date &&
+        e.start < ev.end &&
+        ev.start < e.end,
+    ) || null
+  );
 }

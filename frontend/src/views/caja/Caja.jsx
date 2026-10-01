@@ -23,7 +23,13 @@ export default function Caja() {
   const report = shift && buildReport(state, shift);
 
   const closeShift = (counted, denominations) => {
-    const closed = { ...shift, closedAt: Date.now(), closedBy: user.id, counted, difference: round2(counted - report.cash.expected) };
+    const closed = {
+      ...shift,
+      closedAt: Date.now(),
+      closedBy: user.id,
+      counted,
+      difference: round2(counted - report.cash.expected),
+    };
     update((d) => A.closeShift(d, { counted, denominations, userId: user.id, report }));
     setArqueo(false);
     ui.notify('Turno cerrado');
@@ -39,7 +45,13 @@ export default function Caja() {
           <Field label="Fondo inicial en efectivo">
             <input className="input big" type="number" value={float} onChange={(e) => setFloat(e.target.value)} />
           </Field>
-          <button className="btn btn-primary" onClick={() => { update((d) => A.openShift(d, { float: parseFloat(float) || 0, userId: user.id })); ui.notify('Turno abierto'); }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              update((d) => A.openShift(d, { float: parseFloat(float) || 0, userId: user.id }));
+              ui.notify('Turno abierto');
+            }}
+          >
             Abrir turno
           </button>
         </div>
@@ -50,12 +62,23 @@ export default function Caja() {
           <div className="report-head">
             <div>
               <div className="report-title">Turno en curso</div>
-              <div className="panel-sub text-md">Abierto {fmtDateTime(shift.openedAt)} por {userName(shift.openedBy)}</div>
+              <div className="panel-sub text-md">
+                Abierto {fmtDateTime(shift.openedAt)} por {userName(shift.openedBy)}
+              </div>
             </div>
             <div className="report-actions">
-              <button className="btn" onClick={() => setMovement('entrada')}>Entrada de efectivo</button>
-              <button className="btn" onClick={() => setMovement('salida')}>Salida de efectivo</button>
-              <button className="btn btn-primary" onClick={() => ui.authorize('Cerrar el turno de caja', () => setArqueo(true))}>Cerrar turno</button>
+              <button className="btn" onClick={() => setMovement('entrada')}>
+                Entrada de efectivo
+              </button>
+              <button className="btn" onClick={() => setMovement('salida')}>
+                Salida de efectivo
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => ui.authorize('Cerrar el turno de caja', () => setArqueo(true))}
+              >
+                Cerrar turno
+              </button>
             </div>
           </div>
 
@@ -75,7 +98,12 @@ export default function Caja() {
             <div className="card">
               <div className="card-label">Cobros por forma de pago</div>
               {report.byMethod.map((m) => (
-                <div key={m.key} className="row text-md"><span>{m.label} <span className="panel-sub">· {m.count}</span></span><strong>{fmt(m.amount)}</strong></div>
+                <div key={m.key} className="row text-md">
+                  <span>
+                    {m.label} <span className="panel-sub">· {m.count}</span>
+                  </span>
+                  <strong>{fmt(m.amount)}</strong>
+                </div>
               ))}
             </div>
             <DataTable title="Movimientos de efectivo">
@@ -83,8 +111,13 @@ export default function Caja() {
                 <div key={m.id} className="tx-row voids">
                   <span className="panel-sub">{fmtTime(m.ts)}</span>
                   <span>{m.reason}</span>
-                  <span className="panel-sub">{m.type === 'entrada' ? 'Entrada' : 'Salida'} · {userName(m.userId)}</span>
-                  <strong>{m.type === 'salida' ? '− ' : ''}{fmt(m.amount)}</strong>
+                  <span className="panel-sub">
+                    {m.type === 'entrada' ? 'Entrada' : 'Salida'} · {userName(m.userId)}
+                  </span>
+                  <strong>
+                    {m.type === 'salida' ? '− ' : ''}
+                    {fmt(m.amount)}
+                  </strong>
                 </div>
               ))}
               {!shift.movements.length && <div className="panel-sub">Sin movimientos.</div>}
@@ -93,7 +126,11 @@ export default function Caja() {
         </>
       )}
 
-      <DataTable title="Cierres anteriores" variant="shifts" columns={['Apertura', 'Cierre', 'Cerró', 'Esperado', 'Contado', 'Diferencia', '']}>
+      <DataTable
+        title="Cierres anteriores"
+        variant="shifts"
+        columns={['Apertura', 'Cierre', 'Cerró', 'Esperado', 'Contado', 'Diferencia', '']}
+      >
         {state.shiftHistory.map((s) => (
           <div key={s.id} className="tx-row shifts">
             <span>{fmtDateTime(s.openedAt)}</span>
@@ -102,21 +139,36 @@ export default function Caja() {
             <span>{fmt(s.report.cash.expected)}</span>
             <span>{fmt(s.counted)}</span>
             <strong className={s.difference < 0 ? 'urgent' : ''}>{fmt(s.difference)}</strong>
-            <button className="link" onClick={() => ui.preview('Reporte de cierre', <ReportDoc report={s.report} shift={s} />, { wide: true })}>Ver reporte</button>
+            <button
+              className="link"
+              onClick={() => ui.preview('Reporte de cierre', <ReportDoc report={s.report} shift={s} />, { wide: true })}
+            >
+              Ver reporte
+            </button>
           </div>
         ))}
         {!state.shiftHistory.length && <div className="panel-sub">Aún no hay cierres.</div>}
       </DataTable>
 
       {movement && (
-        <MovementModal type={movement} onClose={() => setMovement(null)}
+        <MovementModal
+          type={movement}
+          onClose={() => setMovement(null)}
           onSave={(amount, reason) => {
             update((d) => A.addMovement(d, { type: movement, amount, reason, userId: user.id }));
             setMovement(null);
             ui.notify(`${movement === 'entrada' ? 'Entrada' : 'Salida'} registrada · ${fmt(amount)}`);
-          }} />
+          }}
+        />
       )}
-      {arqueo && <ArqueoModal expected={report.cash.expected} fmt={fmt} onClose={() => setArqueo(false)} onConfirm={closeShift} />}
+      {arqueo && (
+        <ArqueoModal
+          expected={report.cash.expected}
+          fmt={fmt}
+          onClose={() => setArqueo(false)}
+          onConfirm={closeShift}
+        />
+      )}
     </div>
   );
 }
@@ -125,15 +177,49 @@ function MovementModal({ type, onClose, onSave }) {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const n = parseFloat(amount) || 0;
-  const presets = type === 'salida' ? ['Compra de insumos', 'Pago a proveedor', 'Propinas a meseros', 'Retiro a caja fuerte'] : ['Cambio / sencillo', 'Reposición de fondo'];
+  const presets =
+    type === 'salida'
+      ? ['Compra de insumos', 'Pago a proveedor', 'Propinas a meseros', 'Retiro a caja fuerte']
+      : ['Cambio / sencillo', 'Reposición de fondo'];
   return (
-    <Modal title={type === 'entrada' ? 'Entrada de efectivo' : 'Salida de efectivo'} onClose={onClose} width={440}
-      footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn btn-primary" disabled={n <= 0 || !reason.trim()} onClick={() => onSave(n, reason.trim())}>Registrar</button></>}>
-      <Field label="Monto"><input className="input big" type="number" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+    <Modal
+      title={type === 'entrada' ? 'Entrada de efectivo' : 'Salida de efectivo'}
+      onClose={onClose}
+      width={440}
+      footer={
+        <>
+          <button className="btn" onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            className="btn btn-primary"
+            disabled={n <= 0 || !reason.trim()}
+            onClick={() => onSave(n, reason.trim())}
+          >
+            Registrar
+          </button>
+        </>
+      }
+    >
+      <Field label="Monto">
+        <input
+          className="input big"
+          type="number"
+          autoFocus
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      </Field>
       <Field label="Motivo">
         <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} />
       </Field>
-      <div className="chips">{presets.map((p) => <button key={p} className="chip small" onClick={() => setReason(p)}>{p}</button>)}</div>
+      <div className="chips">
+        {presets.map((p) => (
+          <button key={p} className="chip small" onClick={() => setReason(p)}>
+            {p}
+          </button>
+        ))}
+      </div>
     </Modal>
   );
 }
@@ -143,30 +229,68 @@ function ArqueoModal({ expected, fmt, onClose, onConfirm }) {
   const counted = round2(DENOMINATIONS.reduce((a, d) => a + d * (parseInt(counts[d]) || 0), 0));
   const diff = round2(counted - expected);
   return (
-    <Modal title="Arqueo de caja" onClose={onClose} width={560}
-      footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn btn-primary" onClick={() => onConfirm(counted, counts)}>Cerrar turno</button></>}>
+    <Modal
+      title="Arqueo de caja"
+      onClose={onClose}
+      width={560}
+      footer={
+        <>
+          <button className="btn" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn btn-primary" onClick={() => onConfirm(counted, counts)}>
+            Cerrar turno
+          </button>
+        </>
+      }
+    >
       <div className="panel-sub text-sm">Cuenta el efectivo por denominación.</div>
       <div className="denoms">
         {DENOMINATIONS.map((d) => (
           <label key={d} className="denom">
             <span>{d >= 1 ? fmt(d).replace('.00', '') : fmt(d)}</span>
-            <input className="input" type="number" min="0" placeholder="0" value={counts[d] || ''} onChange={(e) => setCounts({ ...counts, [d]: e.target.value })} />
+            <input
+              className="input"
+              type="number"
+              min="0"
+              placeholder="0"
+              value={counts[d] || ''}
+              onChange={(e) => setCounts({ ...counts, [d]: e.target.value })}
+            />
             <span className="panel-sub">{fmt(d * (parseInt(counts[d]) || 0))}</span>
           </label>
         ))}
       </div>
       <div className="summary-bar">
-        <span>Esperado <strong>{fmt(expected)}</strong></span>
-        <span>Contado <strong>{fmt(counted)}</strong></span>
-        <span className={diff === 0 ? '' : 'urgent'}>{diff === 0 ? 'Cuadra' : diff > 0 ? 'Sobrante' : 'Faltante'} <strong>{fmt(Math.abs(diff))}</strong></span>
+        <span>
+          Esperado <strong>{fmt(expected)}</strong>
+        </span>
+        <span>
+          Contado <strong>{fmt(counted)}</strong>
+        </span>
+        <span className={diff === 0 ? '' : 'urgent'}>
+          {diff === 0 ? 'Cuadra' : diff > 0 ? 'Sobrante' : 'Faltante'} <strong>{fmt(Math.abs(diff))}</strong>
+        </span>
       </div>
-      <button className="link" onClick={() => {
-        // llena el arqueo con el monto esperado usando billetes grandes primero
-        let rest = Math.round(expected * 100);
-        const c = {};
-        for (const d of DENOMINATIONS) { const cents = Math.round(d * 100); const n = Math.floor(rest / cents); if (n) { c[d] = String(n); rest -= n * cents; } }
-        setCounts(c);
-      }}>Llenar con el monto esperado (demo)</button>
+      <button
+        className="link"
+        onClick={() => {
+          // llena el arqueo con el monto esperado usando billetes grandes primero
+          let rest = Math.round(expected * 100);
+          const c = {};
+          for (const d of DENOMINATIONS) {
+            const cents = Math.round(d * 100);
+            const n = Math.floor(rest / cents);
+            if (n) {
+              c[d] = String(n);
+              rest -= n * cents;
+            }
+          }
+          setCounts(c);
+        }}
+      >
+        Llenar con el monto esperado (demo)
+      </button>
     </Modal>
   );
 }

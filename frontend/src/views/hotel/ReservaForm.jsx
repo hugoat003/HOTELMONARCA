@@ -16,11 +16,22 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
     res
       ? { ...res, guest: { ...res.guest } }
       : {
-          id: uid('r'), roomN: roomN || '', checkIn: mode === 'walkin' ? d0 : checkIn || d0,
-          checkOut: addDays(mode === 'walkin' ? d0 : checkIn || d0, 1), adults: 2, children: 0, channel: mode === 'walkin' ? 'Directo' : 'Teléfono',
-          rateType: 'noche', rate: roomN ? typeRate(roomN) : 0, status: 'reservada', notes: '', charges: [], payments: [], createdAt: Date.now(),
+          id: uid('r'),
+          roomN: roomN || '',
+          checkIn: mode === 'walkin' ? d0 : checkIn || d0,
+          checkOut: addDays(mode === 'walkin' ? d0 : checkIn || d0, 1),
+          adults: 2,
+          children: 0,
+          channel: mode === 'walkin' ? 'Directo' : 'Teléfono',
+          rateType: 'noche',
+          rate: roomN ? typeRate(roomN) : 0,
+          status: 'reservada',
+          notes: '',
+          charges: [],
+          payments: [],
+          createdAt: Date.now(),
           guest: { name: '', phone: '', email: '', doc: '', nit: 'CF', nationality: 'Guatemala' },
-        }
+        },
   );
   const set = (patch) => setF((x) => ({ ...x, ...patch }));
   const setGuest = (patch) => setF((x) => ({ ...x, guest: { ...x.guest, ...patch } }));
@@ -29,11 +40,12 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
   const available = (n) => isAvailable(state.reservations, n, f.checkIn, f.checkOut, f.id);
   const monthly = f.rateType === 'mensual';
   const quote = nights > 0 ? folio({ ...f, rate: Number(f.rate) || 0, charges: [], payments: [] }, state.config) : null;
-  const changeRateType = (rateType) => set({
-    rateType,
-    rate: f.roomN ? typeRate(f.roomN, rateType) : f.rate,
-    checkOut: rateType === 'mensual' ? addMonths(f.checkIn, 1) : addDays(f.checkIn, 1),
-  });
+  const changeRateType = (rateType) =>
+    set({
+      rateType,
+      rate: f.roomN ? typeRate(f.roomN, rateType) : f.rate,
+      checkOut: rateType === 'mensual' ? addMonths(f.checkIn, 1) : addDays(f.checkIn, 1),
+    });
   const lockDates = mode === 'checkin';
 
   let problem = '';
@@ -41,48 +53,151 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
   else if (nights < 1) problem = 'La salida debe ser después de la entrada';
   else if (!f.roomN) problem = 'Elige una habitación';
   else if (!available(f.roomN)) problem = `La ${f.roomN} no está disponible en esas fechas`;
-  else if ((mode === 'checkin' || mode === 'walkin') && !f.guest.doc.trim()) problem = 'Falta el documento de identidad';
+  else if ((mode === 'checkin' || mode === 'walkin') && !f.guest.doc.trim())
+    problem = 'Falta el documento de identidad';
 
-  const title = { new: 'Nueva reserva', edit: 'Editar reserva', checkin: `Check-in · Hab. ${f.roomN}`, walkin: `Check-in sin reserva · Hab. ${f.roomN}` }[mode];
-  const cta = { new: 'Guardar reserva', edit: 'Guardar cambios', checkin: 'Confirmar check-in', walkin: 'Registrar y hacer check-in' }[mode];
+  const title = {
+    new: 'Nueva reserva',
+    edit: 'Editar reserva',
+    checkin: `Check-in · Hab. ${f.roomN}`,
+    walkin: `Check-in sin reserva · Hab. ${f.roomN}`,
+  }[mode];
+  const cta = {
+    new: 'Guardar reserva',
+    edit: 'Guardar cambios',
+    checkin: 'Confirmar check-in',
+    walkin: 'Registrar y hacer check-in',
+  }[mode];
 
   return (
-    <Modal title={title} onClose={onClose} width={720}
-      footer={<><button className="btn" onClick={onClose}>Cancelar</button>
-        <button className="btn btn-primary" disabled={!!problem} onClick={() => onSave({ ...f, rate: Number(f.rate), guest: { ...f.guest, name: f.guest.name.trim() } })}>{problem || cta}</button></>}>
+    <Modal
+      title={title}
+      onClose={onClose}
+      width={720}
+      footer={
+        <>
+          <button className="btn" onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            className="btn btn-primary"
+            disabled={!!problem}
+            onClick={() => onSave({ ...f, rate: Number(f.rate), guest: { ...f.guest, name: f.guest.name.trim() } })}
+          >
+            {problem || cta}
+          </button>
+        </>
+      }
+    >
       <div className="form-grid">
         <Field label="Huésped" className="span-2">
-          <input className="input" autoFocus={mode !== 'checkin'} value={f.guest.name} onChange={(e) => setGuest({ name: e.target.value })} placeholder="Nombre completo" />
+          <input
+            className="input"
+            autoFocus={mode !== 'checkin'}
+            value={f.guest.name}
+            onChange={(e) => setGuest({ name: e.target.value })}
+            placeholder="Nombre completo"
+          />
         </Field>
-        <Field label="Teléfono"><input className="input" value={f.guest.phone} onChange={(e) => setGuest({ phone: e.target.value })} /></Field>
-        <Field label="Correo"><input className="input" value={f.guest.email} onChange={(e) => setGuest({ email: e.target.value })} /></Field>
+        <Field label="Teléfono">
+          <input className="input" value={f.guest.phone} onChange={(e) => setGuest({ phone: e.target.value })} />
+        </Field>
+        <Field label="Correo">
+          <input className="input" value={f.guest.email} onChange={(e) => setGuest({ email: e.target.value })} />
+        </Field>
         <Field label="Documento" hint={mode === 'checkin' || mode === 'walkin' ? 'obligatorio' : 'DPI o pasaporte'}>
-          <input className="input" autoFocus={mode === 'checkin'} value={f.guest.doc} onChange={(e) => setGuest({ doc: e.target.value })} placeholder="DPI / Pasaporte" />
+          <input
+            className="input"
+            autoFocus={mode === 'checkin'}
+            value={f.guest.doc}
+            onChange={(e) => setGuest({ doc: e.target.value })}
+            placeholder="DPI / Pasaporte"
+          />
         </Field>
-        <Field label="Nacionalidad"><input className="input" value={f.guest.nationality} onChange={(e) => setGuest({ nationality: e.target.value })} /></Field>
-        <Field label="NIT para factura"><input className="input" value={f.guest.nit} onChange={(e) => setGuest({ nit: e.target.value })} /></Field>
+        <Field label="Nacionalidad">
+          <input
+            className="input"
+            value={f.guest.nationality}
+            onChange={(e) => setGuest({ nationality: e.target.value })}
+          />
+        </Field>
+        <Field label="NIT para factura">
+          <input className="input" value={f.guest.nit} onChange={(e) => setGuest({ nit: e.target.value })} />
+        </Field>
         <Field label="Canal">
           <select className="input" value={f.channel} onChange={(e) => set({ channel: e.target.value })}>
-            {CHANNELS.map((c) => <option key={c}>{c}</option>)}
+            {CHANNELS.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
           </select>
         </Field>
         <Field label="Entrada">
-          <input className="input" type="date" value={f.checkIn} disabled={lockDates || mode === 'walkin'}
-            onChange={(e) => set({ checkIn: e.target.value, checkOut: e.target.value >= f.checkOut ? addDays(e.target.value, 1) : f.checkOut })} />
+          <input
+            className="input"
+            type="date"
+            value={f.checkIn}
+            disabled={lockDates || mode === 'walkin'}
+            onChange={(e) =>
+              set({
+                checkIn: e.target.value,
+                checkOut: e.target.value >= f.checkOut ? addDays(e.target.value, 1) : f.checkOut,
+              })
+            }
+          />
         </Field>
-        <Field label="Salida" hint={quote ? (monthly ? `${quote.months} mes${quote.months === 1 ? '' : 'es'}` : `${nights} noche${nights > 1 ? 's' : ''}`) : ''}>
-          <input className="input" type="date" value={f.checkOut} min={addDays(f.checkIn, 1)} onChange={(e) => set({ checkOut: e.target.value })} />
+        <Field
+          label="Salida"
+          hint={
+            quote
+              ? monthly
+                ? `${quote.months} mes${quote.months === 1 ? '' : 'es'}`
+                : `${nights} noche${nights > 1 ? 's' : ''}`
+              : ''
+          }
+        >
+          <input
+            className="input"
+            type="date"
+            value={f.checkOut}
+            min={addDays(f.checkIn, 1)}
+            onChange={(e) => set({ checkOut: e.target.value })}
+          />
         </Field>
-        <Field label="Adultos"><input className="input" type="number" min="1" value={f.adults} onChange={(e) => set({ adults: Math.max(1, parseInt(e.target.value) || 1) })} /></Field>
-        <Field label="Niños"><input className="input" type="number" min="0" value={f.children} onChange={(e) => set({ children: Math.max(0, parseInt(e.target.value) || 0) })} /></Field>
+        <Field label="Adultos">
+          <input
+            className="input"
+            type="number"
+            min="1"
+            value={f.adults}
+            onChange={(e) => set({ adults: Math.max(1, parseInt(e.target.value) || 1) })}
+          />
+        </Field>
+        <Field label="Niños">
+          <input
+            className="input"
+            type="number"
+            min="0"
+            value={f.children}
+            onChange={(e) => set({ children: Math.max(0, parseInt(e.target.value) || 0) })}
+          />
+        </Field>
         <Field label="Habitación" className="span-2">
-          <select className="input" value={f.roomN} disabled={lockDates || mode === 'walkin'}
-            onChange={(e) => set({ roomN: e.target.value, rate: typeRate(e.target.value, f.rateType) })}>
+          <select
+            className="input"
+            value={f.roomN}
+            disabled={lockDates || mode === 'walkin'}
+            onChange={(e) => set({ roomN: e.target.value, rate: typeRate(e.target.value, f.rateType) })}
+          >
             <option value="">Elegir…</option>
             {state.rooms.map((r) => {
               const t = state.roomTypes.find((x) => x.id === r.typeId);
               const ok = available(r.n) && r.hk !== 'fuera';
-              return <option key={r.n} value={r.n} disabled={!ok && r.n !== f.roomN}>{r.n} · {t?.name} · {fmt(monthly ? t?.monthlyRate : t?.rate)}{ok ? '' : ' · ocupada'}</option>;
+              return (
+                <option key={r.n} value={r.n} disabled={!ok && r.n !== f.roomN}>
+                  {r.n} · {t?.name} · {fmt(monthly ? t?.monthlyRate : t?.rate)}
+                  {ok ? '' : ' · ocupada'}
+                </option>
+              );
             })}
           </select>
         </Field>
@@ -92,24 +207,46 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, onClose
         <Field as="div" label="Tipo de tarifa">
           <div className="segmented row two">
             {Object.entries(RATE_TYPES).map(([k, l]) => (
-              <button key={k} type="button" className={'seg-btn' + (f.rateType === k || (!f.rateType && k === 'noche') ? ' active' : '')} onClick={() => changeRateType(k)}>{l}</button>
+              <button
+                key={k}
+                type="button"
+                className={'seg-btn' + (f.rateType === k || (!f.rateType && k === 'noche') ? ' active' : '')}
+                onClick={() => changeRateType(k)}
+              >
+                {l}
+              </button>
             ))}
           </div>
         </Field>
         <Field label="Notas" className="span-2">
-          <input className="input" value={f.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Ej. llegada tarde, cama extra, aniversario" />
+          <input
+            className="input"
+            value={f.notes}
+            onChange={(e) => set({ notes: e.target.value })}
+            placeholder="Ej. llegada tarde, cama extra, aniversario"
+          />
         </Field>
       </div>
       {quote && (
         <div className="summary-bar">
           <span>
-            {monthly ? `${quote.months} mes${quote.months === 1 ? '' : 'es'} × ${fmt(Number(f.rate) || 0)}` : `${nights} noche${nights > 1 ? 's' : ''} × ${fmt(Number(f.rate) || 0)}`} = {fmt(quote.lodging.base)}
+            {monthly
+              ? `${quote.months} mes${quote.months === 1 ? '' : 'es'} × ${fmt(Number(f.rate) || 0)}`
+              : `${nights} noche${nights > 1 ? 's' : ''} × ${fmt(Number(f.rate) || 0)}`}{' '}
+            = {fmt(quote.lodging.base)}
           </span>
-          <span>IVA {fmt(quote.lodging.iva)} · INGUAT {fmt(quote.lodging.inguat)}</span>
+          <span>
+            IVA {fmt(quote.lodging.iva)} · INGUAT {fmt(quote.lodging.inguat)}
+          </span>
           <strong>Total {fmt(quote.lodging.total)}</strong>
         </div>
       )}
-      {monthly && <div className="panel-sub text-sm">La estancia se cobra por mes. El huésped puede abonar en partes durante el mes y el último mes se prorratea por días.</div>}
+      {monthly && (
+        <div className="panel-sub text-sm">
+          La estancia se cobra por mes. El huésped puede abonar en partes durante el mes y el último mes se prorratea
+          por días.
+        </div>
+      )}
     </Modal>
   );
 }

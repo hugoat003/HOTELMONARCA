@@ -13,7 +13,10 @@ export function buildReport(state, shift) {
   const events = ok.filter((s) => s.kind === 'evento');
   const shop = ok.filter((s) => s.kind === 'tienda');
   const shopTotal = sum(shop, (s) => s.total);
-  const shopCost = sum(shop.flatMap((s) => s.lines), (l) => (l.cost || 0) * l.qty);
+  const shopCost = sum(
+    shop.flatMap((s) => s.lines),
+    (l) => (l.cost || 0) * l.qty,
+  );
 
   const restTotal = sum(rest, (s) => s.total);
   const tips = sum(rest, (s) => s.tip);
@@ -30,15 +33,26 @@ export function buildReport(state, shift) {
     cats[l.cat] = round2((cats[l.cat] || 0) + l.price * l.qty);
     items[l.name] = (items[l.name] || 0) + l.qty;
   }
-  const byCategory = Object.entries(cats).map(([cat, amount]) => ({ cat, amount })).sort((a, b) => b.amount - a.amount);
-  const topItems = Object.entries(items).map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty).slice(0, 5);
+  const byCategory = Object.entries(cats)
+    .map(([cat, amount]) => ({ cat, amount }))
+    .sort((a, b) => b.amount - a.amount);
+  const topItems = Object.entries(items)
+    .map(([name, qty]) => ({ name, qty }))
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 5);
 
   const lineVoids = state.voids.filter((v) => v.shiftId === shift.id);
   const voidedSales = sales.filter((s) => s.status === 'anulada');
 
   const cashSales = byMethod.find((m) => m.key === 'efectivo').amount;
-  const entradas = sum(shift.movements.filter((m) => m.type === 'entrada'), (m) => m.amount);
-  const salidas = sum(shift.movements.filter((m) => m.type === 'salida'), (m) => m.amount);
+  const entradas = sum(
+    shift.movements.filter((m) => m.type === 'entrada'),
+    (m) => m.amount,
+  );
+  const salidas = sum(
+    shift.movements.filter((m) => m.type === 'salida'),
+    (m) => m.amount,
+  );
 
   const inHouse = state.reservations.filter((r) => r.status === 'hospedado');
   const lodgingRevenue = sum(inHouse, nightlyRate);
@@ -54,8 +68,19 @@ export function buildReport(state, shift) {
     byMethod,
     byCategory,
     topItems,
-    voids: { lines: lineVoids.length, linesAmount: sum(lineVoids, (v) => v.amount), sales: voidedSales.length, salesAmount: sum(voidedSales, (s) => s.grand) },
-    cash: { float: shift.float, cashSales, entradas, salidas, expected: round2(shift.float + cashSales + entradas - salidas) },
+    voids: {
+      lines: lineVoids.length,
+      linesAmount: sum(lineVoids, (v) => v.amount),
+      sales: voidedSales.length,
+      salesAmount: sum(voidedSales, (s) => s.grand),
+    },
+    cash: {
+      float: shift.float,
+      cashSales,
+      entradas,
+      salidas,
+      expected: round2(shift.float + cashSales + entradas - salidas),
+    },
     hotel: {
       rooms,
       occupied: inHouse.length,
@@ -65,7 +90,9 @@ export function buildReport(state, shift) {
       revpar: rooms ? round2(lodgingRevenue / rooms) : 0,
       collected: sum(hotel, (s) => s.grand),
       inguat: sum(hotel, (s) => s.taxes?.inguat),
-      arrivals: state.reservations.filter((r) => r.checkIn === day && (r.status === 'hospedado' || r.status === 'salida')).length,
+      arrivals: state.reservations.filter(
+        (r) => r.checkIn === day && (r.status === 'hospedado' || r.status === 'salida'),
+      ).length,
       departures: state.reservations.filter((r) => r.status === 'salida' && r.checkedOutOn === day).length,
     },
     events: { collected: sum(events, (s) => s.grand), count: events.length },

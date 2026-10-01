@@ -44,7 +44,7 @@ export function StoreProvider({ children }) {
       replace: (next) => dispatch({ replace: next }),
       resetDemo: () => dispatch({ replace: seed() }),
     }),
-    []
+    [],
   );
 
   const value = useMemo(() => {

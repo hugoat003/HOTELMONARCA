@@ -17,14 +17,35 @@ export const NAV = [
   { key: 'admin', label: 'Configuración' },
 ];
 export const TITLES = {
-  dashboard: 'Resumen', mesas: 'Mesas', pedido: 'Pedido', ventas: 'Ventas del turno', inventario: 'Inventario',
-  habitaciones: 'Habitaciones', reservas: 'Reservas', limpieza: 'Limpieza', tienda: 'Tienda de recepción', eventos: 'Eventos',
-  caja: 'Caja', reporte: 'Reporte diario', admin: 'Configuración',
+  dashboard: 'Resumen',
+  mesas: 'Mesas',
+  pedido: 'Pedido',
+  ventas: 'Ventas del turno',
+  inventario: 'Inventario',
+  habitaciones: 'Habitaciones',
+  reservas: 'Reservas',
+  limpieza: 'Limpieza',
+  tienda: 'Tienda de recepción',
+  eventos: 'Eventos',
+  caja: 'Caja',
+  reporte: 'Reporte diario',
+  admin: 'Configuración',
 };
 
 export const ROLES = {
   mesero: ['mesas', 'pedido', 'ventas'],
-  recepcion: ['mesas', 'pedido', 'ventas', 'inventario', 'habitaciones', 'reservas', 'limpieza', 'tienda', 'eventos', 'caja'],
+  recepcion: [
+    'mesas',
+    'pedido',
+    'ventas',
+    'inventario',
+    'habitaciones',
+    'reservas',
+    'limpieza',
+    'tienda',
+    'eventos',
+    'caja',
+  ],
   gerente: NAV.map((n) => n.key),
 };
 export const ROLE_LABELS = { mesero: 'Mesero', recepcion: 'Recepción', gerente: 'Gerente' };
@@ -63,7 +84,15 @@ export const RES_STATUS = {
 };
 export const CHANNELS = ['Directo', 'Teléfono', 'WhatsApp', 'Booking.com', 'Expedia', 'Agencia'];
 
-export const QUICK_NOTES = ['Sin cebolla', 'Sin chile', 'Sin hielo', 'Término medio', 'Bien cocido', 'Para llevar', 'Alergia: nueces'];
+export const QUICK_NOTES = [
+  'Sin cebolla',
+  'Sin chile',
+  'Sin hielo',
+  'Término medio',
+  'Bien cocido',
+  'Para llevar',
+  'Alergia: nueces',
+];
 export const EXTRA_CHARGES = [
   ['Lavandería', 75],
   ['Minibar', 45],
@@ -76,9 +105,20 @@ export const EXTRA_CHARGES = [
 export const DENOMINATIONS = [200, 100, 50, 20, 10, 5, 1, 0.5, 0.25, 0.1, 0.05];
 
 // Eventos
-export const EVENT_STATUS = { cotizado: 'Cotizado', confirmado: 'Confirmado', realizado: 'Realizado', cancelado: 'Cancelado' };
+export const EVENT_STATUS = {
+  cotizado: 'Cotizado',
+  confirmado: 'Confirmado',
+  realizado: 'Realizado',
+  cancelado: 'Cancelado',
+};
 export const EVENT_UNITS = { persona: 'por persona', pareja: 'por pareja', evento: 'por evento' };
-export const EVENT_EXTRAS = [['Decoración', 1200], ['Música / DJ', 1500], ['Pastel', 650], ['Barra libre (por hora)', 900], ['Proyector y sonido', 400]];
+export const EVENT_EXTRAS = [
+  ['Decoración', 1200],
+  ['Música / DJ', 1500],
+  ['Pastel', 650],
+  ['Barra libre (por hora)', 900],
+  ['Proyector y sonido', 400],
+];
 
 // Inventario
 export const INV_CATS = ['Insumos', 'Bebidas', 'Desechables', 'Utensilios', 'Limpieza'];

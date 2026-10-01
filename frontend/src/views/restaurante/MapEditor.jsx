@@ -30,7 +30,9 @@ export default function MapEditor({ onDone }) {
     const id = Math.max(0, ...state.tables.map((t) => t.id)) + 1;
     const { w, h } = sizeFor('cuadrada', 4);
     const spot = freeSpot([...tables, ...decor], w, h);
-    update((d) => A.addTable(d, { id, name: 'Mesa ' + id, zone, seats: 4, shape: 'cuadrada', w, h, ...spot, reservedAt: null }));
+    update((d) =>
+      A.addTable(d, { id, name: 'Mesa ' + id, zone, seats: 4, shape: 'cuadrada', w, h, ...spot, reservedAt: null }),
+    );
     setSel({ kind: 'table', id });
   };
   const addDecor = () => {
@@ -49,28 +51,73 @@ export default function MapEditor({ onDone }) {
     <div className="map-editor">
       <div className="map-editor-main">
         <div className="row items-center gap-12">
-          <Tabs className="grow" tabs={(zones.includes(zone) ? zones : [...zones, zone]).map((z) => [z, z])} value={zone} onChange={(z) => { setZone(z); setSel(null); }}>
-            {newZone === null
-              ? <button className="tab" onClick={() => setNewZone('')}>+ Zona</button>
-              : (
-                <span className="inline-form" style={{ padding: 4 }}>
-                  <input className="input small" autoFocus placeholder="Nombre" value={newZone} onChange={(e) => setNewZone(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && newZone.trim()) { setZone(newZone.trim()); setNewZone(null); } if (e.key === 'Escape') setNewZone(null); }} />
-                  <button className="btn small" disabled={!newZone.trim()} onClick={() => { setZone(newZone.trim()); setNewZone(null); }}>Crear</button>
-                </span>
-              )}
+          <Tabs
+            className="grow"
+            tabs={(zones.includes(zone) ? zones : [...zones, zone]).map((z) => [z, z])}
+            value={zone}
+            onChange={(z) => {
+              setZone(z);
+              setSel(null);
+            }}
+          >
+            {newZone === null ? (
+              <button className="tab" onClick={() => setNewZone('')}>
+                + Zona
+              </button>
+            ) : (
+              <span className="inline-form" style={{ padding: 4 }}>
+                <input
+                  className="input small"
+                  autoFocus
+                  placeholder="Nombre"
+                  value={newZone}
+                  onChange={(e) => setNewZone(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newZone.trim()) {
+                      setZone(newZone.trim());
+                      setNewZone(null);
+                    }
+                    if (e.key === 'Escape') setNewZone(null);
+                  }}
+                />
+                <button
+                  className="btn small"
+                  disabled={!newZone.trim()}
+                  onClick={() => {
+                    setZone(newZone.trim());
+                    setNewZone(null);
+                  }}
+                >
+                  Crear
+                </button>
+              </span>
+            )}
           </Tabs>
           <div className="chips">
-            <button className="btn small" onClick={addDecor}>+ Elemento</button>
-            <button className="btn btn-primary small" onClick={addTable}>+ Mesa</button>
-            {onDone && <button className="btn small" onClick={onDone}>Listo</button>}
+            <button className="btn small" onClick={addDecor}>
+              + Elemento
+            </button>
+            <button className="btn btn-primary small" onClick={addTable}>
+              + Mesa
+            </button>
+            {onDone && (
+              <button className="btn small" onClick={onDone}>
+                Listo
+              </button>
+            )}
           </div>
         </div>
-        <TableMap tables={tables} decor={decor} edit selected={sel}
+        <TableMap
+          tables={tables}
+          decor={decor}
+          edit
+          selected={sel}
           onSelect={(kind, id) => setSel(kind ? { kind, id } : null)}
-          onMove={(kind, id, x, y) => update((d) => A.moveMapItem(d, kind, id, x, y))} />
+          onMove={(kind, id, x, y) => update((d) => A.moveMapItem(d, kind, id, x, y))}
+        />
         <div className="panel-sub text-sm">
-          Arrastra las mesas y elementos para acomodarlos como en el local. Toca uno para editarlo. {!tables.length && !decor.length && 'Esta zona está vacía: agrega mesas para crearla.'}
+          Arrastra las mesas y elementos para acomodarlos como en el local. Toca uno para editarlo.{' '}
+          {!tables.length && !decor.length && 'Esta zona está vacía: agrega mesas para crearla.'}
         </div>
       </div>
 
@@ -78,7 +125,12 @@ export default function MapEditor({ onDone }) {
         {!sel && (
           <>
             <div className="card-label">Zona {zone}</div>
-            <div className="kv"><span>Mesas</span><strong>{tables.length}</strong><span>Sillas</span><strong>{tables.reduce((a, t) => a + t.seats, 0)}</strong></div>
+            <div className="kv">
+              <span>Mesas</span>
+              <strong>{tables.length}</strong>
+              <span>Sillas</span>
+              <strong>{tables.reduce((a, t) => a + t.seats, 0)}</strong>
+            </div>
             <div className="panel-sub">Selecciona una mesa o elemento en el plano.</div>
           </>
         )}
@@ -86,10 +138,20 @@ export default function MapEditor({ onDone }) {
         {table && (
           <>
             <div className="card-label">{table.name}</div>
-            <Field label="Nombre"><input className="input" value={table.name} onChange={(e) => saveTable({ name: e.target.value })} /></Field>
+            <Field label="Nombre">
+              <input className="input" value={table.name} onChange={(e) => saveTable({ name: e.target.value })} />
+            </Field>
             <Field as="div" label="Forma">
               <div className="segmented row">
-                {Object.entries(SHAPES).map(([k, l]) => <button key={k} className={'seg-btn' + (table.shape === k ? ' active' : '')} onClick={() => changeShapeOrSeats(k, table.seats)}>{l}</button>)}
+                {Object.entries(SHAPES).map(([k, l]) => (
+                  <button
+                    key={k}
+                    className={'seg-btn' + (table.shape === k ? ' active' : '')}
+                    onClick={() => changeShapeOrSeats(k, table.seats)}
+                  >
+                    {l}
+                  </button>
+                ))}
               </div>
             </Field>
             <Field as="div" label="Personas">
@@ -100,34 +162,105 @@ export default function MapEditor({ onDone }) {
               </div>
             </Field>
             <Field label="Zona">
-              <select className="input" value={table.zone} onChange={(e) => { const z = e.target.value; const { x, y } = freeSpot(state.tables.map(placed).filter((t) => t.zone === z), table.w, table.h); saveTable({ zone: z, x, y }); setZone(z); }}>
-                {zones.map((z) => <option key={z}>{z}</option>)}
+              <select
+                className="input"
+                value={table.zone}
+                onChange={(e) => {
+                  const z = e.target.value;
+                  const { x, y } = freeSpot(
+                    state.tables.map(placed).filter((t) => t.zone === z),
+                    table.w,
+                    table.h,
+                  );
+                  saveTable({ zone: z, x, y });
+                  setZone(z);
+                }}
+              >
+                {zones.map((z) => (
+                  <option key={z}>{z}</option>
+                ))}
                 {!zones.includes(zone) && <option>{zone}</option>}
               </select>
             </Field>
             <Field label="Reservada a las" hint="opcional">
-              <input className="input" type="time" value={table.reservedAt || ''} onChange={(e) => saveTable({ reservedAt: e.target.value || null })} />
+              <input
+                className="input"
+                type="time"
+                value={table.reservedAt || ''}
+                onChange={(e) => saveTable({ reservedAt: e.target.value || null })}
+              />
             </Field>
-            <button className="btn btn-quiet" onClick={() => {
-              if (hasOrder(table.id)) return ui.notify('La mesa tiene una cuenta abierta');
-              ui.confirm({ title: 'Eliminar mesa', message: `¿Eliminar ${table.name} del mapa?`, confirmLabel: 'Eliminar', danger: true },
-                () => { update((d) => A.remove(d, 'tables', table.id)); setSel(null); });
-            }}>Eliminar mesa</button>
+            <button
+              className="btn btn-quiet"
+              onClick={() => {
+                if (hasOrder(table.id)) return ui.notify('La mesa tiene una cuenta abierta');
+                ui.confirm(
+                  {
+                    title: 'Eliminar mesa',
+                    message: `¿Eliminar ${table.name} del mapa?`,
+                    confirmLabel: 'Eliminar',
+                    danger: true,
+                  },
+                  () => {
+                    update((d) => A.remove(d, 'tables', table.id));
+                    setSel(null);
+                  },
+                );
+              }}
+            >
+              Eliminar mesa
+            </button>
           </>
         )}
 
         {item && (
           <>
             <div className="card-label">Elemento del plano</div>
-            <Field label="Texto"><input className="input" value={item.label} onChange={(e) => saveDecor({ label: e.target.value })} /></Field>
+            <Field label="Texto">
+              <input className="input" value={item.label} onChange={(e) => saveDecor({ label: e.target.value })} />
+            </Field>
             <div className="form-grid two">
-              <Field label="Ancho"><input className="input" type="number" step="10" value={item.w} onChange={(e) => { const w = Math.min(MAP_W, Math.max(40, parseInt(e.target.value) || 40)); saveDecor({ w, ...clampPos(item.x, item.y, w, item.h) }); }} /></Field>
-              <Field label="Alto"><input className="input" type="number" step="10" value={item.h} onChange={(e) => { const h = Math.min(MAP_H, Math.max(30, parseInt(e.target.value) || 30)); saveDecor({ h, ...clampPos(item.x, item.y, item.w, h) }); }} /></Field>
+              <Field label="Ancho">
+                <input
+                  className="input"
+                  type="number"
+                  step="10"
+                  value={item.w}
+                  onChange={(e) => {
+                    const w = Math.min(MAP_W, Math.max(40, parseInt(e.target.value) || 40));
+                    saveDecor({ w, ...clampPos(item.x, item.y, w, item.h) });
+                  }}
+                />
+              </Field>
+              <Field label="Alto">
+                <input
+                  className="input"
+                  type="number"
+                  step="10"
+                  value={item.h}
+                  onChange={(e) => {
+                    const h = Math.min(MAP_H, Math.max(30, parseInt(e.target.value) || 30));
+                    saveDecor({ h, ...clampPos(item.x, item.y, item.w, h) });
+                  }}
+                />
+              </Field>
             </div>
             <div className="chips">
-              {['Barra', 'Cocina', 'Entrada', 'Baños', 'Caja', 'Jardín', 'Escenario'].map((l) => <button key={l} className="chip small" onClick={() => saveDecor({ label: l })}>{l}</button>)}
+              {['Barra', 'Cocina', 'Entrada', 'Baños', 'Caja', 'Jardín', 'Escenario'].map((l) => (
+                <button key={l} className="chip small" onClick={() => saveDecor({ label: l })}>
+                  {l}
+                </button>
+              ))}
             </div>
-            <button className="btn btn-quiet" onClick={() => { update((d) => A.remove(d, 'mapDecor', item.id)); setSel(null); }}>Eliminar elemento</button>
+            <button
+              className="btn btn-quiet"
+              onClick={() => {
+                update((d) => A.remove(d, 'mapDecor', item.id));
+                setSel(null);
+              }}
+            >
+              Eliminar elemento
+            </button>
           </>
         )}
       </div>

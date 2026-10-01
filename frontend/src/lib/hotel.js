@@ -6,7 +6,8 @@ const overlaps = (a1, b1, a2, b2) => a1 < b2 && a2 < b1;
 
 export function isAvailable(reservations, roomN, checkIn, checkOut, ignoreId) {
   return !reservations.some(
-    (r) => r.id !== ignoreId && r.roomN === roomN && isActiveRes(r) && overlaps(checkIn, checkOut, r.checkIn, r.checkOut)
+    (r) =>
+      r.id !== ignoreId && r.roomN === roomN && isActiveRes(r) && overlaps(checkIn, checkOut, r.checkIn, r.checkOut),
   );
 }
 
@@ -16,7 +17,7 @@ export function roomState(room, reservations, day) {
   if (inHouse) return { status: 'ocupada', res: inHouse };
   if (room.hk === 'fuera') return { status: 'fuera' };
   const arriving = reservations.find(
-    (r) => r.roomN === room.n && r.status === 'reservada' && r.checkIn <= day && r.checkOut > day
+    (r) => r.roomN === room.n && r.status === 'reservada' && r.checkIn <= day && r.checkOut > day,
   );
   if (room.hk === 'sucia' || room.hk === 'limpiando') return { status: 'limpieza', res: arriving };
   if (arriving) return { status: 'reservada', res: arriving };
@@ -53,12 +54,23 @@ export function folio(res, config) {
   const nights = Math.max(1, nightsBetween(res.checkIn, res.checkOut));
   const chargesTotal = sum(res.charges, (c) => c.amt);
   const paid = sum(res.payments, (p) => p.amount);
-  let lodging, periods = null, dueToday = null;
+  let lodging,
+    periods = null,
+    dueToday = null;
   if (res.rateType === 'mensual') {
     periods = monthlyPeriods(res.checkIn, res.checkOut).map((p) => ({ ...p, amount: round2(res.rate * p.frac) }));
-    lodging = lodgingFromBase(sum(periods, (p) => p.amount), config);
+    lodging = lodgingFromBase(
+      sum(periods, (p) => p.amount),
+      config,
+    );
     // Lo que ya debería estar pagado: periodos iniciados + cargos
-    const accrued = lodgingFromBase(sum(periods.filter((p) => p.start <= today()), (p) => p.amount), config);
+    const accrued = lodgingFromBase(
+      sum(
+        periods.filter((p) => p.start <= today()),
+        (p) => p.amount,
+      ),
+      config,
+    );
     dueToday = round2(accrued.total + chargesTotal - paid);
   } else {
     lodging = lodgingTotals(res.rate, nights, config);
@@ -68,7 +80,19 @@ export function folio(res, config) {
   const label = periods
     ? `Hospedaje mensual · ${months} mes${months === 1 ? '' : 'es'}`
     : `Hospedaje ${nights} noche${nights === 1 ? '' : 's'}`;
-  return { nights, lodging, chargesTotal, paid, total, balance: round2(total - paid), periods, months, dueToday, label };
+  return {
+    nights,
+    lodging,
+    chargesTotal,
+    paid,
+    total,
+    balance: round2(total - paid),
+    periods,
+    months,
+    dueToday,
+    label,
+  };
 }
 
-export const guestLabel = (res) => res.guest.name + (res.adults + res.children > 1 ? ` (${res.adults + res.children})` : '');
+export const guestLabel = (res) =>
+  res.guest.name + (res.adults + res.children > 1 ? ` (${res.adults + res.children})` : '');

@@ -23,19 +23,32 @@ function Header() {
 }
 
 const Row = ({ l, r, strong }) => (
-  <div className={'doc-row' + (strong ? ' strong' : '')}><span>{l}</span><span>{r}</span></div>
+  <div className={'doc-row' + (strong ? ' strong' : '')}>
+    <span>{l}</span>
+    <span>{r}</span>
+  </div>
 );
 
 export function TicketDoc({ sale }) {
   const { state, fmt } = useStore();
   const hotel = sale.kind === 'hotel';
-  const refLabel = hotel ? 'Habitación' : sale.kind === 'evento' ? 'Evento' : sale.kind === 'tienda' ? 'Venta' : 'Cuenta';
+  const refLabel = hotel
+    ? 'Habitación'
+    : sale.kind === 'evento'
+      ? 'Evento'
+      : sale.kind === 'tienda'
+        ? 'Venta'
+        : 'Cuenta';
   return (
     <div className="doc">
       <Header />
-      <div className="doc-title">{sale.docType === 'recibo' ? 'Recibo' : 'Factura'} No. {String(sale.number).padStart(6, '0')}</div>
+      <div className="doc-title">
+        {sale.docType === 'recibo' ? 'Recibo' : 'Factura'} No. {String(sale.number).padStart(6, '0')}
+      </div>
       <div className="doc-center doc-small">
-        {sale.docType === 'recibo' ? 'Se aplicará en la factura de salida' : 'Documento Tributario Electrónico (demostración)'}
+        {sale.docType === 'recibo'
+          ? 'Se aplicará en la factura de salida'
+          : 'Documento Tributario Electrónico (demostración)'}
       </div>
       {sale.status === 'anulada' && <div className="doc-void">ANULADA · {sale.voidReason}</div>}
       <div className="doc-sep" />
@@ -47,7 +60,10 @@ export function TicketDoc({ sale }) {
       <div className="doc-sep" />
       {sale.lines.map((l, i) => (
         <div key={i} className="doc-line">
-          <span>{l.qty} × {l.name}{l.note ? <em> ({l.note})</em> : null}</span>
+          <span>
+            {l.qty} × {l.name}
+            {l.note ? <em> ({l.note})</em> : null}
+          </span>
           <span>{fmt(l.price * l.qty)}</span>
         </div>
       ))}
@@ -80,7 +96,11 @@ export function TicketDoc({ sale }) {
       )}
       <div className="doc-sep" />
       {sale.payments.map((p, i) => (
-        <Row key={i} l={METHOD_LABELS[p.method] + (p.roomN ? ' ' + p.roomN : '') + (p.ref ? ' · ' + p.ref : '')} r={fmt(p.amount + (p.method === 'efectivo' ? sale.change || 0 : 0))} />
+        <Row
+          key={i}
+          l={METHOD_LABELS[p.method] + (p.roomN ? ' ' + p.roomN : '') + (p.ref ? ' · ' + p.ref : '')}
+          r={fmt(p.amount + (p.method === 'efectivo' ? sale.change || 0 : 0))}
+        />
       ))}
       {sale.change > 0 && <Row l="Cambio" r={fmt(sale.change)} />}
       <div className="doc-sep" />
@@ -99,7 +119,9 @@ export function ComandaDoc({ label, lines, number, waiterId, guests }) {
       <div className="doc-sep" />
       {lines.map((l) => (
         <div key={l.id} className="comanda-line">
-          <strong>{l.qty} × {l.name}</strong>
+          <strong>
+            {l.qty} × {l.name}
+          </strong>
           {l.note && <div>→ {l.note}</div>}
         </div>
       ))}
@@ -121,7 +143,12 @@ export function PrecuentaDoc({ label, lines, waiterId, guests }) {
       <Row l={`Atendió: ${userName(state.users, waiterId)}`} r={`${guests} pers.`} />
       <div className="doc-sep" />
       {lines.map((l) => (
-        <div key={l.id} className="doc-line"><span>{l.qty} × {l.name}</span><span>{fmt(l.price * l.qty)}</span></div>
+        <div key={l.id} className="doc-line">
+          <span>
+            {l.qty} × {l.name}
+          </span>
+          <span>{fmt(l.price * l.qty)}</span>
+        </div>
       ))}
       <div className="doc-sep" />
       <Row l="Total" r={fmt(total)} strong />
@@ -142,14 +169,26 @@ export function FolioDoc({ res }) {
       <Row l="Huésped" r={res.guest.name} />
       <Row l="Estancia" r={`${fmtDate(res.checkIn)} → ${fmtDate(res.checkOut)}`} />
       <div className="doc-sep" />
-      {f.periods
-        ? f.periods.map((p) => <Row key={p.n} l={`Mes ${p.n}: ${fmtDate(p.start, { day: 'numeric', month: 'short' })} – ${fmtDate(p.end, { day: 'numeric', month: 'short' })}${p.frac < 1 ? ' (prorrateo)' : ''}`} r={fmt(p.amount)} />)
-        : <Row l={`Hospedaje ${f.nights} noche(s) × ${fmt(res.rate)}`} r={fmt(f.lodging.base)} />}
+      {f.periods ? (
+        f.periods.map((p) => (
+          <Row
+            key={p.n}
+            l={`Mes ${p.n}: ${fmtDate(p.start, { day: 'numeric', month: 'short' })} – ${fmtDate(p.end, { day: 'numeric', month: 'short' })}${p.frac < 1 ? ' (prorrateo)' : ''}`}
+            r={fmt(p.amount)}
+          />
+        ))
+      ) : (
+        <Row l={`Hospedaje ${f.nights} noche(s) × ${fmt(res.rate)}`} r={fmt(f.lodging.base)} />
+      )}
       <Row l={`IVA (${state.config.iva}%)`} r={fmt(f.lodging.iva)} />
       <Row l={`INGUAT (${state.config.inguat}%)`} r={fmt(f.lodging.inguat)} />
-      {res.charges.map((c) => <Row key={c.id} l={c.desc} r={fmt(c.amt)} />)}
+      {res.charges.map((c) => (
+        <Row key={c.id} l={c.desc} r={fmt(c.amt)} />
+      ))}
       <Row l="Total cargos" r={fmt(f.total)} strong />
-      {res.payments.map((p) => <Row key={p.id} l={`${p.desc} · ${METHOD_LABELS[p.method]}`} r={'− ' + fmt(p.amount)} />)}
+      {res.payments.map((p) => (
+        <Row key={p.id} l={`${p.desc} · ${METHOD_LABELS[p.method]}`} r={'− ' + fmt(p.amount)} />
+      ))}
       <div className="doc-sep" />
       <Row l="Saldo de la estancia" r={fmt(f.balance)} strong />
       {f.dueToday !== null && <Row l="Saldo pendiente a hoy" r={fmt(Math.max(0, f.dueToday))} strong />}
@@ -164,8 +203,11 @@ export function ReportDoc({ report: r, shift }) {
       <Header />
       <div className="doc-title">Reporte Diario de Producción</div>
       <div className="doc-center">
-        {fmtDate(r.day, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Turno abierto {fmtTime(shift.openedAt)} por {userName(state.users, shift.openedBy)}
-        {shift.closedAt ? ` · cerrado ${fmtTime(shift.closedAt)} por ${userName(state.users, shift.closedBy)}` : ' · en curso'}
+        {fmtDate(r.day, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Turno abierto{' '}
+        {fmtTime(shift.openedAt)} por {userName(state.users, shift.openedBy)}
+        {shift.closedAt
+          ? ` · cerrado ${fmtTime(shift.closedAt)} por ${userName(state.users, shift.closedBy)}`
+          : ' · en curso'}
       </div>
       <div className="doc-cols">
         <div>
@@ -178,9 +220,13 @@ export function ReportDoc({ report: r, shift }) {
           <Row l={`Anulaciones de platillos (${r.voids.lines})`} r={fmt(r.voids.linesAmount)} />
           <Row l={`Cuentas anuladas (${r.voids.sales})`} r={fmt(r.voids.salesAmount)} />
           <h4>Ventas por categoría</h4>
-          {r.byCategory.map((c) => <Row key={c.cat} l={c.cat} r={fmt(c.amount)} />)}
+          {r.byCategory.map((c) => (
+            <Row key={c.cat} l={c.cat} r={fmt(c.amount)} />
+          ))}
           <h4>Más vendidos</h4>
-          {r.topItems.map((t) => <Row key={t.name} l={t.name} r={t.qty} />)}
+          {r.topItems.map((t) => (
+            <Row key={t.name} l={t.name} r={t.qty} />
+          ))}
         </div>
         <div>
           <h4>Hotel</h4>
@@ -195,7 +241,9 @@ export function ReportDoc({ report: r, shift }) {
           <Row l={`Tienda de recepción (${r.shop?.count || 0})`} r={fmt(r.shop?.total)} />
           <Row l="Ganancia de la tienda" r={fmt(r.shop?.margin)} />
           <h4>Cobros por forma de pago</h4>
-          {r.byMethod.map((m) => <Row key={m.key} l={`${m.label} (${m.count})`} r={fmt(m.amount)} />)}
+          {r.byMethod.map((m) => (
+            <Row key={m.key} l={`${m.label} (${m.count})`} r={fmt(m.amount)} />
+          ))}
           <h4>Efectivo en caja</h4>
           <Row l="Fondo inicial" r={fmt(r.cash.float)} />
           <Row l="Ventas en efectivo" r={fmt(r.cash.cashSales)} />
@@ -212,7 +260,10 @@ export function ReportDoc({ report: r, shift }) {
       </div>
       <div className="doc-sep" />
       <Row l="Producción total (restaurante + hospedaje + eventos + tienda)" r={fmt(r.production)} strong />
-      <div className="doc-signatures"><span>Cajero</span><span>Gerente</span></div>
+      <div className="doc-signatures">
+        <span>Cajero</span>
+        <span>Gerente</span>
+      </div>
     </div>
   );
 }
@@ -224,7 +275,9 @@ export function EventDoc({ ev }) {
     <div className="doc">
       <Header />
       <div className="doc-title">{ev.payments.length ? 'Estado de cuenta' : 'Cotización'} de evento</div>
-      <div className="doc-center doc-small">{EVENT_STATUS[ev.status]} · {fmtDateTime(Date.now())}</div>
+      <div className="doc-center doc-small">
+        {EVENT_STATUS[ev.status]} · {fmtDateTime(Date.now())}
+      </div>
       <div className="doc-sep" />
       <Row l="Evento" r={ev.name} />
       <Row l="Cliente" r={ev.client.name} />
@@ -234,16 +287,29 @@ export function EventDoc({ ev }) {
       <Row l="Lugar" r={t.venue?.name || 'Restaurante / terraza'} />
       <Row l="Invitados" r={ev.guests} />
       <div className="doc-sep" />
-      {t.venue && <Row l={`Renta ${t.venue.name}${t.venueWaived ? ' (incluida con el menú)' : ''}`} r={fmt(t.venueAmt)} />}
-      {t.menu && <Row l={`${ev.menuQty} × ${t.menu.name} (${fmt(t.menu.price)} ${EVENT_UNITS[t.menu.unit]})`} r={fmt(t.menuAmt)} />}
+      {t.venue && (
+        <Row l={`Renta ${t.venue.name}${t.venueWaived ? ' (incluida con el menú)' : ''}`} r={fmt(t.venueAmt)} />
+      )}
+      {t.menu && (
+        <Row
+          l={`${ev.menuQty} × ${t.menu.name} (${fmt(t.menu.price)} ${EVENT_UNITS[t.menu.unit]})`}
+          r={fmt(t.menuAmt)}
+        />
+      )}
       {t.menu?.description && <div className="doc-small">{t.menu.description}</div>}
-      {ev.extras.map((x) => <Row key={x.id} l={x.desc} r={fmt(x.amt)} />)}
+      {ev.extras.map((x) => (
+        <Row key={x.id} l={x.desc} r={fmt(x.amt)} />
+      ))}
       <div className="doc-sep" />
       <Row l="Total (IVA incluido)" r={fmt(t.total)} strong />
-      {ev.payments.map((p) => <Row key={p.id} l={`${p.desc} · ${METHOD_LABELS[p.method]}`} r={'− ' + fmt(p.amount)} />)}
+      {ev.payments.map((p) => (
+        <Row key={p.id} l={`${p.desc} · ${METHOD_LABELS[p.method]}`} r={'− ' + fmt(p.amount)} />
+      ))}
       {ev.payments.length > 0 && <Row l="Saldo" r={fmt(t.balance)} strong />}
       <div className="doc-sep" />
-      <div className="doc-center doc-small">Se requiere 50 % de anticipo para reservar la fecha. {state.config.phone && `Tel. ${state.config.phone}`}</div>
+      <div className="doc-center doc-small">
+        Se requiere 50 % de anticipo para reservar la fecha. {state.config.phone && `Tel. ${state.config.phone}`}
+      </div>
     </div>
   );
 }

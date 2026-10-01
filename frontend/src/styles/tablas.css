@@ -1,14 +1,48 @@
 /* Tablas */
 
-.tx-row.sales { grid-template-columns: 60px 110px 1.3fr 1.3fr 1fr 110px 110px; align-items: center; }
-.tx-row.voids { grid-template-columns: 60px 1.4fr 1.4fr auto; }
-.tx-row.res { grid-template-columns: 60px 1.5fr 1fr 1fr 1fr 1fr; }
-.tx-row.hk { grid-template-columns: 60px 90px 1.3fr 1.3fr 400px; align-items: center; }
-.tx-row.shifts { grid-template-columns: 1.2fr 1.2fr 1fr 1fr 1fr 1fr 110px; align-items: center; }
-.tx-row.admin-menu { grid-template-columns: 1.6fr 1fr 110px 110px 140px; align-items: center; }
-.tx-row.admin-tables { grid-template-columns: 1fr 1fr 1fr 1fr 140px; align-items: center; }
-.tx-row.admin-types { grid-template-columns: 1fr 1.2fr 1.4fr 140px; align-items: center; }
-.tx-row.admin-users { grid-template-columns: 1.6fr 1fr 80px 100px 140px; align-items: center; }
-.tx-row.inv { grid-template-columns: 1.4fr 1fr 1fr 70px 120px 110px 250px; align-items: center; }
-.tx-row.inv-moves { grid-template-columns: 150px 1.3fr 1.6fr 70px 90px; font-size: 14px; }
-.tx-row.shop { grid-template-columns: 1.6fr 1.1fr 90px 90px 70px 120px 110px 170px; align-items: center; }
+.tx-row.sales {
+  grid-template-columns: 60px 110px 1.3fr 1.3fr 1fr 110px 110px;
+  align-items: center;
+}
+.tx-row.voids {
+  grid-template-columns: 60px 1.4fr 1.4fr auto;
+}
+.tx-row.res {
+  grid-template-columns: 60px 1.5fr 1fr 1fr 1fr 1fr;
+}
+.tx-row.hk {
+  grid-template-columns: 60px 90px 1.3fr 1.3fr 400px;
+  align-items: center;
+}
+.tx-row.shifts {
+  grid-template-columns: 1.2fr 1.2fr 1fr 1fr 1fr 1fr 110px;
+  align-items: center;
+}
+.tx-row.admin-menu {
+  grid-template-columns: 1.6fr 1fr 110px 110px 140px;
+  align-items: center;
+}
+.tx-row.admin-tables {
+  grid-template-columns: 1fr 1fr 1fr 1fr 140px;
+  align-items: center;
+}
+.tx-row.admin-types {
+  grid-template-columns: 1fr 1.2fr 1.4fr 140px;
+  align-items: center;
+}
+.tx-row.admin-users {
+  grid-template-columns: 1.6fr 1fr 80px 100px 140px;
+  align-items: center;
+}
+.tx-row.inv {
+  grid-template-columns: 1.4fr 1fr 1fr 70px 120px 110px 250px;
+  align-items: center;
+}
+.tx-row.inv-moves {
+  grid-template-columns: 150px 1.3fr 1.6fr 70px 90px;
+  font-size: 14px;
+}
+.tx-row.shop {
+  grid-template-columns: 1.6fr 1.1fr 90px 90px 70px 120px 110px 170px;
+  align-items: center;
+}

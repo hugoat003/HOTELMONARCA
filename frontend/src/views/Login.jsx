@@ -35,12 +35,16 @@ export default function Login() {
               <div className="panel-title">{sel.name}</div>
               <div className="panel-sub">Ingresa tu PIN</div>
             </div>
-            <PinPad onSubmit={(pin) => {
-              if (pin !== sel.pin) return false;
-              update((d) => A.login(d, sel.id));
-              return true;
-            }} />
-            <button className="btn btn-quiet" onClick={() => setSel(null)}>Cambiar de usuario</button>
+            <PinPad
+              onSubmit={(pin) => {
+                if (pin !== sel.pin) return false;
+                update((d) => A.login(d, sel.id));
+                return true;
+              }}
+            />
+            <button className="btn btn-quiet" onClick={() => setSel(null)}>
+              Cambiar de usuario
+            </button>
           </>
         )}
       </div>

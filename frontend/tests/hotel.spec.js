@@ -46,5 +46,7 @@ test('nueva reserva desde el calendario', async ({ page }) => {
   await page.getByPlaceholder('Nombre completo').fill('Huésped Prueba');
   await page.getByRole('button', { name: 'Guardar reserva' }).click();
   await expect(page.getByText(/Reserva creada · Huésped Prueba/)).toBeVisible();
-  expect((await state(page)).reservations.some((r) => r.guest.name === 'Huésped Prueba' && r.roomN === '102')).toBe(true);
+  expect((await state(page)).reservations.some((r) => r.guest.name === 'Huésped Prueba' && r.roomN === '102')).toBe(
+    true,
+  );
 });

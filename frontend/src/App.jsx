@@ -60,11 +60,17 @@ function PhoneShell() {
       <header className="phone-head">
         <img src="/logo-monarca.png" alt="Monarca Hotel Boutique" />
         <div className="chips">
-          <button className="chip small" onClick={() => refresh((n) => n + 1)}>Actualizar</button>
-          <button className="chip small" onClick={() => update((d) => A.logout(d))}>Salir</button>
+          <button className="chip small" onClick={() => refresh((n) => n + 1)}>
+            Actualizar
+          </button>
+          <button className="chip small" onClick={() => update((d) => A.logout(d))}>
+            Salir
+          </button>
         </div>
       </header>
-      {user.role === 'gerente' ? <Dashboard mobile /> : (
+      {user.role === 'gerente' ? (
+        <Dashboard mobile />
+      ) : (
         <div className="empty-state" style={{ padding: '60px 16px', textAlign: 'center' }}>
           <div>El resumen en el teléfono es para gerencia. Usa la tablet o la computadora para operar el sistema.</div>
         </div>
@@ -98,7 +104,9 @@ function Shell() {
           {NAV.filter((n) => allowed.includes(n.key)).map((n) => (
             <div key={n.key} className="nav-item">
               {n.group && <div className="nav-group">{n.group}</div>}
-              <button className={'nav-btn' + (view === n.key ? ' active' : '')} onClick={() => go(n.key)}>{n.label}</button>
+              <button className={'nav-btn' + (view === n.key ? ' active' : '')} onClick={() => go(n.key)}>
+                {n.label}
+              </button>
             </div>
           ))}
         </nav>
@@ -111,7 +119,19 @@ function Shell() {
               <div className="panel-sub text-xs">{ROLE_LABELS[user.role]}</div>
             </div>
           </div>
-          <button className="btn btn-quiet" onClick={() => ui.confirm({ title: 'Cerrar sesión', message: `¿Salir de la sesión de ${user.name}?`, confirmLabel: 'Cerrar sesión' }, () => update((d) => A.logout(d)))}>
+          <button
+            className="btn btn-quiet"
+            onClick={() =>
+              ui.confirm(
+                {
+                  title: 'Cerrar sesión',
+                  message: `¿Salir de la sesión de ${user.name}?`,
+                  confirmLabel: 'Cerrar sesión',
+                },
+                () => update((d) => A.logout(d)),
+              )
+            }
+          >
             Cerrar sesión
           </button>
         </div>
@@ -124,10 +144,15 @@ function Shell() {
             <span className="header-date">{fmtLongDate()}</span>
           </div>
           <div className="header-stats">
-            <span className="pill">Mesas {occTables}/{state.tables.length}</span>
-            <span className="pill">Habitaciones {occRooms}/{state.rooms.length}</span>
+            <span className="pill">
+              Mesas {occTables}/{state.tables.length}
+            </span>
+            <span className="pill">
+              Habitaciones {occRooms}/{state.rooms.length}
+            </span>
             <button className={'pill' + (state.shift ? '' : ' warn')} onClick={() => go('caja')}>
-              <span className={'dot' + (state.shift ? ' on' : '')} />{state.shift ? 'Caja abierta' : 'Caja cerrada'}
+              <span className={'dot' + (state.shift ? ' on' : '')} />
+              {state.shift ? 'Caja abierta' : 'Caja cerrada'}
             </button>
           </div>
         </header>

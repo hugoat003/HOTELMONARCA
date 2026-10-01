@@ -9,7 +9,9 @@ export default function DataTable({ title, variant = '', columns, empty, childre
       {title && <div className="card-label">{title}</div>}
       {columns && (
         <div className={rowClass(variant, 'head')}>
-          {columns.map((c, i) => <span key={i}>{c}</span>)}
+          {columns.map((c, i) => (
+            <span key={i}>{c}</span>
+          ))}
         </div>
       )}
       {children}

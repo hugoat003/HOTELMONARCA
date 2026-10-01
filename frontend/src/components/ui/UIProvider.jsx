@@ -48,11 +48,11 @@ export function UIProvider({ children }) {
 
       {auth && (
         <Modal title="Autorización" onClose={() => setAuth(null)} width={380}>
-          <div className="panel-sub text-md">
-            {auth.label}. Ingresa el PIN de un gerente para continuar.
-          </div>
+          <div className="panel-sub text-md">{auth.label}. Ingresa el PIN de un gerente para continuar.</div>
           <PinPad onSubmit={checkManagerPin} error="PIN de gerente inválido" />
-          <button className="btn btn-quiet" onClick={() => setAuth(null)}>Cancelar</button>
+          <button className="btn btn-quiet" onClick={() => setAuth(null)}>
+            Cancelar
+          </button>
         </Modal>
       )}
 
@@ -63,10 +63,15 @@ export function UIProvider({ children }) {
           width={420}
           footer={
             <>
-              <button className="btn" onClick={() => setAsk(null)}>Cancelar</button>
+              <button className="btn" onClick={() => setAsk(null)}>
+                Cancelar
+              </button>
               <button
                 className={'btn btn-primary' + (ask.danger ? ' btn-danger' : '')}
-                onClick={() => { setAsk(null); ask.cb(); }}
+                onClick={() => {
+                  setAsk(null);
+                  ask.cb();
+                }}
               >
                 {ask.confirmLabel}
               </button>
@@ -84,8 +89,12 @@ export function UIProvider({ children }) {
           width={doc.wide ? 860 : 420}
           footer={
             <>
-              <button className="btn" onClick={() => setDoc(null)}>Cerrar</button>
-              <button className="btn btn-primary" onClick={() => window.print()}>Imprimir</button>
+              <button className="btn" onClick={() => setDoc(null)}>
+                Cerrar
+              </button>
+              <button className="btn btn-primary" onClick={() => window.print()}>
+                Imprimir
+              </button>
             </>
           }
         >

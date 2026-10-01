@@ -27,7 +27,10 @@ export default function Modal({ title, aside, onClose, width = 480, children, fo
 export function Field({ label, hint, children, style, className = '', as: Tag = 'label' }) {
   return (
     <Tag className={'field ' + className} style={style}>
-      <span>{label}{hint && <span className="field-hint"> · {hint}</span>}</span>
+      <span>
+        {label}
+        {hint && <span className="field-hint"> · {hint}</span>}
+      </span>
       {children}
     </Tag>
   );

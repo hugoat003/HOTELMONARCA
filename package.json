@@ -8,6 +8,9 @@
     "build": "npm --prefix frontend run build",
     "preview": "npm --prefix frontend run preview --",
     "install:frontend": "npm --prefix frontend install",
-    "test": "npm --prefix frontend test --"
+    "test": "npm --prefix frontend test --",
+    "test:visual": "npm --prefix frontend run test:visual --",
+    "lint": "npm --prefix frontend run lint",
+    "format": "npm --prefix frontend run format"
   }
 }

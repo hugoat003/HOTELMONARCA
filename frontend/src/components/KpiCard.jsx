@@ -8,5 +8,11 @@ export default function KpiCard({ label, value, note, tone, onClick, className =
       {note && <div className="kpi-note">{note}</div>}
     </>
   );
-  return onClick ? <button className={cls} onClick={onClick}>{body}</button> : <div className={cls}>{body}</div>;
+  return onClick ? (
+    <button className={cls} onClick={onClick}>
+      {body}
+    </button>
+  ) : (
+    <div className={cls}>{body}</div>
+  );
 }

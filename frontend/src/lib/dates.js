@@ -30,7 +30,13 @@ export const fmtLongDate = (d = new Date()) =>
   d.toLocaleDateString('es-GT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 export const fmtTime = (ts) => new Date(ts).toTimeString().slice(0, 5);
 export const fmtDateTime = (ts) =>
-  new Date(ts).toLocaleString('es-GT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  new Date(ts).toLocaleString('es-GT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 export const dateOf = (ts) => toDateStr(new Date(ts));
 
 export const uid = (p = 'id') => p + '_' + Math.random().toString(36).slice(2, 9);

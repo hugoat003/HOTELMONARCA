@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, payAll, state, test, typePin } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, state, test, typePin } from './helpers.js';
 
 test('mesero abre mesa, agrega platillos con nota, envía a cocina y cobra con pago mixto', async ({ page }) => {
   await fresh(page);

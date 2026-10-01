@@ -1,20 +1,83 @@
 /* Caja */
 
-.report { padding: 24px 28px; display: flex; flex-direction: column; gap: 22px; max-width: 1200px; }
-.report-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-.report-title { font-family: var(--condensed); font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-.report-actions { display: flex; gap: 10px; }
-.report-actions .btn { padding: 12px 18px; }
-.report-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 14px; }
-.kpis.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.kpi.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
-.kpi.dark .card-label { color: var(--faint); }
-.report-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.report-actions .input { padding: 10px 12px; }
-.denoms { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; }
-.denom { display: grid; grid-template-columns: 80px 90px 1fr; gap: 10px; align-items: center; font-size: 15px; font-weight: 600; }
-.denom .input { padding: 8px 10px; }
-.denom .panel-sub { text-align: right; font-weight: 400; }
-.kpi.alert { border-color: #C9876B; background: #FBF1EC; }
-.kpi-button { text-align: left; font: inherit; color: inherit; }
-.kpi-button:hover { border-color: var(--ink); }
+.report {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 1200px;
+}
+.report-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.report-title {
+  font-family: var(--condensed);
+  font-size: 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.report-actions {
+  display: flex;
+  gap: 10px;
+}
+.report-actions .btn {
+  padding: 12px 18px;
+}
+.report-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 14px;
+}
+.kpis.five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.kpi.dark {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.kpi.dark .card-label {
+  color: var(--faint);
+}
+.report-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.report-actions .input {
+  padding: 10px 12px;
+}
+.denoms {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 18px;
+}
+.denom {
+  display: grid;
+  grid-template-columns: 80px 90px 1fr;
+  gap: 10px;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+.denom .input {
+  padding: 8px 10px;
+}
+.denom .panel-sub {
+  text-align: right;
+  font-weight: 400;
+}
+.kpi.alert {
+  border-color: #c9876b;
+  background: #fbf1ec;
+}
+.kpi-button {
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.kpi-button:hover {
+  border-color: var(--ink);
+}

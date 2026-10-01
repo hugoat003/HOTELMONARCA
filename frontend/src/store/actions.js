@@ -11,8 +11,12 @@ export const orderLabel = (order, tables) =>
 
 export const A = {
   // Sesión
-  login(d, userId) { d.session = { userId }; },
-  logout(d) { d.session = null; },
+  login(d, userId) {
+    d.session = { userId };
+  },
+  logout(d) {
+    d.session = null;
+  },
 
   // Restaurante
   openTable(d, { id, tableId, guests, waiterId }) {
@@ -21,14 +25,35 @@ export const A = {
   },
   openTakeout(d, { id, customer, waiterId }) {
     d.counters.llevar++;
-    d.orders.push({ id, type: 'llevar', number: d.counters.llevar, customer, guests: 1, waiterId, openedAt: Date.now(), lines: [] });
+    d.orders.push({
+      id,
+      type: 'llevar',
+      number: d.counters.llevar,
+      customer,
+      guests: 1,
+      waiterId,
+      openedAt: Date.now(),
+      lines: [],
+    });
   },
-  closeOrder(d, orderId) { d.orders = d.orders.filter((o) => o.id !== orderId); },
+  closeOrder(d, orderId) {
+    d.orders = d.orders.filter((o) => o.id !== orderId);
+  },
   addItem(d, orderId, m) {
     const o = byId(d.orders, orderId);
     const ex = o.lines.find((l) => l.mid === m.id && !l.sent && !l.note);
     if (ex) ex.qty++;
-    else o.lines.push({ id: uid('l'), mid: m.id, name: m.name, cat: m.cat, price: m.price, qty: 1, note: '', sent: false });
+    else
+      o.lines.push({
+        id: uid('l'),
+        mid: m.id,
+        name: m.name,
+        cat: m.cat,
+        price: m.price,
+        qty: 1,
+        note: '',
+        sent: false,
+      });
   },
   changeQty(d, orderId, lineId, delta) {
     const o = byId(d.orders, orderId);
@@ -43,7 +68,18 @@ export const A = {
   voidLine(d, { orderId, lineId, qty, reason, userId, authId, label }) {
     const o = byId(d.orders, orderId);
     const l = byId(o.lines, lineId);
-    d.voids.push({ id: uid('v'), shiftId: d.shift?.id, ts: Date.now(), ref: label, name: l.name, qty, amount: l.price * qty, reason, userId, authId });
+    d.voids.push({
+      id: uid('v'),
+      shiftId: d.shift?.id,
+      ts: Date.now(),
+      ref: label,
+      name: l.name,
+      qty,
+      amount: l.price * qty,
+      reason,
+      userId,
+      authId,
+    });
     l.qty -= qty;
     o.lines = o.lines.filter((x) => x.qty > 0);
   },
@@ -63,7 +99,15 @@ export const A = {
     for (const p of sale.payments) {
       if (p.method === 'habitacion') {
         byId(d.reservations, p.resId).charges.push({
-          id: uid('c'), ts: sale.ts, desc: sale.kind === 'tienda' ? `Tienda de recepción · Ticket #${sale.number}` : `Restaurante · ${sale.ref} · Ticket #${sale.number}`, amt: p.amount, saleId: sale.id, type: sale.kind,
+          id: uid('c'),
+          ts: sale.ts,
+          desc:
+            sale.kind === 'tienda'
+              ? `Tienda de recepción · Ticket #${sale.number}`
+              : `Restaurante · ${sale.ref} · Ticket #${sale.number}`,
+          amt: p.amount,
+          saleId: sale.id,
+          type: sale.kind,
         });
       }
     }
@@ -73,7 +117,17 @@ export const A = {
         const it = byId(d.shopItems, l.itemId);
         if (!it) continue;
         it.stock = Math.max(0, it.stock - l.qty);
-        d.shopMoves.push({ id: uid('sm'), ts: sale.ts, itemId: it.id, type: 'venta', qty: l.qty, note: `Ticket #${sale.number}`, userId: sale.cashierId, after: it.stock, saleId: sale.id });
+        d.shopMoves.push({
+          id: uid('sm'),
+          ts: sale.ts,
+          itemId: it.id,
+          type: 'venta',
+          qty: l.qty,
+          note: `Ticket #${sale.number}`,
+          userId: sale.cashierId,
+          after: it.stock,
+          saleId: sale.id,
+        });
       }
     }
     if (orderId) {
@@ -96,7 +150,17 @@ export const A = {
         const it = byId(d.shopItems, l.itemId);
         if (!it) continue;
         it.stock += l.qty;
-        d.shopMoves.push({ id: uid('sm'), ts: Date.now(), itemId: it.id, type: 'devolucion', qty: l.qty, note: `Anulación ticket #${s.number}`, userId: authId, after: it.stock, saleId });
+        d.shopMoves.push({
+          id: uid('sm'),
+          ts: Date.now(),
+          itemId: it.id,
+          type: 'devolucion',
+          qty: l.qty,
+          note: `Anulación ticket #${s.number}`,
+          userId: authId,
+          after: it.stock,
+          saleId,
+        });
       }
     }
   },
@@ -134,7 +198,15 @@ export const A = {
     d.counters.doc = sale.number;
     d.sales.push(sale);
     const r = byId(d.reservations, resId);
-    for (const p of sale.payments) r.payments.push({ id: uid('p'), ts: sale.ts, method: p.method, amount: p.amount, desc: sale.lines[0]?.name || 'Pago', saleId: sale.id });
+    for (const p of sale.payments)
+      r.payments.push({
+        id: uid('p'),
+        ts: sale.ts,
+        method: p.method,
+        amount: p.amount,
+        desc: sale.lines[0]?.name || 'Pago',
+        saleId: sale.id,
+      });
   },
   checkOut(d, resId) {
     const r = byId(d.reservations, resId);
@@ -148,7 +220,9 @@ export const A = {
     if (sale) A.addFolioPayment(d, resId, sale);
     A.checkOut(d, resId);
   },
-  setHk(d, roomN, hk) { byId(d.rooms, roomN, 'n').hk = hk; },
+  setHk(d, roomN, hk) {
+    byId(d.rooms, roomN, 'n').hk = hk;
+  },
 
   // Eventos
   saveEvent(d, ev) {
@@ -156,12 +230,22 @@ export const A = {
     if (i >= 0) d.events[i] = { ...d.events[i], ...ev };
     else d.events.push(ev);
   },
-  setEventStatus(d, id, status) { byId(d.events, id).status = status; },
+  setEventStatus(d, id, status) {
+    byId(d.events, id).status = status;
+  },
   addEventPayment(d, eventId, sale) {
     d.counters.doc = sale.number;
     d.sales.push(sale);
     const ev = byId(d.events, eventId);
-    for (const p of sale.payments) ev.payments.push({ id: uid('ep'), ts: sale.ts, method: p.method, amount: p.amount, desc: sale.lines[0]?.name || 'Pago', saleId: sale.id });
+    for (const p of sale.payments)
+      ev.payments.push({
+        id: uid('ep'),
+        ts: sale.ts,
+        method: p.method,
+        amount: p.amount,
+        desc: sale.lines[0]?.name || 'Pago',
+        saleId: sale.id,
+      });
   },
 
   // Inventario: entrada suma, salida y merma restan, ajuste fija la existencia contada
@@ -169,7 +253,10 @@ export const A = {
   invMove(d, { itemId, type, qty, note, userId }, coll = 'inventory', movesColl = 'invMoves') {
     const it = byId(d[coll], itemId);
     const q = Number(qty);
-    it.stock = Math.max(0, Math.round((type === 'entrada' ? it.stock + q : type === 'ajuste' ? q : it.stock - q) * 1000) / 1000);
+    it.stock = Math.max(
+      0,
+      Math.round((type === 'entrada' ? it.stock + q : type === 'ajuste' ? q : it.stock - q) * 1000) / 1000,
+    );
     d[movesColl].push({ id: uid('im'), ts: Date.now(), itemId, type, qty: q, note, userId, after: it.stock });
   },
 
@@ -182,7 +269,14 @@ export const A = {
   },
   closeShift(d, { counted, denominations, userId, report }) {
     const s = d.shift;
-    Object.assign(s, { closedAt: Date.now(), closedBy: userId, counted, denominations, difference: Math.round((counted - report.cash.expected) * 100) / 100, report });
+    Object.assign(s, {
+      closedAt: Date.now(),
+      closedBy: userId,
+      counted,
+      denominations,
+      difference: Math.round((counted - report.cash.expected) * 100) / 100,
+      report,
+    });
     d.shiftHistory.unshift(s);
     d.shift = null;
   },
@@ -193,18 +287,30 @@ export const A = {
     if (i >= 0) d[coll][i] = { ...d[coll][i], ...item };
     else d[coll].push(item);
   },
-  remove(d, coll, value, key = 'id') { d[coll] = d[coll].filter((x) => x[key] !== value); },
-  setConfig(d, patch) { Object.assign(d.config, patch); },
-  addCategory(d, name) { if (!d.categories.includes(name)) d.categories.push(name); },
-  removeCategory(d, name) { d.categories = d.categories.filter((c) => c !== name); },
+  remove(d, coll, value, key = 'id') {
+    d[coll] = d[coll].filter((x) => x[key] !== value);
+  },
+  setConfig(d, patch) {
+    Object.assign(d.config, patch);
+  },
+  addCategory(d, name) {
+    if (!d.categories.includes(name)) d.categories.push(name);
+  },
+  removeCategory(d, name) {
+    d.categories = d.categories.filter((c) => c !== name);
+  },
   saveRoom(d, room) {
     A.upsert(d, 'rooms', room, 'n');
     d.rooms.sort((a, b) => a.n.localeCompare(b.n));
   },
 
   // Mapa de mesas
-  addTable(d, table) { d.tables.push(table); },
-  addMapDecor(d, item) { d.mapDecor.push(item); },
+  addTable(d, table) {
+    d.tables.push(table);
+  },
+  addMapDecor(d, item) {
+    d.mapDecor.push(item);
+  },
   moveMapItem(d, kind, id, x, y) {
     if (kind === 'table') {
       const i = d.tables.findIndex((t) => t.id === id);
@@ -218,4 +324,3 @@ export const A = {
     for (const m of d.menu) if (m.cat === from) m.cat = to;
   },
 };
-
