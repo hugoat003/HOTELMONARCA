@@ -1,3 +1,4 @@
+import KpiCard from '../components/KpiCard.jsx';
 import { EVENT_STATUS } from '../data.js';
 import { addDays, fmtDate, fmtTime, today } from '../lib/dates.js';
 import { eventTotals, isActiveEvent } from '../lib/events.js';
@@ -54,10 +55,10 @@ export default function Dashboard({ go, mobile = false }) {
       </div>
 
       <div className="dash-kpis">
-        <Kpi label="Ventas restaurante" value={fmt(r?.restTotal || 0)} note={r ? `${r.restCount} cuentas · ticket ${fmt(r.avgTicket)}` : 'Sin turno abierto'} onClick={link('reporte')} />
-        <Kpi label="Ocupación" value={occ + '%'} note={`${occupied} de ${state.rooms.length} habitaciones`} onClick={link('habitaciones')} />
-        <Kpi label="Producción del día" value={fmt(r?.production || 0)} note="Restaurante, hospedaje, eventos y tienda" onClick={link('reporte')} />
-        <Kpi label="Efectivo en caja" value={r ? fmt(r.cash.expected) : 'Cerrada'} note={r ? `Fondo ${fmt(r.cash.float)}` : 'Abre el turno en Caja'} dark onClick={link('caja')} />
+        <KpiCard className="dash-kpi" label="Ventas restaurante" value={fmt(r?.restTotal || 0)} note={r ? `${r.restCount} cuentas · ticket ${fmt(r.avgTicket)}` : 'Sin turno abierto'} onClick={link('reporte')} />
+        <KpiCard className="dash-kpi" label="Ocupación" value={occ + '%'} note={`${occupied} de ${state.rooms.length} habitaciones`} onClick={link('habitaciones')} />
+        <KpiCard className="dash-kpi" label="Producción del día" value={fmt(r?.production || 0)} note="Restaurante, hospedaje, eventos y tienda" onClick={link('reporte')} />
+        <KpiCard className="dash-kpi" label="Efectivo en caja" value={r ? fmt(r.cash.expected) : 'Cerrada'} note={r ? `Fondo ${fmt(r.cash.float)}` : 'Abre el turno en Caja'} tone="dark" onClick={link('caja')} />
       </div>
 
       <div className="dash-grid">
@@ -105,16 +106,6 @@ export default function Dashboard({ go, mobile = false }) {
         </section>
       </div>
     </div>
-  );
-}
-
-function Kpi({ label, value, note, dark, onClick }) {
-  return (
-    <button className={'card kpi dash-kpi' + (dark ? ' dark' : '')} onClick={onClick} disabled={!onClick}>
-      <div className="card-label">{label}</div>
-      <div className="kpi-value">{value}</div>
-      <div className="kpi-note">{note}</div>
-    </button>
   );
 }
 

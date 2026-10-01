@@ -1,25 +1,23 @@
 import { useState } from 'react';
+import DataTable, { rowClass } from '../../components/DataTable.jsx';
+import KpiCard from '../../components/KpiCard.jsx';
+import { ItemModal, MoveModal, StockMoves, StockTag } from '../../components/Stock.jsx';
+import Tabs from '../../components/Tabs.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { SHOP_CATS, SHOP_MOVE_LABELS, SHOP_MOVES } from '../../data.js';
-import { fmtDateTime, uid } from '../../lib/dates.js';
-import { stockStatus } from '../../lib/inventory.js';
+import { uid } from '../../lib/dates.js';
+import { qtyFmt, stockStatus } from '../../lib/inventory.js';
 import { ivaIncluded, linesTotal, sum } from '../../lib/money.js';
 import { TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import Cobro from '../restaurante/Cobro.jsx';
-import { ItemModal, MoveModal, qtyFmt } from '../restaurante/Inventario.jsx';
-
-const STATUS_LABEL = { ok: 'OK', bajo: 'Bajo mínimo', agotado: 'Agotado' };
 
 export default function Tienda() {
   const [tab, setTab] = useState('vender');
   return (
     <div className="page" style={{ gap: 18, height: '100%' }}>
-      <div className="tabs">
-        <button className={'tab' + (tab === 'vender' ? ' active' : '')} onClick={() => setTab('vender')}>Vender</button>
-        <button className={'tab' + (tab === 'existencias' ? ' active' : '')} onClick={() => setTab('existencias')}>Existencias</button>
-      </div>
+      <Tabs tabs={[['vender', 'Vender'], ['existencias', 'Existencias']]} value={tab} onChange={setTab} />
       {tab === 'vender' ? <Vender /> : <Existencias />}
     </div>
   );
@@ -139,9 +137,7 @@ function Existencias() {
   const turnSales = state.sales.filter((s) => s.kind === 'tienda' && s.status === 'ok' && s.shiftId === state.shift?.id);
   const turnTotal = sum(turnSales, (s) => s.total);
   const turnCost = sum(turnSales.flatMap((s) => s.lines), (l) => (l.cost || 0) * l.qty);
-  const name = (id) => state.shopItems.find((i) => i.id === id)?.name || '—';
-  const userName = (id) => state.users.find((u) => u.id === id)?.name || '—';
-  const moves = [...state.shopMoves].sort((a, b) => b.ts - a.ts).slice(0, 15);
+  const outOfStock = low.filter((i) => i.stock <= 0).length;
 
   const doMove = (type, qty, note) => {
     const run = () => {
@@ -156,10 +152,10 @@ function Existencias() {
   return (
     <>
       <div className="kpis">
-        <div className="card kpi"><div className="card-label">Ventas del turno</div><div className="kpi-value">{fmt(turnTotal)}</div><div className="kpi-note">{turnSales.length} venta{turnSales.length === 1 ? '' : 's'}</div></div>
-        <div className="card kpi"><div className="card-label">Ganancia del turno</div><div className="kpi-value">{fmt(turnTotal - turnCost)}</div><div className="kpi-note">Precio de venta menos costo</div></div>
-        <div className={'card kpi' + (low.length ? ' alert' : '')}><div className="card-label">Bajo mínimo</div><div className="kpi-value">{low.length}</div><div className="kpi-note">{low.filter((i) => i.stock <= 0).length} agotado(s)</div></div>
-        <div className="card kpi"><div className="card-label">Valor en existencia</div><div className="kpi-value">{fmt(sum(state.shopItems, (i) => i.stock * i.cost))}</div><div className="kpi-note">A costo de compra</div></div>
+        <KpiCard label="Ventas del turno" value={fmt(turnTotal)} note={`${turnSales.length} venta${turnSales.length === 1 ? '' : 's'}`} />
+        <KpiCard label="Ganancia del turno" value={fmt(turnTotal - turnCost)} note="Precio de venta menos costo" />
+        <KpiCard label="Bajo mínimo" value={low.length} note={`${outOfStock} agotado${outOfStock === 1 ? '' : 's'}`} tone={low.length ? 'alert' : undefined} />
+        <KpiCard label="Valor en existencia" value={fmt(sum(state.shopItems, (i) => i.stock * i.cost))} note="A costo de compra" />
       </div>
 
       <div className="row items-center">
@@ -170,19 +166,17 @@ function Existencias() {
         <button className="btn btn-primary small" onClick={() => setEdit({ id: uid('t'), name: '', cat: cat === 'Todas' ? SHOP_CATS[0] : cat, unit: 'unidad', stock: '0', min: '', cost: '', price: '', active: true, isNew: true })}>+ Producto</button>
       </div>
 
-      <div className="card tx-card">
-        <div className="tx-row head shop"><span>Producto</span><span>Categoría</span><span>Precio</span><span>Costo</span><span>Margen</span><span>Existencia</span><span>Estado</span><span /></div>
+      <DataTable variant="shop" columns={['Producto', 'Categoría', 'Precio', 'Costo', 'Margen', 'Existencia', 'Estado', '']} empty="Sin productos en esta vista.">
         {items.map((it) => {
-          const st = stockStatus(it);
           return (
-            <div key={it.id} className="tx-row shop">
+            <div key={it.id} className={rowClass('shop')}>
               <strong>{it.name}</strong>
               <span className="panel-sub">{it.cat}</span>
               <strong>{fmt(it.price)}</strong>
               <span className="panel-sub">{fmt(it.cost)}</span>
               <span>{it.price ? Math.round(((it.price - it.cost) / it.price) * 100) : 0}%</span>
               <span><strong>{qtyFmt(it.stock)}</strong> <span className="panel-sub">mín. {qtyFmt(it.min)}</span></span>
-              <span><span className={'tag stock-' + st}>{STATUS_LABEL[st]}</span></span>
+              <span><StockTag item={it} /></span>
               <span className="row-actions">
                 <button className="link" onClick={() => setMove({ item: it, type: 'entrada' })}>Entrada</button>
                 <button className="link" onClick={() => setMove({ item: it, type: 'merma' })}>Merma</button>
@@ -191,20 +185,9 @@ function Existencias() {
             </div>
           );
         })}
-      </div>
+      </DataTable>
 
-      <div className="card tx-card">
-        <div className="card-label">Últimos movimientos</div>
-        {moves.map((m) => (
-          <div key={m.id} className="tx-row inv-moves">
-            <span className="panel-sub">{fmtDateTime(m.ts)}</span>
-            <span><strong>{SHOP_MOVE_LABELS[m.type]}</strong> · {name(m.itemId)}</span>
-            <span className="panel-sub">{m.note || '—'} · {userName(m.userId)}</span>
-            <span>{m.type === 'entrada' || m.type === 'devolucion' ? '+' : m.type === 'ajuste' ? '=' : '−'}{qtyFmt(m.qty)}</span>
-            <span className="panel-sub">queda {qtyFmt(m.after)}</span>
-          </div>
-        ))}
-      </div>
+      <StockMoves moves={state.shopMoves} items={state.shopItems} users={state.users} labels={SHOP_MOVE_LABELS} limit={15} />
 
       {move && <MoveModal {...move} moves={SHOP_MOVES} onClose={() => setMove(null)} onSave={doMove} />}
       {edit && (

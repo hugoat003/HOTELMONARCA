@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DataTable from '../../components/DataTable.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { HK_LABELS, ROOM_COLORS } from '../../data.js';
 import { fmtDate, today } from '../../lib/dates.js';
@@ -37,8 +38,7 @@ export default function Limpieza() {
         ))}
       </div>
 
-      <div className="card tx-card">
-        <div className="tx-row head hk"><span>Hab.</span><span>Tipo</span><span>Ocupación</span><span>Próxima llegada</span><span>Limpieza</span></div>
+      <DataTable variant="hk" columns={['Hab.', 'Tipo', 'Ocupación', 'Próxima llegada', 'Limpieza']}>
         {rows.map(({ room, st, next }) => (
           <div key={room.n} className="tx-row hk">
             <strong>{room.n}</strong>
@@ -55,7 +55,7 @@ export default function Limpieza() {
           </div>
         ))}
         {!rows.length && <div className="panel-sub pad-12">No hay habitaciones en este estado.</div>}
-      </div>
+      </DataTable>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import KpiCard from '../../components/KpiCard.jsx';
+import DataTable from '../../components/DataTable.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { METHOD_LABELS } from '../../data.js';
 import { dateOf, fmtDate, fmtDateTime, fmtTime } from '../../lib/dates.js';
@@ -54,11 +56,7 @@ export default function Reporte({ go }) {
 
       <div className="kpis">
         {kpis.map(([label, value, note]) => (
-          <div key={label} className="card kpi">
-            <div className="card-label">{label}</div>
-            <div className="kpi-value">{value}</div>
-            <div className="kpi-note">{note}</div>
-          </div>
+          <KpiCard key={label} label={label} value={value} note={note} />
         ))}
       </div>
 
@@ -98,9 +96,7 @@ export default function Reporte({ go }) {
         </div>
       </div>
 
-      <div className="card tx-card">
-        <div className="card-label">Cobros del turno</div>
-        <div className="tx-row head"><span>Hora</span><span>Cuenta</span><span>Forma de pago</span><span>Total</span></div>
+      <DataTable title="Cobros del turno" columns={['Hora', 'Cuenta', 'Forma de pago', 'Total']}>
         {r.sales.map((s) => (
           <div key={s.id} className={'tx-row' + (s.status === 'anulada' ? ' voided' : '')}>
             <span className="panel-sub">{fmtTime(s.ts)}</span>
@@ -109,7 +105,7 @@ export default function Reporte({ go }) {
             <strong>{fmt(s.grand)}</strong>
           </div>
         ))}
-      </div>
+      </DataTable>
     </div>
   );
 }

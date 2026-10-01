@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import KpiCard from '../../components/KpiCard.jsx';
+import DataTable from '../../components/DataTable.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DENOMINATIONS } from '../../data.js';
@@ -65,10 +67,7 @@ export default function Caja() {
               ['Salidas', report.cash.salidas],
               ['Efectivo esperado', report.cash.expected],
             ].map(([l, v], i) => (
-              <div key={l} className={'card kpi' + (i === 4 ? ' dark' : '')}>
-                <div className="card-label">{l}</div>
-                <div className="kpi-value">{fmt(v)}</div>
-              </div>
+              <KpiCard key={l} label={l} value={fmt(v)} tone={i === 4 ? 'dark' : undefined} />
             ))}
           </div>
 
@@ -79,8 +78,7 @@ export default function Caja() {
                 <div key={m.key} className="row text-md"><span>{m.label} <span className="panel-sub">· {m.count}</span></span><strong>{fmt(m.amount)}</strong></div>
               ))}
             </div>
-            <div className="card tx-card">
-              <div className="card-label">Movimientos de efectivo</div>
+            <DataTable title="Movimientos de efectivo">
               {shift.movements.map((m) => (
                 <div key={m.id} className="tx-row voids">
                   <span className="panel-sub">{fmtTime(m.ts)}</span>
@@ -90,14 +88,12 @@ export default function Caja() {
                 </div>
               ))}
               {!shift.movements.length && <div className="panel-sub">Sin movimientos.</div>}
-            </div>
+            </DataTable>
           </div>
         </>
       )}
 
-      <div className="card tx-card">
-        <div className="card-label">Cierres anteriores</div>
-        <div className="tx-row head shifts"><span>Apertura</span><span>Cierre</span><span>Cerró</span><span>Esperado</span><span>Contado</span><span>Diferencia</span><span /></div>
+      <DataTable title="Cierres anteriores" variant="shifts" columns={['Apertura', 'Cierre', 'Cerró', 'Esperado', 'Contado', 'Diferencia', '']}>
         {state.shiftHistory.map((s) => (
           <div key={s.id} className="tx-row shifts">
             <span>{fmtDateTime(s.openedAt)}</span>
@@ -110,7 +106,7 @@ export default function Caja() {
           </div>
         ))}
         {!state.shiftHistory.length && <div className="panel-sub">Aún no hay cierres.</div>}
-      </div>
+      </DataTable>
 
       {movement && (
         <MovementModal type={movement} onClose={() => setMovement(null)}

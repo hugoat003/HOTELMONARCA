@@ -1,3 +1,5 @@
+import Tabs from '../../components/Tabs.jsx';
+import DataTable from '../../components/DataTable.jsx';
 import { useRef, useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
@@ -14,9 +16,7 @@ export default function Admin() {
   const [tab, setTab] = useState('menu');
   return (
     <div className="page" style={{ gap: 20, maxWidth: 1100 }}>
-      <div className="tabs">
-        {TABS.map(([k, l]) => <button key={k} className={'tab' + (tab === k ? ' active' : '')} onClick={() => setTab(k)}>{l}</button>)}
-      </div>
+      <Tabs tabs={TABS} value={tab} onChange={setTab} />
       {tab === 'menu' && <MenuTab />}
       {tab === 'mesas' && <MesasTab />}
       {tab === 'habitaciones' && <HabitacionesTab />}
@@ -76,8 +76,7 @@ function MenuTab() {
           <button className="btn btn-primary small" onClick={() => setEdit({ id: uid('m'), name: '', cat: filter === 'Todos' ? state.categories[0] : filter, price: '', active: true, isNew: true })}>+ Platillo</button>
         </div>
       </div>
-      <div className="card tx-card">
-        <div className="tx-row head admin-menu"><span>Platillo</span><span>Categoría</span><span>Precio</span><span>Disponible</span><span /></div>
+      <DataTable variant="admin-menu" columns={['Platillo', 'Categoría', 'Precio', 'Disponible', '']}>
         {items.map((m) => (
           <div key={m.id} className="tx-row admin-menu">
             <span>{m.name}</span>
@@ -90,7 +89,7 @@ function MenuTab() {
             </span>
           </div>
         ))}
-      </div>
+      </DataTable>
 
       {edit && (
         <FormModal title={edit.isNew ? 'Nuevo platillo' : 'Editar platillo'} initial={edit} onClose={() => setEdit(null)}
@@ -140,21 +139,19 @@ function HabitacionesTab() {
       <div className="row"><span className="card-label">Tipos y tarifas</span>
         <button className="btn small" onClick={() => setEditType({ id: uid('t'), name: '', rate: '', monthlyRate: '', isNew: true })}>+ Tipo</button>
       </div>
-      <div className="card tx-card">
-        <div className="tx-row head admin-types"><span>Tipo</span><span>Por noche / mensual (sin impuestos)</span><span>Habitaciones</span><span /></div>
+      <DataTable variant="admin-types" columns={['Tipo', 'Por noche / mensual (sin impuestos)', 'Habitaciones', '']}>
         {state.roomTypes.map((t) => (
           <div key={t.id} className="tx-row admin-types">
             <strong>{t.name}</strong><span>{fmt(t.rate)} / {fmt(t.monthlyRate || 0)}</span><span className="panel-sub">{state.rooms.filter((r) => r.typeId === t.id).map((r) => r.n).join(', ') || '—'}</span>
             <span className="row-actions"><button className="link" onClick={() => setEditType({ ...t, rate: String(t.rate), monthlyRate: String(t.monthlyRate || '') })}>Editar</button></span>
           </div>
         ))}
-      </div>
+      </DataTable>
 
       <div className="row"><span className="card-label">Habitaciones</span>
         <button className="btn btn-primary small" onClick={() => setEditRoom({ n: '', typeId: state.roomTypes[0]?.id, hk: 'limpia', isNew: true })}>+ Habitación</button>
       </div>
-      <div className="card tx-card">
-        <div className="tx-row head admin-types"><span>Número</span><span>Tipo</span><span>Piso</span><span /></div>
+      <DataTable variant="admin-types" columns={['Número', 'Tipo', 'Piso', '']}>
         {state.rooms.map((r) => (
           <div key={r.n} className="tx-row admin-types">
             <strong>{r.n}</strong><span>{state.roomTypes.find((t) => t.id === r.typeId)?.name}</span><span className="panel-sub">Piso {r.n[0]}</span>
@@ -167,7 +164,7 @@ function HabitacionesTab() {
             </span>
           </div>
         ))}
-      </div>
+      </DataTable>
 
       {editType && (
         <FormModal title={editType.isNew ? 'Nuevo tipo' : 'Editar tipo'} initial={editType} onClose={() => setEditType(null)}
@@ -202,8 +199,7 @@ function EventosTab() {
       <div className="row"><span className="card-label">Salones</span>
         <button className="btn small" onClick={() => setVenue({ id: uid('v'), name: '', capacity: '', price: '', isNew: true })}>+ Salón</button>
       </div>
-      <div className="card tx-card">
-        <div className="tx-row head admin-types"><span>Salón</span><span>Renta (solo sin menú del hotel)</span><span>Capacidad</span><span /></div>
+      <DataTable variant="admin-types" columns={['Salón', 'Renta (solo sin menú del hotel)', 'Capacidad', '']}>
         {state.venues.map((v) => (
           <div key={v.id} className="tx-row admin-types">
             <strong>{v.name}</strong><span>{fmt(v.price)}</span><span className="panel-sub">{v.capacity} personas</span>
@@ -214,13 +210,12 @@ function EventosTab() {
             </span>
           </div>
         ))}
-      </div>
+      </DataTable>
 
       <div className="row"><span className="card-label">Menús y paquetes de eventos</span>
         <button className="btn btn-primary small" onClick={() => setMenu({ id: uid('em'), name: '', unit: 'persona', price: '', description: '', isNew: true })}>+ Menú o paquete</button>
       </div>
-      <div className="card tx-card">
-        <div className="tx-row head admin-menu"><span>Nombre</span><span>Incluye</span><span>Precio</span><span>Cobro</span><span /></div>
+      <DataTable variant="admin-menu" columns={['Nombre', 'Incluye', 'Precio', 'Cobro', '']}>
         {state.eventMenus.map((m) => (
           <div key={m.id} className="tx-row admin-menu">
             <strong>{m.name}</strong><span className="panel-sub">{m.description}</span><strong>{fmt(m.price)}</strong><span>{EVENT_UNITS[m.unit]}</span>
@@ -231,7 +226,7 @@ function EventosTab() {
             </span>
           </div>
         ))}
-      </div>
+      </DataTable>
 
       {venue && (
         <FormModal title={venue.isNew ? 'Nuevo salón' : 'Editar salón'} initial={venue} onClose={() => setVenue(null)}
@@ -263,8 +258,7 @@ function UsuariosTab() {
       <div className="row"><span className="panel-sub">Cada usuario entra con su PIN de 4 dígitos. El rol define qué pantallas ve.</span>
         <button className="btn btn-primary small" onClick={() => setEdit({ id: uid('u'), name: '', role: 'mesero', pin: '', active: true, isNew: true })}>+ Usuario</button>
       </div>
-      <div className="card tx-card">
-        <div className="tx-row head admin-users"><span>Nombre</span><span>Rol</span><span>PIN</span><span>Activo</span><span /></div>
+      <DataTable variant="admin-users" columns={['Nombre', 'Rol', 'PIN', 'Activo', '']}>
         {state.users.map((u) => (
           <div key={u.id} className="tx-row admin-users">
             <strong>{u.name}{u.id === user.id && <span className="tag">Tú</span>}</strong>
@@ -277,7 +271,7 @@ function UsuariosTab() {
             </span>
           </div>
         ))}
-      </div>
+      </DataTable>
       {edit && (
         <FormModal title={edit.isNew ? 'Nuevo usuario' : 'Editar usuario'} initial={edit} onClose={() => setEdit(null)}
           fields={[

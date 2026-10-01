@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DataTable from '../../components/DataTable.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { RES_STATUS } from '../../data.js';
 import { addDays, fmtDate, nightsBetween, today } from '../../lib/dates.js';
@@ -99,15 +100,14 @@ export default function Reservas() {
         )}
 
         {list && (
-          <div className="card tx-card">
-            <div className="tx-row head res"><span>Hab.</span><span>Huésped</span><span>Entrada</span><span>Salida</span><span>Canal</span><span>Estado</span></div>
+          <DataTable variant="res" columns={['Hab.', 'Huésped', 'Entrada', 'Salida', 'Canal', 'Estado']}>
             {upcoming.map((r) => (
               <button key={r.id} className={'tx-row res list-row' + (selId === r.id ? ' selected' : '')} onClick={() => setSelId(r.id)}>
                 <strong>{r.roomN}</strong><span>{r.guest.name}</span><span>{fmtDate(r.checkIn)}</span><span>{fmtDate(r.checkOut)}</span>
                 <span className="panel-sub">{r.channel}{r.rateType === 'mensual' ? ' · mensual' : ''}</span><span>{RES_STATUS[r.status]}</span>
               </button>
             ))}
-          </div>
+          </DataTable>
         )}
       </div>
 

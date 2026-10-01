@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Field } from '../../components/ui/Modal.jsx';
 import TableMap from '../../components/TableMap.jsx';
+import Tabs from '../../components/Tabs.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { uid } from '../../lib/dates.js';
 import { clampPos, freeSpot, MAP_H, MAP_W, placed, SHAPES, sizeFor } from '../../lib/tablemap.js';
@@ -48,8 +49,7 @@ export default function MapEditor({ onDone }) {
     <div className="map-editor">
       <div className="map-editor-main">
         <div className="row items-center gap-12">
-          <div className="tabs grow">
-            {zones.map((z) => <button key={z} className={'tab' + (zone === z ? ' active' : '')} onClick={() => { setZone(z); setSel(null); }}>{z}</button>)}
+          <Tabs className="grow" tabs={(zones.includes(zone) ? zones : [...zones, zone]).map((z) => [z, z])} value={zone} onChange={(z) => { setZone(z); setSel(null); }}>
             {newZone === null
               ? <button className="tab" onClick={() => setNewZone('')}>+ Zona</button>
               : (
@@ -59,7 +59,7 @@ export default function MapEditor({ onDone }) {
                   <button className="btn small" disabled={!newZone.trim()} onClick={() => { setZone(newZone.trim()); setNewZone(null); }}>Crear</button>
                 </span>
               )}
-          </div>
+          </Tabs>
           <div className="chips">
             <button className="btn small" onClick={addDecor}>+ Elemento</button>
             <button className="btn btn-primary small" onClick={addTable}>+ Mesa</button>

@@ -482,3 +482,4 @@ button.pill { cursor: pointer; font-weight: 600; font-family: inherit; color: va
 .gap-16 { gap: 16px; }
 .gap-18 { gap: 18px; }
 .gap-20 { gap: 20px; }
+.kpi-button { text-align: left; font: inherit; color: inherit; } .kpi-button:hover { border-color: var(--ink); }

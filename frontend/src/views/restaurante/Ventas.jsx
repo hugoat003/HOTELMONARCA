@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DataTable from '../../components/DataTable.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { METHOD_LABELS } from '../../data.js';
@@ -47,8 +48,7 @@ export default function Ventas() {
 
       {scope === 'turno' && !state.shift && <div className="note-box">No hay un turno de caja abierto.</div>}
 
-      <div className="card tx-card">
-        <div className="tx-row head sales"><span>No.</span><span>Hora</span><span>Cuenta</span><span>Forma de pago</span><span>Cajero</span><span>Total</span><span /></div>
+      <DataTable variant="sales" columns={['No.', 'Hora', 'Cuenta', 'Forma de pago', 'Cajero', 'Total', '']}>
         {sales.map((s) => (
           <div key={s.id} className={'tx-row sales' + (s.status === 'anulada' ? ' voided' : '')}>
             <span className="panel-sub">#{s.number}</span>
@@ -65,11 +65,10 @@ export default function Ventas() {
           </div>
         ))}
         {!sales.length && <div className="panel-sub pad-12">Sin cobros todavía.</div>}
-      </div>
+      </DataTable>
 
       {voids.length > 0 && (
-        <div className="card tx-card">
-          <div className="card-label">Platillos anulados</div>
+        <DataTable title="Platillos anulados">
           {voids.map((v) => (
             <div key={v.id} className="tx-row voids">
               <span className="panel-sub">{fmtTime(v.ts)}</span>
@@ -78,7 +77,7 @@ export default function Ventas() {
               <strong>{fmt(v.amount)}</strong>
             </div>
           ))}
-        </div>
+        </DataTable>
       )}
 
       {voiding && (
