@@ -8,6 +8,7 @@ import { placed } from '../../lib/tablemap.js';
 import { A, orderLabel } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import MapEditor from './MapEditor.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 const firstName = (users, id) => (users.find((u) => u.id === id)?.name || '').split(' ')[0];
 const minutesNum = (ts) => Math.max(0, Math.round((Date.now() - ts) / 60000));
@@ -25,7 +26,8 @@ export default function Mesas({ go }) {
   const { state, user, fmt, update } = useStore();
   const [opening, setOpening] = useState(null); // mesa a abrir
   const [takeout, setTakeout] = useState(false);
-  const [mode, setMode] = useState('mapa'); // 'mapa' | 'tarjetas' | 'editar'
+  const [savedMode, setMode] = usePersisted('mesas.vista', 'mapa'); // 'mapa' | 'tarjetas' | 'editar'
+  const mode = savedMode === 'editar' && user.role !== 'gerente' ? 'mapa' : savedMode;
   const [, tick] = useState(0);
 
   // Refresca los minutos de las cuentas abiertas

@@ -10,6 +10,9 @@ test('salida de efectivo, cierre con arqueo y cobro bloqueado con caja cerrada',
   await modalClick(page, 'Registrar');
 
   await page.getByRole('button', { name: 'Cerrar turno' }).click();
+  // Hay cuentas abiertas: avisa antes de cerrar
+  await expect(page.locator('.modal')).toContainText(/Quedan 4 cuentas sin cobrar/);
+  await modalClick(page, 'Cerrar de todos modos');
   await page.getByRole('button', { name: /Llenar con el monto esperado/ }).click();
   await modalClick(page, 'Cerrar turno');
   await expect(page.locator('.print-doc')).toContainText('Reporte Diario de Producción');

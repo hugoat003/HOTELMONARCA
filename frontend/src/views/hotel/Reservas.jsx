@@ -8,6 +8,7 @@ import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import ReservaForm from './ReservaForm.jsx';
 import ReservaPanel from './ReservaPanel.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 const DAYS = 14;
 
@@ -16,9 +17,9 @@ export default function Reservas() {
   const ui = useUI();
   const d0 = today();
   const [start, setStart] = useState(addDays(d0, -1));
-  const [selId, setSelId] = useState(null);
+  const [selId, setSelId] = usePersisted('reservas.seleccion', null);
   const [form, setForm] = useState(null); // { roomN, checkIn }
-  const [list, setList] = useState(false);
+  const [list, setList] = usePersisted('reservas.lista', false);
 
   const days = Array.from({ length: DAYS }, (_, i) => addDays(start, i));
   const end = addDays(start, DAYS);

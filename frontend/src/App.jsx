@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { UIProvider, useUI } from './components/ui/UIProvider.jsx';
 import { NAV, ROLE_LABELS, ROLES, TITLES } from './data.js';
 import { fmtLongDate, today } from './lib/dates.js';
@@ -19,6 +20,7 @@ import Login from './views/Login.jsx';
 import Mesas from './views/restaurante/Mesas.jsx';
 import Pedido from './views/restaurante/Pedido.jsx';
 import Ventas from './views/restaurante/Ventas.jsx';
+import { usePersisted } from './store/usePersisted.js';
 
 export default function App() {
   return (
@@ -79,12 +81,40 @@ function PhoneShell() {
   );
 }
 
+// Cierra la sesión tras `minutes` sin tocar la pantalla (0 = nunca).
+// Las cuentas y pedidos no se pierden: viven en el store.
+function useIdleLock(minutes, onLock) {
+  const lockRef = useRef(onLock);
+  lockRef.current = onLock;
+  useEffect(() => {
+    if (!minutes) return;
+    let timer;
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => lockRef.current(), minutes * 60 * 1000);
+    };
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [minutes]);
+}
+
 function Shell() {
   const { state, user, update } = useStore();
   const ui = useUI();
   const allowed = ROLES[user.role];
-  const [view, setView] = useState(allowed[0]);
-  const [orderId, setOrderId] = useState(null);
+  const [savedView, setView] = usePersisted('vista', allowed[0]);
+  const view = allowed.includes(savedView) ? savedView : allowed[0];
+  const [orderId, setOrderId] = usePersisted('pedido.orden', null);
+
+  useIdleLock(state.config.lockMinutes ?? 5, () => {
+    update((d) => A.logout(d));
+    ui.notify('Sesión cerrada por inactividad');
+  });
 
   const go = (v, params = {}) => {
     if (!allowed.includes(v)) return;
@@ -158,19 +188,21 @@ function Shell() {
         </header>
 
         <div className="content">
-          {view === 'dashboard' && <Dashboard go={go} />}
-          {view === 'mesas' && <Mesas go={go} />}
-          {view === 'pedido' && <Pedido orderId={orderId} go={go} />}
-          {view === 'ventas' && <Ventas />}
-          {view === 'inventario' && <Inventario />}
-          {view === 'eventos' && <Eventos />}
-          {view === 'habitaciones' && <Habitaciones />}
-          {view === 'reservas' && <Reservas />}
-          {view === 'limpieza' && <Limpieza />}
-          {view === 'tienda' && <Tienda />}
-          {view === 'caja' && <Caja />}
-          {view === 'reporte' && <Reporte go={go} />}
-          {view === 'admin' && <Admin />}
+          <ErrorBoundary key={view} onReset={() => setView(allowed[0])}>
+            {view === 'dashboard' && <Dashboard go={go} />}
+            {view === 'mesas' && <Mesas go={go} />}
+            {view === 'pedido' && <Pedido orderId={orderId} go={go} />}
+            {view === 'ventas' && <Ventas />}
+            {view === 'inventario' && <Inventario />}
+            {view === 'eventos' && <Eventos />}
+            {view === 'habitaciones' && <Habitaciones />}
+            {view === 'reservas' && <Reservas />}
+            {view === 'limpieza' && <Limpieza />}
+            {view === 'tienda' && <Tienda />}
+            {view === 'caja' && <Caja />}
+            {view === 'reporte' && <Reporte go={go} />}
+            {view === 'admin' && <Admin />}
+          </ErrorBoundary>
         </div>
       </main>
     </div>

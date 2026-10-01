@@ -8,14 +8,15 @@ import { ComandaDoc, PrecuentaDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A, orderLabel } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import Cobro from './Cobro.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 const VOID_REASONS = ['Error de captura', 'Cliente cambió de opinión', 'Platillo devuelto', 'Demora en cocina'];
 
 export default function Pedido({ orderId, go }) {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
-  const [cat, setCat] = useState('Todos');
-  const [search, setSearch] = useState('');
+  const [cat, setCat] = usePersisted('pedido.categoria', 'Todos');
+  const [search, setSearch] = usePersisted('pedido.busqueda', '');
   const [noteLine, setNoteLine] = useState(null);
   const [voidLine, setVoidLine] = useState(null);
   const [moving, setMoving] = useState(false);

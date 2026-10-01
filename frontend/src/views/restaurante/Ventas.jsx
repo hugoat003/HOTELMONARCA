@@ -8,20 +8,23 @@ import { sum } from '../../lib/money.js';
 import { TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 export default function Ventas() {
-  const { state, fmt, update } = useStore();
+  const { state, user, fmt, update } = useStore();
   const ui = useUI();
-  const [scope, setScope] = useState('turno');
+  const [scope, setScope] = usePersisted('ventas.alcance', 'turno');
+  // El mesero solo ve las cuentas que atendió; recepción y gerencia ven todo
+  const mine = user.role === 'mesero';
   const [voiding, setVoiding] = useState(null);
   const [reason, setReason] = useState('');
 
   const sales = state.sales
-    .filter((s) => scope === 'todas' || s.shiftId === state.shift?.id)
+    .filter((s) => (scope === 'todas' || s.shiftId === state.shift?.id) && (!mine || s.waiterId === user.id))
     .sort((a, b) => b.ts - a.ts);
   const ok = sales.filter((s) => s.status === 'ok');
   const voids = state.voids
-    .filter((v) => scope === 'todas' || v.shiftId === state.shift?.id)
+    .filter((v) => (scope === 'todas' || v.shiftId === state.shift?.id) && (!mine || v.userId === user.id))
     .sort((a, b) => b.ts - a.ts);
   const userName = (id) => state.users.find((u) => u.id === id)?.name || '—';
 
@@ -49,6 +52,7 @@ export default function Ventas() {
         <div className="header-stats">
           <span className="pill">{ok.length} cobros</span>
           <span className="pill">Total {fmt(sum(ok, (s) => s.grand))}</span>
+          {mine && <span className="pill">Tus propinas {fmt(sum(ok, (s) => s.tip))}</span>}
         </div>
       </div>
 

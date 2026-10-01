@@ -672,3 +672,10 @@ button.pill {
   background: #fbf1ec;
   border: 1px solid #c9876b;
 }
+.error-screen {
+  gap: 14px;
+  text-align: center;
+}
+.pinpad.locked .pin-keys button {
+  opacity: 0.35;
+}

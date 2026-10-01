@@ -9,13 +9,14 @@ import { qtyFmt, stockStatus } from '../../lib/inventory.js';
 import { sum } from '../../lib/money.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 export default function Inventario() {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
-  const [cat, setCat] = useState('Todas');
-  const [search, setSearch] = useState('');
-  const [onlyLow, setOnlyLow] = useState(false);
+  const [cat, setCat] = usePersisted('inventario.categoria', 'Todas');
+  const [search, setSearch] = usePersisted('inventario.busqueda', '');
+  const [onlyLow, setOnlyLow] = usePersisted('inventario.bajos', false);
   const [move, setMove] = useState(null); // { item, type }
   const [edit, setEdit] = useState(null);
 

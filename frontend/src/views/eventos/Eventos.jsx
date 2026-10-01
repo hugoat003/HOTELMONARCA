@@ -8,6 +8,7 @@ import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import Cobro, { AmountModal } from '../restaurante/Cobro.jsx';
 import EventoForm from './EventoForm.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 const FILTERS = [
   ['proximos', 'Próximos'],
@@ -21,8 +22,8 @@ const FILTERS = [
 export default function Eventos() {
   const { state, fmt, update } = useStore();
   const ui = useUI();
-  const [filter, setFilter] = useState('proximos');
-  const [selId, setSelId] = useState(null);
+  const [filter, setFilter] = usePersisted('eventos.filtro', 'proximos');
+  const [selId, setSelId] = usePersisted('eventos.seleccion', null);
   const [form, setForm] = useState(null); // null | 'new' | evento
 
   const d0 = today();

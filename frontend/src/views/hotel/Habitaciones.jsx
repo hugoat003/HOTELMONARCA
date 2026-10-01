@@ -7,11 +7,12 @@ import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import ReservaForm from './ReservaForm.jsx';
 import ReservaPanel from './ReservaPanel.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 export default function Habitaciones() {
   const { state, fmt, update } = useStore();
   const ui = useUI();
-  const [selRoom, setSelRoom] = useState(null);
+  const [selRoom, setSelRoom] = usePersisted('habitaciones.seleccion', null);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState(null); // { mode, roomN }
 

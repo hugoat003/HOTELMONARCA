@@ -753,6 +753,7 @@ export function seed() {
       iva: 12,
       inguat: 10,
       tipPct: 10,
+      lockMinutes: 5,
     },
     users: USERS,
     categories: CATEGORIES,

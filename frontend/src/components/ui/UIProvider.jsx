@@ -49,7 +49,7 @@ export function UIProvider({ children }) {
       {auth && (
         <Modal title="Autorización" onClose={() => setAuth(null)} width={380}>
           <div className="panel-sub text-md">{auth.label}. Ingresa el PIN de un gerente para continuar.</div>
-          <PinPad onSubmit={checkManagerPin} error="PIN de gerente inválido" />
+          <PinPad onSubmit={checkManagerPin} error="PIN de gerente inválido" guardKey="autorizacion" />
           <button className="btn btn-quiet" onClick={() => setAuth(null)}>
             Cancelar
           </button>

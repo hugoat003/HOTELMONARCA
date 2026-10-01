@@ -5,7 +5,7 @@ import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DENOMINATIONS } from '../../data.js';
 import { fmtDateTime, fmtTime } from '../../lib/dates.js';
-import { round2 } from '../../lib/money.js';
+import { linesTotal, round2 } from '../../lib/money.js';
 import { buildReport } from '../../lib/report.js';
 import { ReportDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
@@ -75,7 +75,21 @@ export default function Caja() {
               </button>
               <button
                 className="btn btn-primary"
-                onClick={() => ui.authorize('Cerrar el turno de caja', () => setArqueo(true))}
+                onClick={() => {
+                  const open = state.orders.filter((o) => o.lines.length);
+                  const start = () => ui.authorize('Cerrar el turno de caja', () => setArqueo(true));
+                  if (!open.length) return start();
+                  const amount = open.reduce((a, o) => a + linesTotal(o.lines), 0);
+                  ui.confirm(
+                    {
+                      title: 'Hay cuentas abiertas',
+                      message: `Quedan ${open.length} cuenta${open.length === 1 ? '' : 's'} sin cobrar por ${fmt(amount)}. Si cierras el turno, se cobrarán en el siguiente. ¿Cerrar de todos modos?`,
+                      confirmLabel: 'Cerrar de todos modos',
+                      danger: true,
+                    },
+                    start,
+                  );
+                }}
               >
                 Cerrar turno
               </button>

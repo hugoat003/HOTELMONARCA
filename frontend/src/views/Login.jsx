@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PinPad from '../components/ui/PinPad.jsx';
+import { DEMO } from '../config.js';
 import { ROLE_LABELS } from '../data.js';
 import { fmtLongDate } from '../lib/dates.js';
 import { A } from '../store/actions.js';
@@ -27,7 +28,7 @@ export default function Login() {
                 </button>
               ))}
             </div>
-            <div className="demo-hint">Demo · PIN: Gerente 1111 · Recepción 2222 · Juan 3333 · Ana 4444</div>
+            {DEMO && <div className="demo-hint">Demo · PIN: Gerente 1111 · Recepción 2222 · Juan 3333 · Ana 4444</div>}
           </>
         ) : (
           <>
@@ -36,6 +37,7 @@ export default function Login() {
               <div className="panel-sub">Ingresa tu PIN</div>
             </div>
             <PinPad
+              guardKey={'login:' + sel.id}
               onSubmit={(pin) => {
                 if (pin !== sel.pin) return false;
                 update((d) => A.login(d, sel.id));

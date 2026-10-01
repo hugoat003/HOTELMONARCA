@@ -12,9 +12,10 @@ import { TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import Cobro from '../restaurante/Cobro.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 export default function Tienda() {
-  const [tab, setTab] = useState('vender');
+  const [tab, setTab] = usePersisted('tienda.pestana', 'vender');
   return (
     <div className="page" style={{ gap: 18, height: '100%' }}>
       <Tabs
@@ -33,9 +34,9 @@ export default function Tienda() {
 function Vender() {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
-  const [cat, setCat] = useState('Todos');
+  const [cat, setCat] = usePersisted('tienda.categoria', 'Todos');
   const [search, setSearch] = useState('');
-  const [cart, setCart] = useState({}); // itemId -> cantidad
+  const [cart, setCart] = usePersisted('tienda.carrito', {}); // itemId -> cantidad
   const [paying, setPaying] = useState(false);
 
   const q = search.trim().toLowerCase();
@@ -194,8 +195,8 @@ function Vender() {
 function Existencias() {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
-  const [cat, setCat] = useState('Todas');
-  const [onlyLow, setOnlyLow] = useState(false);
+  const [cat, setCat] = usePersisted('tienda.existencias.categoria', 'Todas');
+  const [onlyLow, setOnlyLow] = usePersisted('tienda.existencias.bajos', false);
   const [move, setMove] = useState(null);
   const [edit, setEdit] = useState(null);
 

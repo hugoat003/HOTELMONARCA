@@ -1,14 +1,16 @@
-import Tabs from '../../components/Tabs.jsx';
-import DataTable from '../../components/DataTable.jsx';
 import { useRef, useState } from 'react';
+import DataTable from '../../components/DataTable.jsx';
+import Tabs from '../../components/Tabs.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
+import { DEMO } from '../../config.js';
 import { EVENT_UNITS, ROLE_LABELS } from '../../data.js';
 import { uid } from '../../lib/dates.js';
 import { isActiveRes } from '../../lib/hotel.js';
 import { A } from '../../store/actions.js';
 import { useStore, VERSION } from '../../store/store.jsx';
 import MapEditor from '../restaurante/MapEditor.jsx';
+import { usePersisted } from '../../store/usePersisted.js';
 
 const TABS = [
   ['menu', 'Menú'],
@@ -17,11 +19,11 @@ const TABS = [
   ['eventos', 'Eventos'],
   ['usuarios', 'Usuarios'],
   ['negocio', 'Negocio e impuestos'],
-  ['datos', 'Datos de demo'],
+  ['datos', DEMO ? 'Datos de demo' : 'Respaldo'],
 ];
 
 export default function Admin() {
-  const [tab, setTab] = useState('menu');
+  const [tab, setTab] = usePersisted('config.pestana', 'menu');
   return (
     <div className="page" style={{ gap: 20, maxWidth: 1100 }}>
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
@@ -88,7 +90,7 @@ function MenuTab() {
   const ui = useUI();
   const [edit, setEdit] = useState(null);
   const [catEdit, setCatEdit] = useState(null);
-  const [filter, setFilter] = useState('Todos');
+  const [filter, setFilter] = usePersisted('config.menu.categoria', 'Todos');
   const items = state.menu.filter((m) => filter === 'Todos' || m.cat === filter);
 
   return (
@@ -627,7 +629,7 @@ function UsuariosTab() {
 function NegocioTab() {
   const { state, update } = useStore();
   const ui = useUI();
-  const [c, setC] = useState(state.config);
+  const [c, setC] = useState({ lockMinutes: 5, ...state.config });
   const set = (k) => (e) => setC({ ...c, [k]: e.target.value });
   const save = () => {
     update((d) =>
@@ -636,6 +638,7 @@ function NegocioTab() {
         iva: parseFloat(c.iva) || 0,
         inguat: parseFloat(c.inguat) || 0,
         tipPct: parseFloat(c.tipPct) || 0,
+        lockMinutes: Math.max(0, parseInt(c.lockMinutes) || 0),
       }),
     );
     ui.notify('Configuración guardada');
@@ -674,6 +677,11 @@ function NegocioTab() {
         </Field>
         <Field label="Propina sugerida %">
           <input className="input" type="number" value={c.tipPct} onChange={set('tipPct')} />
+        </Field>
+      </div>
+      <div className="form-grid four">
+        <Field label="Bloquear tras" hint="minutos sin uso · 0 = nunca">
+          <input className="input" type="number" min="0" value={c.lockMinutes} onChange={set('lockMinutes')} />
         </Field>
       </div>
       <div className="panel-sub text-sm">
@@ -720,11 +728,12 @@ function DatosTab() {
     <div className="card" style={{ maxWidth: 760, gap: 18 }}>
       <div>
         <div className="report-title" style={{ fontSize: 20 }}>
-          Datos de la demostración
+          {DEMO ? 'Datos de la demostración' : 'Respaldo de datos'}
         </div>
         <div className="panel-sub text-md">
-          Todo se guarda en este navegador. Antes de presentar, restaura los datos de ejemplo para empezar con mesas,
-          reservas y ventas del día.
+          {DEMO
+            ? 'Todo se guarda en este navegador. Antes de presentar, restaura los datos de ejemplo para empezar con mesas, reservas y ventas del día.'
+            : 'Descarga una copia de toda la información o carga una copia anterior.'}
         </div>
       </div>
       <div className="kv">
@@ -745,23 +754,25 @@ function DatosTab() {
           Importar respaldo
         </button>
         <input ref={fileRef} type="file" accept="application/json" hidden onChange={importJson} />
-        <button
-          className="btn btn-primary btn-danger"
-          onClick={() =>
-            ui.confirm(
-              {
-                title: 'Restaurar datos de ejemplo',
-                message:
-                  'Se borran todos los cambios hechos en este navegador y se cargan los datos de ejemplo con fechas de hoy. Tendrás que volver a iniciar sesión.',
-                confirmLabel: 'Restaurar',
-                danger: true,
-              },
-              resetDemo,
-            )
-          }
-        >
-          Restaurar datos de ejemplo
-        </button>
+        {DEMO && (
+          <button
+            className="btn btn-primary btn-danger"
+            onClick={() =>
+              ui.confirm(
+                {
+                  title: 'Restaurar datos de ejemplo',
+                  message:
+                    'Se borran todos los cambios hechos en este navegador y se cargan los datos de ejemplo con fechas de hoy. Tendrás que volver a iniciar sesión.',
+                  confirmLabel: 'Restaurar',
+                  danger: true,
+                },
+                resetDemo,
+              )
+            }
+          >
+            Restaurar datos de ejemplo
+          </button>
+        )}
       </div>
     </div>
   );
