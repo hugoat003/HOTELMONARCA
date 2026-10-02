@@ -182,3 +182,69 @@ test('rentabilidad: costo y margen por platillo', async ({ page }) => {
   const s = await state(page);
   expect(s.menu.find((m) => m.name === 'Pepián de pollo').recipe.length).toBeGreaterThan(0);
 });
+
+test('revisión de la mañana: no-show con devolución y aviso de Booking', async ({ page }) => {
+  await fresh(page);
+  await patch(page, (s) => {
+    const y = new Date(Date.now() - 864e5).toLocaleDateString('sv-SE');
+    const t = new Date(Date.now() + 864e5).toLocaleDateString('sv-SE');
+    const base = {
+      adults: 2,
+      children: 0,
+      rateType: 'noche',
+      pricing: 'auto',
+      rate: 650,
+      status: 'reservada',
+      notes: '',
+      charges: [],
+    };
+    s.reservations.push(
+      {
+        ...base,
+        id: 'r_ns',
+        roomN: '102',
+        checkIn: y,
+        checkOut: t,
+        channel: 'Booking.com',
+        payments: [{ id: 'p_ns', ts: Date.now(), method: 'tarjeta', amount: 300, desc: 'Anticipo' }],
+        guest: { name: 'Hans Gruber', phone: '', email: '', doc: '', nationality: '' },
+      },
+      {
+        ...base,
+        id: 'r_late',
+        roomN: '301',
+        checkIn: y,
+        checkOut: t,
+        channel: 'Teléfono',
+        lateArrival: true,
+        payments: [],
+        guest: { name: 'Lucía Tarde', phone: '', email: '', doc: '', nationality: '' },
+      },
+    );
+  });
+  await login(page, 'Luis Recepción');
+  await nav(page, 'Caja');
+  const review = page.locator('.review');
+  await expect(review).toContainText('No llegaron · 2');
+  await expect(review.locator('.review-row', { hasText: 'Hans Gruber' })).toContainText(
+    'Repórtalo también en Booking.com',
+  );
+  await expect(review.locator('.review-row', { hasText: 'Lucía Tarde' })).toContainText('Avisó que llega tarde');
+
+  await review
+    .locator('.review-row', { hasText: 'Hans Gruber' })
+    .getByRole('button', { name: 'Marcar no-show' })
+    .click();
+  await page.getByText('Devolver', { exact: true }).click();
+  await modalClick(page, 'Marcar no-show');
+  await modalClick(page, 'Cerrar');
+  await expect(review).toContainText('No llegaron · 1');
+  const s = await state(page);
+  const r = s.reservations.find((x) => x.id === 'r_ns');
+  expect(r.status).toBe('noshow');
+  expect(r.payments.reduce((a, p) => a + p.amount, 0)).toBe(0);
+
+  // "Ver reserva" abre la reserva en la pantalla de Reservas
+  await review.locator('.review-row', { hasText: 'Lucía Tarde' }).getByRole('button', { name: 'Ver reserva' }).click();
+  await expect(page.locator('.side-panel')).toContainText('Avisó que llega tarde');
+});

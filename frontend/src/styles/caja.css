@@ -95,3 +95,26 @@
   background: #fbf1ec;
   color: #9b2c1f;
 }
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-color: var(--accent);
+}
+.review-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.review-row:last-child {
+  border-bottom: none;
+}
+.review-note {
+  display: block;
+  font-size: 13px;
+  color: #8a3a1b;
+  margin-top: 2px;
+}

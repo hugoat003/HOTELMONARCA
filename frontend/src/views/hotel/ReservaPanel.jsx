@@ -4,6 +4,7 @@ import { useUI } from '../../components/ui/UIProvider.jsx';
 import { EXTRA_CHARGES, METHOD_LABELS, RES_STATUS } from '../../data.js';
 import { fmtDate, fmtTime, nightsBetween, today, uid } from '../../lib/dates.js';
 import { folio as calcFolio, groupText } from '../../lib/hotel.js';
+import { refundSale } from '../../lib/sales.js';
 import { FolioDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
@@ -70,33 +71,13 @@ export default function ReservaPanel({ res, onRoomChanged }) {
     ui.preview('Recibo', <TicketDoc sale={sale} />);
   };
 
-  // Venta de devolución (monto negativo): sale de caja y baja lo pagado en el folio
-  const refundSale = (amount, method, name) => ({
-    id: uid('s'),
-    number: state.counters.doc + 1,
-    kind: 'hotel',
-    docType: 'devolucion',
-    ts: Date.now(),
-    ref: label,
-    resId: res.id,
-    lines: [{ name, qty: 1, price: -amount, cat: 'Hospedaje' }],
-    subtotal: -amount,
-    total: -amount,
-    tip: 0,
-    grand: -amount,
-    discount: null,
-    payments: [{ method, amount: -amount }],
-    change: 0,
-    invoice: null,
-    cashierId: user.id,
-    shiftId: state.shift?.id,
-    status: 'ok',
-  });
+  const makeRefund = (amount, method, name) =>
+    refundSale(state, user, { kind: 'hotel', ref: label, resId: res.id, amount, method, name });
 
   const closeReservation = ({ reason, refund }) => {
     if (refund && !state.shift) return ui.notify('Abre el turno de caja para registrar la devolución.');
     const status = closing === 'noshow' ? 'noshow' : 'cancelada';
-    const sale = refund && refundSale(refund.amount, refund.method, 'Devolución de anticipo');
+    const sale = refund && makeRefund(refund.amount, refund.method, 'Devolución de anticipo');
     update((d) => A.closeReservation(d, res.id, { status, reason, refund: sale, userId: user.id }));
     setClosing(null);
     ui.notify(status === 'noshow' ? 'Reserva marcada como no-show' : 'Reserva cancelada');
@@ -128,7 +109,7 @@ export default function ReservaPanel({ res, onRoomChanged }) {
         ...r,
       });
     }
-    const back = refund ? refundSale(-f.balance, refund.method, 'Devolución de saldo a favor') : null;
+    const back = refund ? makeRefund(-f.balance, refund.method, 'Devolución de saldo a favor') : null;
     if (back && sale) back.number = sale.number + 1;
     update((d) => A.checkOutWith(d, res.id, sale, { checkOut: checkout.early ? d0 : undefined, refund: back }));
     setCheckout(false);
@@ -191,6 +172,12 @@ export default function ReservaPanel({ res, onRoomChanged }) {
         </strong>
         <span>Canal</span>
         <strong>{res.channel}</strong>
+        {res.lateArrival && res.status === 'reservada' && (
+          <>
+            <span>Llegada</span>
+            <strong>Avisó que llega tarde</strong>
+          </>
+        )}
         <span>Teléfono</span>
         <strong>{res.guest.phone || '—'}</strong>
         <span>Documento</span>

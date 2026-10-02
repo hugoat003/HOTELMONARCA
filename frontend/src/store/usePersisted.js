@@ -23,3 +23,12 @@ export function usePersisted(key, initial) {
   }, [storageKey, value]);
   return [value, setValue];
 }
+
+// Deja preparada la selección de otra pantalla antes de navegar a ella (ej. abrir una reserva en Reservas)
+export function setPersisted(userId, key, value) {
+  try {
+    localStorage.setItem(`monarca-ui:${userId || 'anon'}:${key}`, JSON.stringify(value));
+  } catch {
+    /* sin almacenamiento: la otra pantalla abre sin selección */
+  }
+}

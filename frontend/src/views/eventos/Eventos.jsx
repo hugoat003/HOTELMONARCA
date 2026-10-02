@@ -3,6 +3,7 @@ import { useUI } from '../../components/ui/UIProvider.jsx';
 import { EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../../data.js';
 import { dateOf, fmtDate, fmtTime, nightsBetween, today, uid } from '../../lib/dates.js';
 import { eventTotals, isActiveEvent } from '../../lib/events.js';
+import { refundSale } from '../../lib/sales.js';
 import { BeoDoc, EventDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
@@ -250,27 +251,16 @@ function EventPanel({ ev, onEdit }) {
   // Cancelación con anticipo: se retiene o se devuelve (sale de caja)
   const cancelEvent = ({ reason, refund }) => {
     if (refund && !state.shift) return ui.notify('Abre el turno de caja para registrar la devolución.');
-    const sale = refund && {
-      id: uid('s'),
-      number: state.counters.doc + 1,
-      kind: 'evento',
-      docType: 'devolucion',
-      ts: Date.now(),
-      ref: ev.name,
-      eventId: ev.id,
-      lines: [{ name: 'Devolución de anticipo', qty: 1, price: -refund.amount, cat: 'Eventos' }],
-      subtotal: -refund.amount,
-      total: -refund.amount,
-      tip: 0,
-      grand: -refund.amount,
-      discount: null,
-      payments: [{ method: refund.method, amount: -refund.amount }],
-      change: 0,
-      invoice: null,
-      cashierId: user.id,
-      shiftId: state.shift?.id,
-      status: 'ok',
-    };
+    const sale =
+      refund &&
+      refundSale(state, user, {
+        kind: 'evento',
+        ref: ev.name,
+        eventId: ev.id,
+        amount: refund.amount,
+        method: refund.method,
+        name: 'Devolución de anticipo',
+      });
     update((d) => A.cancelEvent(d, ev.id, { reason, refund: sale }));
     setCancelling(false);
     ui.notify('Evento cancelado');

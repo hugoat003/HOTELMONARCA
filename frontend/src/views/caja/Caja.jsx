@@ -6,18 +6,20 @@ import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DEMO } from '../../config.js';
 import { DENOMINATIONS } from '../../data.js';
 import { fmtDateTime, fmtTime } from '../../lib/dates.js';
-import { linesTotal, round2 } from '../../lib/money.js';
+import { round2 } from '../../lib/money.js';
 import { buildReport } from '../../lib/report.js';
 import { ReportDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
+import { ClosingReview, MorningReview } from './Revision.jsx';
 
-export default function Caja() {
+export default function Caja({ go }) {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
   const [float, setFloat] = useState('1000');
   const [movement, setMovement] = useState(null); // 'entrada' | 'salida'
   const [arqueo, setArqueo] = useState(false);
+  const [review, setReview] = useState(false); // revisión antes del cierre
   const shift = state.shift;
   const manager = user.role === 'gerente';
   const userName = (id) => state.users.find((u) => u.id === id)?.name || '—';
@@ -62,6 +64,8 @@ export default function Caja() {
         </div>
       )}
 
+      {shift && <MorningReview go={go} />}
+
       {shift && (
         <>
           <div className="report-head">
@@ -78,24 +82,7 @@ export default function Caja() {
               <button className="btn" onClick={() => setMovement('salida')}>
                 Salida de efectivo
               </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  const open = state.orders.filter((o) => o.lines.length);
-                  const start = () => ui.authorize('Cerrar el turno de caja', (mgr) => setArqueo({ authId: mgr.id }));
-                  if (!open.length) return start();
-                  const amount = open.reduce((a, o) => a + linesTotal(o.lines), 0);
-                  ui.confirm(
-                    {
-                      title: 'Hay cuentas abiertas',
-                      message: `Quedan ${open.length} cuenta${open.length === 1 ? '' : 's'} sin cobrar por ${fmt(amount)}. Si cierras el turno, se cobrarán en el siguiente. ¿Cerrar de todos modos?`,
-                      confirmLabel: 'Cerrar de todos modos',
-                      danger: true,
-                    },
-                    start,
-                  );
-                }}
-              >
+              <button className="btn btn-primary" onClick={() => setReview(true)}>
                 Cerrar turno
               </button>
             </div>
@@ -187,6 +174,16 @@ export default function Caja() {
             update((d) => A.addMovement(d, { type: movement, amount, reason, userId: user.id }));
             setMovement(null);
             ui.notify(`${movement === 'entrada' ? 'Entrada' : 'Salida'} registrada · ${fmt(amount)}`);
+          }}
+        />
+      )}
+      {review && (
+        <ClosingReview
+          go={go}
+          onClose={() => setReview(false)}
+          onContinue={() => {
+            setReview(false);
+            ui.authorize('Cerrar el turno de caja', (mgr) => setArqueo({ authId: mgr.id }));
           }}
         />
       )}

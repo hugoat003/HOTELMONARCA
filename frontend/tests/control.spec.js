@@ -79,7 +79,7 @@ test('cierre ciego: la diferencia se ve al confirmar el conteo y se explica', as
   // Recepción no ve el efectivo esperado
   await expect(page.locator('.kpi', { hasText: 'Efectivo esperado' })).toContainText('Lo ve gerencia');
   await page.getByRole('button', { name: 'Cerrar turno' }).click();
-  await modalClick(page, 'Cerrar de todos modos');
+  await modalClick(page, 'Continuar al arqueo');
   await typePin(page, '1111');
   await page.locator('.denom', { hasText: 'Q 100' }).locator('input').fill('3');
   await modalClick(page, /Confirmar conteo/);

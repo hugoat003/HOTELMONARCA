@@ -224,7 +224,7 @@ function Shell() {
             {view === 'huespedes' && <Huespedes />}
             {view === 'limpieza' && <Limpieza />}
             {view === 'tienda' && <Tienda />}
-            {view === 'caja' && <Caja />}
+            {view === 'caja' && <Caja go={go} />}
             {view === 'reporte' && <Reporte go={go} />}
             {view === 'bitacora' && <Bitacora />}
             {view === 'admin' && <Admin />}

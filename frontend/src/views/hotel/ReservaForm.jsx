@@ -324,9 +324,15 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
             className="input"
             value={f.notes}
             onChange={(e) => set({ notes: e.target.value })}
-            placeholder="Ej. llegada tarde, cama extra, aniversario"
+            placeholder="Ej. cama extra, aniversario"
           />
         </Field>
+        {mode !== 'walkin' && mode !== 'checkin' && (
+          <label className="check span-3">
+            <input type="checkbox" checked={!!f.lateArrival} onChange={(e) => set({ lateArrival: e.target.checked })} />
+            <span>Llega tarde (de noche o después de medianoche): no marcar no-show sin confirmar</span>
+          </label>
+        )}
       </div>
       {docOwner && (
         <div className="note-box">

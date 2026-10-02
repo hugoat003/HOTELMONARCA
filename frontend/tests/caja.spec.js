@@ -10,9 +10,9 @@ test('salida de efectivo, cierre con arqueo y cobro bloqueado con caja cerrada',
   await modalClick(page, 'Registrar');
 
   await page.getByRole('button', { name: 'Cerrar turno' }).click();
-  // Hay cuentas abiertas: avisa antes de cerrar
-  await expect(page.locator('.modal')).toContainText(/Quedan 4 cuentas sin cobrar/);
-  await modalClick(page, 'Cerrar de todos modos');
+  // Revisión antes del cierre: avisa de las cuentas abiertas
+  await expect(page.locator('.modal')).toContainText('Cuentas abiertas · 4');
+  await modalClick(page, 'Continuar al arqueo');
   // Cierre ciego: el esperado no se ve hasta confirmar el conteo
   await expect(page.locator('.modal')).not.toContainText('Esperado');
   await page.getByRole('button', { name: /Llenar con el monto esperado/ }).click();

@@ -30,7 +30,12 @@ export function buildReminders(state, fmt) {
   // Hotel
   const res = state.reservations;
   for (const r of res.filter((x) => x.status === 'reservada' && x.checkIn < d0))
-    add('Hotel', 'high', `Hab. ${r.roomN} · ${r.guest.name}: no llegó (${fmtDate(r.checkIn)}). ¿No-show?`, 'reservas');
+    add(
+      'Hotel',
+      'high',
+      `Hab. ${r.roomN} · ${r.guest.name}: no llegó (${fmtDate(r.checkIn)})${r.lateArrival ? ', avisó que llegaba tarde' : ''}. ¿No-show?`,
+      'reservas',
+    );
   for (const r of res.filter((x) => x.status === 'hospedado' && x.checkOut <= d0)) {
     const f = folio(r, state);
     add(
