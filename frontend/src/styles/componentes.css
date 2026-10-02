@@ -722,3 +722,8 @@ button.pill {
 .suggest-item:hover {
   background: var(--surface);
 }
+.btn-accent {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+}

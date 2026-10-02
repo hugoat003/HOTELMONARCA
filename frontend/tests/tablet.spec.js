@@ -3,7 +3,6 @@ import { expect, fresh, login, test } from './helpers.js';
 const SCREENS = [
   'Resumen',
   'Mesas',
-  'Pedido',
   'Ventas',
   'Inventario',
   'Habitaciones',
@@ -14,6 +13,7 @@ const SCREENS = [
   'Eventos',
   'Caja',
   'Reporte / RDP',
+  'Bitácora',
   'Configuración',
 ];
 

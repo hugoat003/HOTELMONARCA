@@ -230,14 +230,21 @@ function Existencias() {
   const outOfStock = low.filter((i) => i.stock <= 0).length;
 
   const doMove = (type, qty, note) => {
-    const run = () => {
-      update((d) => A.invMove(d, { itemId: move.item.id, type, qty, note, userId: user.id }, 'shopItems', 'shopMoves'));
+    const run = (mgr) => {
+      update((d) =>
+        A.invMove(
+          d,
+          { itemId: move.item.id, type, qty, note, userId: user.id, authId: mgr?.id },
+          'shopItems',
+          'shopMoves',
+        ),
+      );
       setMove(null);
       ui.notify(`${SHOP_MOVE_LABELS[type]} registrada · ${move.item.name}`);
     };
-    if ((type === 'merma' || type === 'ajuste') && user.role !== 'gerente')
-      ui.authorize(`${SHOP_MOVE_LABELS[type]} de ${move.item.name}`, run);
-    else run();
+    // Recepción solo registra entradas; lo demás lo autoriza gerencia
+    if (type === 'entrada') run();
+    else ui.authorize(`${SHOP_MOVE_LABELS[type]} de ${move.item.name}`, run);
   };
 
   return (
@@ -280,18 +287,20 @@ function Existencias() {
           <button
             className="btn btn-primary small"
             onClick={() =>
-              setEdit({
-                id: uid('t'),
-                name: '',
-                cat: cat === 'Todas' ? SHOP_CATS[0] : cat,
-                unit: 'unidad',
-                stock: '0',
-                min: '',
-                cost: '',
-                price: '',
-                active: true,
-                isNew: true,
-              })
+              ui.authorize('Agregar un producto a la tienda', () =>
+                setEdit({
+                  id: uid('t'),
+                  name: '',
+                  cat: cat === 'Todas' ? SHOP_CATS[0] : cat,
+                  unit: 'unidad',
+                  stock: '0',
+                  min: '',
+                  cost: '',
+                  price: '',
+                  active: true,
+                  isNew: true,
+                }),
+              )
             }
           >
             + Producto
@@ -328,13 +337,16 @@ function Existencias() {
                 <button
                   className="link"
                   onClick={() =>
-                    setEdit({
-                      ...it,
-                      stock: String(it.stock),
-                      min: String(it.min),
-                      cost: String(it.cost),
-                      price: String(it.price),
-                    })
+                    ui.authorize(`Editar ${it.name}`, (mgr) =>
+                      setEdit({
+                        ...it,
+                        stock: String(it.stock),
+                        min: String(it.min),
+                        cost: String(it.cost),
+                        price: String(it.price),
+                        authId: mgr.id,
+                      }),
+                    )
                   }
                 >
                   Editar
@@ -374,16 +386,22 @@ function Existencias() {
               },
             )
           }
-          onSave={({ isNew, ...v }) => {
+          onSave={({ isNew, authId, ...v }) => {
             update((d) =>
-              A.upsert(d, 'shopItems', {
-                ...v,
-                name: v.name.trim(),
-                stock: parseFloat(v.stock) || 0,
-                min: parseFloat(v.min) || 0,
-                cost: parseFloat(v.cost) || 0,
-                price: parseFloat(v.price) || 0,
-              }),
+              A.upsert(
+                d,
+                'shopItems',
+                {
+                  ...v,
+                  name: v.name.trim(),
+                  stock: parseFloat(v.stock) || 0,
+                  min: parseFloat(v.min) || 0,
+                  cost: parseFloat(v.cost) || 0,
+                  price: parseFloat(v.price) || 0,
+                },
+                'id',
+                { authId },
+              ),
             );
             setEdit(null);
             ui.notify(isNew ? 'Producto agregado' : 'Producto actualizado');

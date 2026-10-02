@@ -1,5 +1,5 @@
 // Documentos imprimibles (ticket, comanda, precuenta, folio y reporte de cierre)
-import { EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../data.js';
+import { COURSES, EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../data.js';
 import { fmtDate, fmtDateTime, fmtTime } from '../lib/dates.js';
 import { eventTotals } from '../lib/events.js';
 import { folio as calcFolio, groupText } from '../lib/hotel.js';
@@ -111,23 +111,40 @@ export function TicketDoc({ sale }) {
   );
 }
 
-export function ComandaDoc({ label, lines, number, waiterId, guests }) {
+// Comanda agrupada por tiempos. held: tiempos que esperan a que el mesero los marche.
+// march: comanda corta para marchar un tiempo que estaba en espera.
+export function ComandaDoc({ label, lines, number, waiterId, guests, held = [], march = null }) {
   const { state } = useStore();
+  const groups = [
+    ...Object.keys(COURSES).map((c) => ({ key: c, title: COURSES[c], lines: lines.filter((l) => l.course === c) })),
+    { key: 'otros', title: 'Sin tiempo', lines: lines.filter((l) => !l.course) },
+  ].filter((g) => g.lines.length);
+  const titled = groups.length > 1 || groups[0]?.key !== 'otros';
   return (
     <div className="doc comanda">
-      <div className="doc-title">Comanda #{number}</div>
+      <div className="doc-title">{march ? `Marchar · ${COURSES[march]}` : `Comanda #${number}`}</div>
       <Row l={label} r={fmtTime(Date.now())} strong />
       <Row l={`Mesero: ${userName(state.users, waiterId)}`} r={`${guests} pers.`} />
-      <div className="doc-sep" />
-      {lines.map((l) => (
-        <div key={l.id} className="comanda-line">
-          <strong>
-            {l.qty} × {l.name}
-          </strong>
-          {l.mods?.map((m) => (
-            <div key={m.name}>+ {m.name}</div>
+      {groups.map((g) => (
+        <div key={g.key}>
+          <div className="doc-sep" />
+          {titled && (
+            <div className="comanda-course">
+              {g.title}
+              {held.includes(g.key) ? ' · EN ESPERA' : march ? ' · YA' : ''}
+            </div>
+          )}
+          {g.lines.map((l) => (
+            <div key={l.id} className="comanda-line">
+              <strong>
+                {l.qty} × {l.name}
+              </strong>
+              {l.mods?.map((m) => (
+                <div key={m.name}>+ {m.name}</div>
+              ))}
+              {l.note && <div>→ {l.note}</div>}
+            </div>
           ))}
-          {l.note && <div>→ {l.note}</div>}
         </div>
       ))}
     </div>

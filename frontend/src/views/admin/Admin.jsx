@@ -4,7 +4,7 @@ import Tabs from '../../components/Tabs.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DEMO } from '../../config.js';
-import { EVENT_UNITS, ROLE_LABELS } from '../../data.js';
+import { COURSES, EVENT_UNITS, ROLE_LABELS } from '../../data.js';
 import { uid } from '../../lib/dates.js';
 import { isActiveRes } from '../../lib/hotel.js';
 import { A } from '../../store/actions.js';
@@ -107,11 +107,14 @@ function MenuTab() {
         </div>
         <div className="chips">
           {filter !== 'Todos' && (
-            <button className="btn small" onClick={() => setCatEdit({ from: filter, name: filter })}>
+            <button
+              className="btn small"
+              onClick={() => setCatEdit({ from: filter, name: filter, course: state.config.catCourse?.[filter] || '' })}
+            >
               Editar categoría
             </button>
           )}
-          <button className="btn small" onClick={() => setCatEdit({ from: null, name: '' })}>
+          <button className="btn small" onClick={() => setCatEdit({ from: null, name: '', course: '' })}>
             + Categoría
           </button>
           <button
@@ -212,7 +215,11 @@ function MenuTab() {
                 }
                 onClick={() => {
                   const name = catEdit.name.trim();
-                  update((d) => (catEdit.from ? A.renameCategory(d, catEdit.from, name) : A.addCategory(d, name)));
+                  update((d) => {
+                    if (catEdit.from) A.renameCategory(d, catEdit.from, name);
+                    else A.addCategory(d, name);
+                    A.setCatCourse(d, name, catEdit.course);
+                  });
                   setCatEdit(null);
                   setFilter(name);
                 }}
@@ -229,6 +236,19 @@ function MenuTab() {
               value={catEdit.name}
               onChange={(e) => setCatEdit({ ...catEdit, name: e.target.value })}
             />
+          </Field>
+          <Field as="div" label="Tiempo en la comanda" hint="los fuertes y postres esperan hasta marcharlos">
+            <div className="chips">
+              {[['', 'Sin tiempo'], ...Object.entries(COURSES)].map(([k, l]) => (
+                <button
+                  key={k}
+                  className={'chip' + (catEdit.course === k ? ' active' : '')}
+                  onClick={() => setCatEdit({ ...catEdit, course: k })}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
           </Field>
         </Modal>
       )}

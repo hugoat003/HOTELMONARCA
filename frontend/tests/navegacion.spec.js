@@ -1,10 +1,9 @@
 import { expect, fresh, login, nav, test } from './helpers.js';
 
 const MENUS = {
-  Juan: ['Mesas', 'Pedido', 'Ventas'],
+  Juan: ['Mesas', 'Ventas'],
   'Luis Recepción': [
     'Mesas',
-    'Pedido',
     'Ventas',
     'Inventario',
     'Habitaciones',
@@ -18,7 +17,6 @@ const MENUS = {
   'Marta Gerente': [
     'Resumen',
     'Mesas',
-    'Pedido',
     'Ventas',
     'Inventario',
     'Habitaciones',
@@ -29,6 +27,7 @@ const MENUS = {
     'Eventos',
     'Caja',
     'Reporte / RDP',
+    'Bitácora',
     'Configuración',
   ],
 };
@@ -59,6 +58,6 @@ test('en el teléfono la gerente ve solo el resumen', async ({ browser }) => {
   for (const k of '1111') await page.keyboard.press(k);
   await expect(page.getByText('Hola, Marta')).toBeVisible();
   await expect(page.locator('.sidebar')).toHaveCount(0);
-  await expect(page.getByText(/pendiente de su mensualidad/)).toBeVisible();
+  await expect(page.getByText(/mensualidad pendiente/)).toBeVisible();
   await page.close();
 });

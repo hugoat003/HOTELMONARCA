@@ -15,7 +15,7 @@ import { BreakdownCards } from './Reporte.jsx';
 const KIND = { restaurante: 'Restaurante', hotel: 'Hotel', evento: 'Evento', tienda: 'Tienda' };
 
 // Rangos rápidos
-function preset(key) {
+export function preset(key) {
   const d0 = today();
   const first = d0.slice(0, 8) + '01';
   if (key === 'hoy') return [d0, d0];
@@ -29,7 +29,7 @@ function preset(key) {
   }
   return null;
 }
-const PRESETS = [
+export const PRESETS = [
   ['hoy', 'Hoy'],
   ['ayer', 'Ayer'],
   ['7', 'Últimos 7 días'],

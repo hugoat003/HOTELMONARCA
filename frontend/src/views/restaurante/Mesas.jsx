@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import TableMap from '../../components/TableMap.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { TABLE_COLORS } from '../../data.js';
-import { fmtTime, uid } from '../../lib/dates.js';
+import { uid } from '../../lib/dates.js';
 import { linesTotal } from '../../lib/money.js';
 import { placed } from '../../lib/tablemap.js';
 import { orderLabel, tableOrder } from '../../lib/orders.js';
@@ -27,8 +27,8 @@ export default function Mesas({ go }) {
   const { state, user, fmt, update } = useStore();
   const [opening, setOpening] = useState(null); // mesa a abrir
   const [takeout, setTakeout] = useState(false);
-  const [savedMode, setMode] = usePersisted('mesas.vista', 'mapa'); // 'mapa' | 'tarjetas' | 'editar'
-  const mode = savedMode === 'editar' && user.role !== 'gerente' ? 'mapa' : savedMode;
+  const [savedZone, setZone] = usePersisted('mesas.zona', null);
+  const [editing, setEditing] = useState(false);
   const [, tick] = useState(0);
 
   // Refresca los minutos de las cuentas abiertas
@@ -84,115 +84,76 @@ export default function Mesas({ go }) {
     };
   };
 
-  if (mode === 'editar') {
+  if (editing && user.role === 'gerente') {
     return (
       <div className="page gap-16">
-        <MapEditor onDone={() => setMode('mapa')} />
+        <MapEditor onDone={() => setEditing(false)} />
       </div>
     );
   }
 
+  const zone = zones.includes(savedZone) ? savedZone : zones[0];
+  const zt = tables.filter((t) => t.zone === zone);
+
   return (
-    <div className="split" style={{ '--side': '360px' }}>
-      <div className="split-main gap-18">
-        <div className="row items-center">
-          <div className="legend">
-            <span>
-              <span className="swatch" style={{ border: '1px solid #D6CFC4' }} />
-              Libre
-            </span>
-            <span>
-              <span className="swatch" style={{ background: '#1B1917' }} />
-              Ocupada
-            </span>
-            <span>
-              <span className="swatch" style={{ border: '2px solid #1B1917' }} />
-              Reservada
-            </span>
-            {mode === 'mapa' && (
-              <span>
-                <span className="swatch pulse-dot" />
-                Pedido sin enviar
-              </span>
-            )}
+    <div className="split mesas-split" style={{ '--side': '360px' }}>
+      <div className="split-main gap-16">
+        {/* Una zona a la vez: en la tablet el mapa ocupa todo el ancho y las mesas son fáciles de tocar */}
+        <div className="row items-center gap-12">
+          <div className="zone-tabs" role="tablist">
+            {zones.map((z) => {
+              const zts = tables.filter((t) => t.zone === z);
+              const busy = zts.filter((t) => orderFor(t.id)).length;
+              const unsent = zts.some((t) => orderFor(t.id)?.lines.some((l) => !l.sent));
+              return (
+                <button
+                  key={z}
+                  role="tab"
+                  aria-selected={z === zone}
+                  className={'zone-tab' + (z === zone ? ' active' : '')}
+                  onClick={() => setZone(z)}
+                >
+                  <span>{z}</span>
+                  <span className="zone-tab-count">
+                    {busy}/{zts.length}
+                    {unsent && <span className="pulse-dot" aria-label="pedido sin enviar" />}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <div className="chips">
-            <div className="segmented row two" style={{ width: 200, padding: 3 }}>
-              <button
-                className={'seg-btn' + (mode === 'mapa' ? ' active' : '')}
-                style={{ padding: '7px 4px' }}
-                onClick={() => setMode('mapa')}
-              >
-                Mapa
-              </button>
-              <button
-                className={'seg-btn' + (mode === 'tarjetas' ? ' active' : '')}
-                style={{ padding: '7px 4px' }}
-                onClick={() => setMode('tarjetas')}
-              >
-                Tarjetas
-              </button>
-            </div>
-            {user.role === 'gerente' && (
-              <button className="btn small" onClick={() => setMode('editar')}>
-                Editar mapa
-              </button>
-            )}
-          </div>
+          {user.role === 'gerente' && (
+            <button className="btn small" onClick={() => setEditing(true)}>
+              Editar mapa
+            </button>
+          )}
         </div>
 
-        {zones.map((zone) => {
-          const zt = tables.filter((t) => t.zone === zone);
-          const busy = zt.filter((t) => orderFor(t.id)).length;
-          return (
-            <section key={zone} className="section">
-              <h2 className="section-title">
-                {zone}{' '}
-                <span className="zone-count">
-                  {busy} de {zt.length} ocupadas
-                </span>
-              </h2>
-              {mode === 'mapa' ? (
-                <TableMap
-                  tables={zt}
-                  decor={state.mapDecor.filter((d) => d.zone === zone)}
-                  getLook={look}
-                  onTableClick={clickTable}
-                />
-              ) : (
-                <div className="tile-grid">
-                  {zt.map((t) => {
-                    const o = orderFor(t.id);
-                    const status = o ? 'ocupada' : t.reservedAt ? 'reservada' : 'libre';
-                    const [bg, fg, border, sub, label] = TABLE_COLORS[status];
-                    return (
-                      <button
-                        key={t.id}
-                        className="tile"
-                        style={{ '--t-bg': bg, '--t-fg': fg, '--t-border': border, '--t-sub': sub }}
-                        onClick={() => clickTable(t)}
-                      >
-                        <span className="tile-head">
-                          <span className="tile-name">{t.name}</span>
-                          <span className="tile-sub">{o ? `${o.guests} de ${t.seats}` : `${t.seats} pers.`}</span>
-                        </span>
-                        <span className="tile-status">
-                          {label}
-                          {t.reservedAt && !o ? ' ' + t.reservedAt : ''}
-                          {o && <span className="tile-sub fw-500"> · {firstName(state.users, o.waiterId)}</span>}
-                        </span>
-                        <span className="tile-foot">
-                          <span>{o ? 'Desde ' + fmtTime(o.openedAt) : ''}</span>
-                          <strong>{o ? fmt(linesTotal(o.lines)) : ''}</strong>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          );
-        })}
+        <TableMap
+          tables={zt}
+          decor={state.mapDecor.filter((d) => d.zone === zone)}
+          getLook={look}
+          onTableClick={clickTable}
+        />
+
+        <div className="legend">
+          <span>
+            <span className="swatch" style={{ border: '1px solid #D6CFC4' }} />
+            Libre
+          </span>
+          <span>
+            <span className="swatch" style={{ background: '#1B1917' }} />
+            Ocupada
+          </span>
+          <span>
+            <span className="swatch" style={{ border: '2px solid #1B1917' }} />
+            Reservada
+          </span>
+          <span>
+            <span className="swatch pulse-dot" />
+            Pedido sin enviar
+          </span>
+        </div>
       </div>
 
       <div className="side-panel">

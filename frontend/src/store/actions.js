@@ -1,11 +1,54 @@
 // Recetas para store.update(d => A.algo(d, ...)). Modifican el borrador directamente.
-import { today, uid } from '../lib/dates.js';
-import { sameLine, unitPrice } from '../lib/orders.js';
+import { addDays, today, uid } from '../lib/dates.js';
+import { isAvailable } from '../lib/hotel.js';
+import { isHeldOnSend, orderLabel, sameLine, unitPrice } from '../lib/orders.js';
 import { placed } from '../lib/tablemap.js';
+import { COURSES } from '../data.js';
 
 const byId = (arr, id, key = 'id') => arr.find((x) => x[key] === id);
 
 export { orderLabel } from '../lib/orders.js';
+
+const money = (d, n) => `${d.config.currency} ${Number(n || 0).toFixed(2)}`;
+
+// Bitácora: deja constancia de las operaciones sensibles (quién, cuándo, qué y quién autorizó)
+function audit(d, type, { ref = '', detail = '', amount = null, authId = null, userId } = {}) {
+  d.audit ||= [];
+  d.audit.push({
+    id: uid('au'),
+    ts: Date.now(),
+    type,
+    userId: userId ?? d.session?.userId ?? null,
+    authId: authId && authId !== (userId ?? d.session?.userId) ? authId : null,
+    ref,
+    detail,
+    amount,
+  });
+}
+
+// Campos de precio que se vigilan al editar catálogos
+const PRICE_FIELDS = {
+  menu: [['price', 'precio']],
+  shopItems: [
+    ['price', 'precio'],
+    ['cost', 'costo'],
+  ],
+  inventory: [['cost', 'costo']],
+  roomTypes: [
+    ['rate', 'tarifa por noche'],
+    ['monthlyRate', 'tarifa mensual'],
+  ],
+  venues: [['price', 'renta']],
+  eventMenus: [['price', 'precio por persona']],
+};
+const CATALOG_LABELS = {
+  menu: 'Menú',
+  shopItems: 'Tienda',
+  inventory: 'Inventario',
+  roomTypes: 'Habitaciones',
+  venues: 'Salones',
+  eventMenus: 'Menús de eventos',
+};
 
 // Movimiento de inventario por la receta de un platillo (consumo al enviar a cocina o devolución)
 function applyRecipe(d, mid, qty, sign, { type, note, userId }) {
@@ -63,6 +106,7 @@ export const A = {
         basePrice: m.price,
         mods,
         price: unitPrice(m.price, mods),
+        course: d.config.catCourse?.[m.cat] || null,
         qty: 1,
         note: '',
         sent: false,
@@ -74,6 +118,13 @@ export const A = {
     if (courtesy) {
       l.courtesy = { ...courtesy, price: l.courtesy?.price ?? l.price, ts: Date.now() };
       l.price = 0;
+      audit(d, 'cortesia', {
+        ref: orderLabel(byId(d.orders, orderId), d.tables),
+        detail: `${l.qty} × ${l.name} · ${courtesy.reason}`,
+        amount: l.courtesy.price * l.qty,
+        authId: courtesy.authId,
+        userId: courtesy.userId,
+      });
     } else if (l.courtesy) {
       l.price = l.courtesy.price;
       delete l.courtesy;
@@ -134,16 +185,25 @@ export const A = {
       userId,
       authId,
     });
+    audit(d, 'anulacion', {
+      ref: label,
+      detail: `${qty} × ${l.name} · ${reason}${l.sent ? '' : ' (sin enviar)'}`,
+      amount: l.price * qty,
+      authId,
+      userId,
+    });
     if (returnStock && l.sent)
       applyRecipe(d, l.mid, qty, +1, { type: 'devolucion', note: `Anulado sin preparar · ${label}`, userId });
     l.qty -= qty;
     o.lines = o.lines.filter((x) => x.qty > 0);
   },
-  // Envía lo pendiente a cocina y descuenta los insumos de las recetas
+  // Envía lo pendiente a cocina y descuenta los insumos de las recetas.
   sendKitchen(d, orderId, { userId, label } = {}) {
     d.counters.comanda++;
-    for (const l of byId(d.orders, orderId).lines) {
+    const o = byId(d.orders, orderId);
+    for (const l of o.lines) {
       if (l.sent) continue;
+      l.held = isHeldOnSend(o, l);
       l.sent = true;
       applyRecipe(d, l.mid, l.qty, -1, {
         type: 'consumo',
@@ -151,6 +211,22 @@ export const A = {
         userId,
       });
     }
+  },
+  // Marchar un tiempo: cocina empieza a preparar los platillos que estaban en espera
+  fireCourse(d, orderId, course) {
+    const o = byId(d.orders, orderId);
+    d.counters.comanda++;
+    o.fired = [...new Set([...(o.fired || []), course])];
+    for (const l of o.lines) if (l.course === course) l.held = false;
+  },
+  setLineCourse(d, orderId, lineId, course) {
+    const l = byId(byId(d.orders, orderId).lines, lineId);
+    if (!l.sent && (course === null || COURSES[course])) l.course = course;
+  },
+  setCatCourse(d, cat, course) {
+    d.config.catCourse = { ...(d.config.catCourse || {}) };
+    if (course) d.config.catCourse[cat] = course;
+    else delete d.config.catCourse[cat];
   },
   moveOrder(d, orderId, tableId) {
     byId(d.tables, tableId).reservedAt = null;
@@ -161,6 +237,14 @@ export const A = {
   registerSale(d, sale, { orderId, paidQty } = {}) {
     d.counters.doc = sale.number;
     d.sales.push(sale);
+    if (sale.discount)
+      audit(d, 'descuento', {
+        ref: `${sale.ref} · Ticket #${sale.number}`,
+        detail: [sale.discount.label, sale.discount.reason].filter(Boolean).join(' · '),
+        amount: sale.discount.amount,
+        authId: sale.discount.authBy,
+        userId: sale.cashierId,
+      });
     for (const p of sale.payments) {
       if (p.method === 'habitacion') {
         byId(d.reservations, p.resId).charges.push({
@@ -212,6 +296,12 @@ export const A = {
     s.voidReason = reason;
     s.voidedAt = Date.now();
     s.voidAuth = authId;
+    audit(d, 'comprobante', {
+      ref: `Ticket #${s.number} · ${s.ref || ''}`,
+      detail: reason,
+      amount: s.grand ?? s.total,
+      authId,
+    });
     for (const r of d.reservations) r.charges = r.charges.filter((c) => c.saleId !== saleId);
     // Anular una venta de tienda regresa los productos a existencia
     if (s.kind === 'tienda') {
@@ -237,7 +327,8 @@ export const A = {
   // Hotel
   // Guarda la reserva y mantiene al día la ficha del huésped (la crea si es nuevo)
   saveReservation(d, res) {
-    if (res.guest) {
+    // Las habitaciones bloqueadas para un evento no crean ficha hasta que llega el huésped real
+    if (res.guest && !res.block) {
       d.guests ||= [];
       let g = res.guestId && byId(d.guests, res.guestId);
       if (!g) {
@@ -285,7 +376,18 @@ export const A = {
     r.status = status;
     r.cancelReason = reason;
     r.closedBy = userId;
+    audit(d, 'cancelacion', {
+      ref: `Hab. ${r.roomN} · ${r.guest.name}`,
+      detail: `${status === 'noshow' ? 'No-show' : 'Reserva cancelada'} · ${reason}`,
+      userId,
+    });
     if (refund) {
+      audit(d, 'devolucion', {
+        ref: `Hab. ${r.roomN} · ${r.guest.name}`,
+        detail: `Devolución de anticipo · ${refund.payments[0].method}`,
+        amount: Math.abs(refund.payments[0].amount),
+        userId,
+      });
       d.counters.doc = refund.number;
       d.sales.push(refund);
       const p = refund.payments[0];
@@ -313,13 +415,16 @@ export const A = {
     const r = byId(d.reservations, resId);
     r.status = 'cancelada';
     r.cancelReason = reason;
+    audit(d, 'cancelacion', { ref: `Hab. ${r.roomN} · ${r.guest.name}`, detail: `Reserva cancelada · ${reason}` });
   },
   addCharge(d, resId, { desc, amt }) {
     byId(d.reservations, resId).charges.push({ id: uid('c'), ts: Date.now(), desc, amt, type: 'extra' });
   },
-  removeCharge(d, resId, chargeId) {
+  removeCharge(d, resId, chargeId, { authId } = {}) {
     const r = byId(d.reservations, resId);
-    r.charges = r.charges.filter((c) => c.id !== chargeId);
+    const c = byId(r.charges, chargeId);
+    if (c) audit(d, 'cargo', { ref: `Hab. ${r.roomN} · ${r.guest.name}`, detail: c.desc, amount: c.amt, authId });
+    r.charges = r.charges.filter((x) => x.id !== chargeId);
   },
   // Abono o liquidación: crea la venta (para caja) y el pago en el folio
   addFolioPayment(d, resId, sale) {
@@ -357,9 +462,67 @@ export const A = {
     const i = d.events.findIndex((e) => e.id === ev.id);
     if (i >= 0) d.events[i] = { ...d.events[i], ...ev };
     else d.events.push(ev);
+    A.syncEventRooms(d, ev.id);
   },
   setEventStatus(d, id, status) {
-    byId(d.events, id).status = status;
+    const ev = byId(d.events, id);
+    ev.status = status;
+    if (status === 'cancelado') audit(d, 'cancelacion', { ref: ev.name, detail: 'Evento cancelado' });
+    A.syncEventRooms(d, id);
+  },
+  // Habitaciones bloqueadas para los invitados de un evento: crea, mueve o libera sus reservas.
+  // Las que ya tienen un huésped real (block: false) no se tocan.
+  syncEventRooms(d, eventId) {
+    const ev = byId(d.events, eventId);
+    const rb = ev.roomBlock || { rooms: [], nights: 1, rate: '' };
+    const active = ev.status !== 'cancelado';
+    const checkIn = ev.date;
+    const checkOut = addDays(ev.date, Math.max(1, rb.nights || 1));
+    const linked = d.reservations.filter(
+      (r) => r.eventId === eventId && (r.status === 'reservada' || r.status === 'hospedado'),
+    );
+    const special = Number(rb.rate) > 0;
+    for (const r of linked) {
+      if (!r.block || r.status !== 'reservada') continue;
+      if (!active || !rb.rooms.includes(r.roomN)) {
+        r.status = 'cancelada';
+        r.cancelReason = active ? 'Liberada del bloqueo del evento' : 'Evento cancelado';
+      } else if (isAvailable(d.reservations, r.roomN, checkIn, checkOut, r.id)) {
+        Object.assign(r, {
+          checkIn,
+          checkOut,
+          pricing: special ? 'fija' : 'auto',
+          rate: special ? Number(rb.rate) : byId(d.roomTypes, byId(d.rooms, r.roomN, 'n').typeId).rate,
+          guest: { ...r.guest, name: `Bloqueo · ${ev.name}` },
+        });
+      }
+    }
+    if (!active) return;
+    for (const n of rb.rooms) {
+      if (linked.some((r) => r.roomN === n && r.status !== 'cancelada')) continue;
+      if (!isAvailable(d.reservations, n, checkIn, checkOut)) continue;
+      const type = byId(d.roomTypes, byId(d.rooms, n, 'n').typeId);
+      d.reservations.push({
+        id: uid('r'),
+        roomN: n,
+        checkIn,
+        checkOut,
+        adults: 2,
+        children: 0,
+        channel: 'Evento',
+        rateType: 'noche',
+        pricing: special ? 'fija' : 'auto',
+        rate: special ? Number(rb.rate) : type.rate,
+        status: 'reservada',
+        notes: `Invitados de ${ev.name}`,
+        charges: [],
+        payments: [],
+        createdAt: Date.now(),
+        eventId,
+        block: true,
+        guest: { name: `Bloqueo · ${ev.name}`, phone: ev.client.phone || '', email: '', doc: '', nationality: '' },
+      });
+    }
   },
   addEventPayment(d, eventId, sale) {
     d.counters.doc = sale.number;
@@ -378,14 +541,25 @@ export const A = {
 
   // Inventario: entrada suma, salida y merma restan, ajuste fija la existencia contada
   // coll / movesColl: 'inventory' + 'invMoves' (restaurante) o 'shopItems' + 'shopMoves' (tienda)
-  invMove(d, { itemId, type, qty, note, userId }, coll = 'inventory', movesColl = 'invMoves') {
+  invMove(d, { itemId, type, qty, note, userId, authId }, coll = 'inventory', movesColl = 'invMoves') {
     const it = byId(d[coll], itemId);
     const q = Number(qty);
+    const before = it.stock;
     it.stock = Math.max(
       0,
       Math.round((type === 'entrada' ? it.stock + q : type === 'ajuste' ? q : it.stock - q) * 1000) / 1000,
     );
     d[movesColl].push({ id: uid('im'), ts: Date.now(), itemId, type, qty: q, note, userId, after: it.stock });
+    if (type !== 'entrada') {
+      const lost = before - it.stock;
+      audit(d, 'inventario', {
+        ref: `${CATALOG_LABELS[coll]} · ${it.name}`,
+        detail: `${type === 'ajuste' ? `Ajuste de conteo: ${before} → ${it.stock}` : `${type[0].toUpperCase() + type.slice(1)} de ${q} ${it.unit}`}${note ? ' · ' + note : ''}`,
+        amount: Math.round(lost * (it.cost || 0) * 100) / 100,
+        authId,
+        userId,
+      });
+    }
   },
 
   // Caja
@@ -394,28 +568,65 @@ export const A = {
   },
   addMovement(d, { type, amount, reason, userId }) {
     d.shift.movements.push({ id: uid('mv'), ts: Date.now(), type, amount, reason, userId });
+    if (type === 'salida') audit(d, 'caja', { ref: 'Salida de efectivo', detail: reason, amount, userId });
   },
-  closeShift(d, { counted, denominations, userId, report }) {
+  // Cierre ciego: firstCounted es el primer conteo (antes de ver lo esperado); recounts, las veces que se recontó
+  closeShift(d, { counted, denominations, userId, authId, report, firstCounted = counted, recounts = 0, note = '' }) {
     const s = d.shift;
+    const difference = Math.round((counted - report.cash.expected) * 100) / 100;
     Object.assign(s, {
       closedAt: Date.now(),
       closedBy: userId,
       counted,
+      firstCounted,
+      recounts,
+      differenceNote: note,
       denominations,
-      difference: Math.round((counted - report.cash.expected) * 100) / 100,
+      difference,
       report,
     });
+    if (difference !== 0 || recounts > 0)
+      audit(d, 'caja', {
+        ref: 'Cierre de turno',
+        detail: [
+          difference === 0 ? 'Cuadró' : difference > 0 ? 'Sobrante' : 'Faltante',
+          recounts
+            ? `recontado ${recounts} ${recounts === 1 ? 'vez' : 'veces'} (primer conteo ${money(d, firstCounted)})`
+            : '',
+          note,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        amount: difference,
+        authId,
+        userId,
+      });
     d.shiftHistory.unshift(s);
     d.shift = null;
   },
 
   // Administración
-  upsert(d, coll, item, key = 'id') {
+  // authId: gerente que autorizó el cambio (queda en la bitácora si cambia un precio)
+  upsert(d, coll, item, key = 'id', { authId } = {}) {
     const i = d[coll].findIndex((x) => x[key] === item[key]);
+    if (i >= 0 && PRICE_FIELDS[coll]) {
+      const old = d[coll][i];
+      for (const [f, label] of PRICE_FIELDS[coll])
+        if (f in item && Number(item[f] || 0) !== Number(old[f] || 0))
+          audit(d, 'precio', {
+            ref: `${CATALOG_LABELS[coll]} · ${old.name}`,
+            detail: `Cambio de ${label}: ${money(d, old[f])} → ${money(d, item[f])}`,
+            amount: Number(item[f] || 0) - Number(old[f] || 0),
+            authId,
+          });
+    }
     if (i >= 0) d[coll][i] = { ...d[coll][i], ...item };
     else d[coll].push(item);
   },
   remove(d, coll, value, key = 'id') {
+    const old = d[coll].find((x) => x[key] === value);
+    if (old && CATALOG_LABELS[coll])
+      audit(d, 'catalogo', { ref: `${CATALOG_LABELS[coll]} · ${old.name}`, detail: 'Producto eliminado' });
     d[coll] = d[coll].filter((x) => x[key] !== value);
   },
   setConfig(d, patch) {
@@ -454,5 +665,9 @@ export const A = {
   renameCategory(d, from, to) {
     d.categories = d.categories.map((c) => (c === from ? to : c));
     for (const m of d.menu) if (m.cat === from) m.cat = to;
+    if (d.config.catCourse?.[from] && from !== to) {
+      d.config.catCourse = { ...d.config.catCourse, [to]: d.config.catCourse[from] };
+      delete d.config.catCourse[from];
+    }
   },
 };

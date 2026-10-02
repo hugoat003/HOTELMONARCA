@@ -1,4 +1,5 @@
 // Utilidades de cuentas del restaurante (mesas, unión de mesas, modificadores)
+import { COURSE_ORDER } from '../data.js';
 import { round2, sum } from './money.js';
 
 const byId = (arr, id) => arr.find((x) => x.id === id);
@@ -27,3 +28,12 @@ export const sameLine = (l, mid, mods) =>
   l.mid === mid && !l.sent && !l.note && !l.courtesy && JSON.stringify(l.mods || []) === JSON.stringify(mods || []);
 
 export const modsText = (mods = []) => mods.map((m) => (m.price ? `${m.name} (+${m.price})` : m.name)).join(' · ');
+
+// Al enviar a cocina, un tiempo queda en espera si la cuenta tiene un tiempo anterior y aún no se ha marchado
+export function isHeldOnSend(order, line) {
+  return (
+    !!line.course &&
+    !(order.fired || []).includes(line.course) &&
+    order.lines.some((x) => x.course && COURSE_ORDER[x.course] < COURSE_ORDER[line.course])
+  );
+}

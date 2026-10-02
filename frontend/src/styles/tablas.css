@@ -66,3 +66,23 @@
   grid-template-columns: 1.4fr 90px 1fr 1fr 1fr 1fr;
   align-items: center;
 }
+.tx-row.audit {
+  grid-template-columns: 170px 150px 1.3fr 2fr 100px 1.2fr;
+  align-items: center;
+}
+.tx-row.audit .tag {
+  margin-left: 0;
+}
+.tag.audit-anulacion,
+.tag.audit-comprobante,
+.tag.audit-devolucion,
+.tag.audit-caja {
+  background: #f3e3d9;
+  color: #8a3a1b;
+}
+.tag.audit-cortesia,
+.tag.audit-descuento,
+.tag.audit-precio {
+  background: #f1ead8;
+  color: #6b5413;
+}

@@ -44,11 +44,25 @@ export default function TableMap({ tables, decor, edit = false, selected, getLoo
   };
   const pos = (kind, item) => (drag && drag.kind === kind && drag.id === item.id ? { x: drag.x, y: drag.y } : item);
 
+  // En modo vista se recorta el lienzo a lo que hay dibujado: las mesas se ven más grandes en la tablet
+  const items = [...tables, ...decor];
+  const PAD = 24; // espacio para las sillas
+  const box =
+    edit || !items.length
+      ? { x: 0, y: 0, w: MAP_W, h: MAP_H }
+      : (() => {
+          const x0 = Math.max(0, Math.min(...items.map((i) => i.x)) - PAD);
+          const y0 = Math.max(0, Math.min(...items.map((i) => i.y)) - PAD);
+          const x1 = Math.min(MAP_W, Math.max(...items.map((i) => i.x + i.w)) + PAD);
+          const y1 = Math.min(MAP_H, Math.max(...items.map((i) => i.y + i.h)) + PAD);
+          return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+        })();
+
   return (
     <svg
       ref={svgRef}
       className={'table-map' + (edit ? ' editing' : '')}
-      viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+      viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`}
       onPointerMove={moveDrag}
       onPointerUp={endDrag}
       onPointerLeave={endDrag}
@@ -61,7 +75,15 @@ export default function TableMap({ tables, decor, edit = false, selected, getLoo
           </pattern>
         </defs>
       )}
-      <rect width={MAP_W} height={MAP_H} rx="8" fill={edit ? 'url(#map-grid)' : '#FAFAF8'} className="map-floor" />
+      <rect
+        x={box.x}
+        y={box.y}
+        width={box.w}
+        height={box.h}
+        rx="8"
+        fill={edit ? 'url(#map-grid)' : '#FAFAF8'}
+        className="map-floor"
+      />
 
       {decor.map((d) => {
         const p = pos('decor', d);

@@ -61,10 +61,23 @@ test('pantallas de gerencia', async ({ page }) => {
   await page.getByRole('button', { name: 'Calendario', exact: true }).click();
   await snap(page, 'eventos-calendario');
   await page.getByRole('button', { name: 'Lista', exact: true }).click();
+  await nav(page, 'Bitácora');
+  await page.getByRole('button', { name: 'Últimos 7 días' }).click();
+  await snap(page, 'bitacora');
   await nav(page, 'Configuración');
   await snap(page, 'config-menu');
   await page.getByRole('button', { name: 'Mapa de mesas' }).click();
   await snap(page, 'config-mapa');
+});
+
+// Mesero en tablet horizontal: menú en cajón y mapa a todo lo ancho
+test('mesero en tablet', async ({ browser }) => {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, hasTouch: true });
+  await start(page, 'Juan');
+  await snap(page, 'tablet-mesas');
+  await page.locator('.account', { hasText: 'Mesa 2' }).click();
+  await snap(page, 'tablet-pedido');
+  await page.close();
 });
 
 test('login y teléfono', async ({ browser }) => {

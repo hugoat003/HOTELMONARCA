@@ -37,7 +37,12 @@ export async function login(page, name) {
   await expect(page.locator('.app')).toBeVisible();
 }
 
-export const nav = (page, label) => page.locator('.nav').getByRole('button', { name: label, exact: true }).click();
+// Abre la pantalla desde el menú lateral (si el menú es un cajón, primero lo abre)
+export async function nav(page, label) {
+  const toggle = page.locator('.menu-toggle');
+  if (await toggle.isVisible()) await toggle.click();
+  await page.locator('.nav').getByRole('button', { name: label, exact: true }).click();
+}
 export const modalClick = (page, label) =>
   page.locator('.modal').getByRole('button', { name: label, exact: true }).last().click();
 export const state = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('monarca-pos-v1')));

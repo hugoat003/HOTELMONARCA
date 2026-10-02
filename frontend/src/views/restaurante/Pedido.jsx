@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useUI } from '../../components/ui/UIProvider.jsx';
+import { COURSES } from '../../data.js';
 import { fmtTime, uid } from '../../lib/dates.js';
 import { canMake } from '../../lib/inventory.js';
 import { linesTotal } from '../../lib/money.js';
-import { modsText, orderLabel } from '../../lib/orders.js';
+import { isHeldOnSend, modsText, orderLabel } from '../../lib/orders.js';
 import { ComandaDoc, PrecuentaDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
@@ -39,25 +40,8 @@ export default function Pedido({ orderId, go }) {
 
   const order = state.orders.find((o) => o.id === orderId);
 
-  if (!order) {
-    return (
-      <div className="empty-state">
-        <div>Selecciona una mesa u orden para tomar el pedido.</div>
-        {state.orders.length > 0 && (
-          <div className="chips" style={{ justifyContent: 'center', maxWidth: 640 }}>
-            {state.orders.map((o) => (
-              <button key={o.id} className="chip" onClick={() => go('pedido', { orderId: o.id })}>
-                {orderLabel(o, state.tables)}
-              </button>
-            ))}
-          </div>
-        )}
-        <button className="btn btn-primary" onClick={() => go('mesas')}>
-          Ver mesas
-        </button>
-      </div>
-    );
-  }
+  // App.jsx regresa a Mesas cuando la cuenta ya no existe
+  if (!order) return null;
 
   const label = orderLabel(order, state.tables);
   const table = state.tables.find((t) => t.id === order.tableId);
@@ -75,12 +59,43 @@ export default function Pedido({ orderId, go }) {
 
   const addItem = (m) => (groupsFor(m).length ? setPicking(m) : update((d) => A.addItem(d, order.id, m)));
 
+  // Tiempo en espera más próximo (el que se marcha a continuación)
+  const heldLines = order.lines.filter((l) => l.held);
+  const nextCourse = Object.keys(COURSES).find((c) => heldLines.some((l) => l.course === c));
+  const nextQty = heldLines.filter((l) => l.course === nextCourse).reduce((a, l) => a + l.qty, 0);
+
   const sendKitchen = () => {
     const number = state.counters.comanda + 1;
+    const lines = pending.map((l) => ({ ...l, held: isHeldOnSend(order, l) }));
+    const held = [...new Set(lines.filter((l) => l.held).map((l) => l.course))];
     update((d) => A.sendKitchen(d, order.id, { userId: user.id, label }));
     ui.preview(
       'Comanda enviada a cocina',
-      <ComandaDoc label={label} lines={pending} number={number} waiterId={order.waiterId} guests={order.guests} />,
+      <ComandaDoc
+        label={label}
+        lines={lines}
+        number={number}
+        waiterId={order.waiterId}
+        guests={order.guests}
+        held={held}
+      />,
+    );
+  };
+
+  const fireCourse = () => {
+    const lines = heldLines.filter((l) => l.course === nextCourse);
+    update((d) => A.fireCourse(d, order.id, nextCourse));
+    ui.notify(`${COURSES[nextCourse]} marchado · ${label}`);
+    ui.preview(
+      'Marchar a cocina',
+      <ComandaDoc
+        label={label}
+        lines={lines}
+        number={state.counters.comanda + 1}
+        waiterId={order.waiterId}
+        guests={order.guests}
+        march={nextCourse}
+      />,
     );
   };
 
@@ -121,7 +136,11 @@ export default function Pedido({ orderId, go }) {
   return (
     <div className="split pedido-split" style={{ '--side': '420px' }}>
       <div className="split-main pedido-main">
-        <div className="row gap-12">
+        <div className="row items-center gap-12 pedido-top">
+          <button className="btn" onClick={() => go('mesas')}>
+            ← Mesas
+          </button>
+          <strong className="pedido-label">{label}</strong>
           <input
             className="input search"
             placeholder="Buscar platillo…"
@@ -129,7 +148,7 @@ export default function Pedido({ orderId, go }) {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="chips">
+        <div className="chips cat-scroll">
           {['Todos', ...state.categories].map((c) => (
             <button key={c} className={'chip' + (cat === c ? ' active' : '')} onClick={() => setCat(c)}>
               {c}
@@ -219,9 +238,10 @@ export default function Pedido({ orderId, go }) {
                 <div className="line-name">{l.name}</div>
                 {l.mods?.length > 0 && <div className="line-mods">{modsText(l.mods)}</div>}
                 {l.note && <div className="line-note">{l.note}</div>}
-                <div className={'line-tag' + (l.sent ? '' : ' new')}>
+                <div className={'line-tag' + (l.sent ? (l.held ? ' held' : '') : ' new')}>
                   {l.courtesy ? 'Cortesía · ' : ''}
-                  {l.sent ? 'En cocina' : 'Nuevo · toca para nota'}
+                  {l.sent ? (l.held ? `En espera · ${COURSES[l.course]}` : 'En cocina') : 'Nuevo · toca para nota'}
+                  {!l.sent && l.course ? ` · ${COURSES[l.course]}` : ''}
                 </div>
               </button>
               <div className="line-amt">
@@ -262,6 +282,11 @@ export default function Pedido({ orderId, go }) {
                   Mesas
                 </button>
               </div>
+              {nextCourse && (
+                <button className="btn btn-accent" onClick={fireCourse}>
+                  Marchar {COURSES[nextCourse].toLowerCase()} ({nextQty})
+                </button>
+              )}
               <div className="btn-row">
                 <button className="btn" disabled={!pendingQty} onClick={sendKitchen}>
                   {pendingQty ? `Enviar a cocina (${pendingQty})` : 'Enviado a cocina'}
@@ -312,6 +337,7 @@ export default function Pedido({ orderId, go }) {
             update((d) => A.setNote(d, order.id, lineMenu.id, note));
             setLineMenu(null);
           }}
+          onCourse={(course) => update((d) => A.setLineCourse(d, order.id, lineMenu.id, course))}
           onCourtesy={(reason) =>
             ui.authorize(`Cortesía de ${lineMenu.name}`, (mgr) => {
               update((d) => A.setCourtesy(d, order.id, lineMenu.id, { reason, authId: mgr.id, userId: user.id }));

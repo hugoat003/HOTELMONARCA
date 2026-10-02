@@ -50,9 +50,15 @@ test('mapa de mesas: estados, cuentas abiertas y editor', async ({ page }) => {
   await fresh(page);
   await login(page, 'Marta Gerente');
   await nav(page, 'Mesas');
-  await expect(page.locator('.map-table')).toHaveCount(10);
+  // Una zona a la vez: el Salón tiene 6 mesas
+  await expect(page.locator('.map-table')).toHaveCount(6);
   await expect(page.locator('.account')).toHaveCount(4);
+  // La mesa con pedido sin enviar está en la terraza: su pestaña lo avisa
+  await expect(page.locator('.map-table.pulse')).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: /Terraza/ }).locator('.pulse-dot')).toHaveCount(1);
+  await page.getByRole('tab', { name: /Terraza/ }).click();
   await expect(page.locator('.map-table.pulse')).toHaveCount(1);
+  await page.getByRole('tab', { name: /Salón/ }).click();
   await page.locator('.account', { hasText: 'Mesa 5' }).click();
   await expect(page.getByRole('heading', { name: 'Pedido' })).toBeVisible();
 
@@ -73,7 +79,7 @@ test('mapa de mesas: estados, cuentas abiertas y editor', async ({ page }) => {
   const t11 = (await state(page)).tables.find((t) => t.id === 11);
   expect([t11.shape, t11.seats]).toEqual(['redonda', 5]);
   await page.getByRole('button', { name: 'Listo' }).click();
-  await expect(page.locator('.map-table')).toHaveCount(11);
+  expect((await state(page)).tables).toHaveLength(11);
 });
 
 test('cambiar un precio en configuración se refleja en el pedido', async ({ page }) => {

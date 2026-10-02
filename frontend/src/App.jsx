@@ -7,6 +7,7 @@ import { roomState } from './lib/hotel.js';
 import { A } from './store/actions.js';
 import { StoreProvider, useStore } from './store/store.jsx';
 import Admin from './views/admin/Admin.jsx';
+import Bitacora from './views/admin/Bitacora.jsx';
 import Dashboard from './views/Dashboard.jsx';
 import Eventos from './views/eventos/Eventos.jsx';
 import Inventario from './views/restaurante/Inventario.jsx';
@@ -109,8 +110,11 @@ function Shell() {
   const ui = useUI();
   const allowed = ROLES[user.role];
   const [savedView, setView] = usePersisted('vista', allowed[0]);
-  const view = allowed.includes(savedView) ? savedView : allowed[0];
   const [orderId, setOrderId] = usePersisted('pedido.orden', null);
+  let view = allowed.includes(savedView) ? savedView : allowed[0];
+  // Sin una cuenta abierta el pedido no tiene sentido: se regresa a Mesas
+  if (view === 'pedido' && !state.orders.some((o) => o.id === orderId)) view = 'mesas';
+  const navActive = NAV.find((n) => n.key === view)?.parent || view;
   const [navOpen, setNavOpen] = useState(false); // menú en cajón (tablet)
 
   useIdleLock(state.config.lockMinutes ?? 5, () => {
@@ -130,15 +134,15 @@ function Shell() {
   const occRooms = state.rooms.filter((r) => roomState(r, state.reservations, d0).status === 'ocupada').length;
 
   return (
-    <div className={'app' + (navOpen ? ' nav-open' : '')}>
+    <div className={'app' + (user.role === 'mesero' ? ' compact' : '') + (navOpen ? ' nav-open' : '')}>
       <button className="nav-backdrop" aria-label="Cerrar menú" onClick={() => setNavOpen(false)} />
       <aside className="sidebar">
         <img src="/logo-monarca.png" alt="Monarca Hotel Boutique" className="sidebar-logo" />
         <nav className="nav">
-          {NAV.filter((n) => allowed.includes(n.key)).map((n) => (
+          {NAV.filter((n) => !n.hidden && allowed.includes(n.key)).map((n) => (
             <div key={n.key} className="nav-item">
               {n.group && <div className="nav-group">{n.group}</div>}
-              <button className={'nav-btn' + (view === n.key ? ' active' : '')} onClick={() => go(n.key)}>
+              <button className={'nav-btn' + (navActive === n.key ? ' active' : '')} onClick={() => go(n.key)}>
                 {n.label}
               </button>
             </div>
@@ -209,6 +213,7 @@ function Shell() {
             {view === 'tienda' && <Tienda />}
             {view === 'caja' && <Caja />}
             {view === 'reporte' && <Reporte go={go} />}
+            {view === 'bitacora' && <Bitacora />}
             {view === 'admin' && <Admin />}
           </ErrorBoundary>
         </div>

@@ -1,7 +1,7 @@
 // Modales de la pantalla de Pedido
 import { useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
-import { QUICK_NOTES } from '../../data.js';
+import { COURSES, QUICK_NOTES } from '../../data.js';
 import { modsText, orderLabel, tableOrder, unitPrice } from '../../lib/orders.js';
 
 const VOID_REASONS = ['Error de captura', 'Cliente cambió de opinión', 'Platillo devuelto', 'No se preparó'];
@@ -66,7 +66,7 @@ export function ModifierModal({ item, groups, fmt, onClose, onAdd }) {
 }
 
 // Nota para cocina y cortesía de una línea
-export function LineModal({ line, fmt, onClose, onNote, onCourtesy, onRemoveCourtesy }) {
+export function LineModal({ line, fmt, onClose, onNote, onCourse, onCourtesy, onRemoveCourtesy }) {
   const [note, setNote] = useState(line.note || '');
   const [reason, setReason] = useState('');
   const toggle = (n) =>
@@ -105,6 +105,18 @@ export function LineModal({ line, fmt, onClose, onNote, onCourtesy, onRemoveCour
           <button className="btn btn-primary" onClick={() => onNote(note.trim())}>
             Guardar nota
           </button>
+          <div className="eyebrow mt-8">Tiempo</div>
+          <div className="chips">
+            {[[null, 'Sin tiempo'], ...Object.entries(COURSES)].map(([k, l]) => (
+              <button
+                key={l}
+                className={'chip small' + ((line.course || null) === k ? ' active' : '')}
+                onClick={() => onCourse(k)}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
         </>
       ) : (
         line.note && <div className="note-box">Nota enviada a cocina: {line.note}</div>

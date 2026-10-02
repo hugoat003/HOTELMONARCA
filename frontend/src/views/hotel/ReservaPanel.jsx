@@ -285,8 +285,8 @@ export default function ReservaPanel({ res, onRoomChanged }) {
                     <button
                       className="link danger ml-8"
                       onClick={() =>
-                        ui.authorize('Eliminar un cargo del folio', () =>
-                          update((d) => A.removeCharge(d, res.id, c.id)),
+                        ui.authorize('Eliminar un cargo del folio', (mgr) =>
+                          update((d) => A.removeCharge(d, res.id, c.id, { authId: mgr.id })),
                         )
                       }
                     >

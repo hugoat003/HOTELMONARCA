@@ -96,16 +96,18 @@ export default function Inventario() {
             <button
               className="btn btn-primary small"
               onClick={() =>
-                setEdit({
-                  id: uid('i'),
-                  name: '',
-                  cat: cat === 'Todas' ? INV_CATS[0] : cat,
-                  unit: 'unidad',
-                  stock: '0',
-                  min: '',
-                  cost: '',
-                  isNew: true,
-                })
+                ui.authorize('Agregar un producto al inventario', () =>
+                  setEdit({
+                    id: uid('i'),
+                    name: '',
+                    cat: cat === 'Todas' ? INV_CATS[0] : cat,
+                    unit: 'unidad',
+                    stock: '0',
+                    min: '',
+                    cost: '',
+                    isNew: true,
+                  }),
+                )
               }
             >
               + Producto
@@ -145,7 +147,15 @@ export default function Inventario() {
                 <button
                   className="link"
                   onClick={() =>
-                    setEdit({ ...it, stock: String(it.stock), min: String(it.min), cost: String(it.cost) })
+                    ui.authorize(`Editar ${it.name}`, (mgr) =>
+                      setEdit({
+                        ...it,
+                        stock: String(it.stock),
+                        min: String(it.min),
+                        cost: String(it.cost),
+                        authId: mgr.id,
+                      }),
+                    )
                   }
                 >
                   Editar
@@ -163,16 +173,14 @@ export default function Inventario() {
           {...move}
           onClose={() => setMove(null)}
           onSave={(type, qty, note) => {
-            if (type === 'merma' && user.role !== 'gerente') {
-              return ui.authorize(`Registrar merma de ${move.item.name}`, () => {
-                update((d) => A.invMove(d, { itemId: move.item.id, type, qty, note, userId: user.id }));
-                setMove(null);
-                ui.notify('Merma registrada');
-              });
-            }
-            update((d) => A.invMove(d, { itemId: move.item.id, type, qty, note, userId: user.id }));
-            setMove(null);
-            ui.notify(`${INV_MOVES[type]} registrada · ${move.item.name}`);
+            const run = (mgr) => {
+              update((d) => A.invMove(d, { itemId: move.item.id, type, qty, note, userId: user.id, authId: mgr?.id }));
+              setMove(null);
+              ui.notify(`${INV_MOVES[type]} registrada · ${move.item.name}`);
+            };
+            // Recepción solo registra entradas; lo demás lo autoriza gerencia
+            if (type === 'entrada') run();
+            else ui.authorize(`${INV_MOVES[type]} de ${move.item.name}`, run);
           }}
         />
       )}
@@ -194,15 +202,21 @@ export default function Inventario() {
               },
             )
           }
-          onSave={({ isNew, ...v }) => {
+          onSave={({ isNew, authId, ...v }) => {
             update((d) =>
-              A.upsert(d, 'inventory', {
-                ...v,
-                name: v.name.trim(),
-                stock: parseFloat(v.stock) || 0,
-                min: parseFloat(v.min) || 0,
-                cost: parseFloat(v.cost) || 0,
-              }),
+              A.upsert(
+                d,
+                'inventory',
+                {
+                  ...v,
+                  name: v.name.trim(),
+                  stock: parseFloat(v.stock) || 0,
+                  min: parseFloat(v.min) || 0,
+                  cost: parseFloat(v.cost) || 0,
+                },
+                'id',
+                { authId },
+              ),
             );
             setEdit(null);
             ui.notify(isNew ? 'Producto agregado' : 'Producto actualizado');

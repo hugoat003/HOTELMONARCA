@@ -88,7 +88,10 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
     guestStays(g, state.reservations).filter((r) => r.status === 'salida' || r.status === 'hospedado').length;
 
   let problem = '';
+  // Habitación bloqueada para un evento: sigue como bloqueo mientras no se escriba el huésped real
+  const stillBlock = !!f.block && f.guest.name.trim() === res?.guest.name;
   if (f.guest.name.trim().length < 2) problem = 'Falta el nombre del huésped';
+  else if (stillBlock && mode === 'checkin') problem = 'Escribe el nombre del huésped que llega';
   else if (nights < 1) problem = 'La salida debe ser después de la entrada';
   else if (!f.roomN) problem = 'Elige una habitación';
   else if (!available(f.roomN)) problem = `La ${f.roomN} no está disponible en esas fechas`;
@@ -121,7 +124,14 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
           <button
             className="btn btn-primary"
             disabled={!!problem}
-            onClick={() => onSave({ ...f, rate: Number(f.rate), guest: { ...f.guest, name: f.guest.name.trim() } })}
+            onClick={() =>
+              onSave({
+                ...f,
+                block: stillBlock,
+                rate: Number(f.rate),
+                guest: { ...f.guest, name: f.guest.name.trim() },
+              })
+            }
           >
             {problem || cta}
           </button>

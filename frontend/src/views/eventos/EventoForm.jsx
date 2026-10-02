@@ -3,6 +3,7 @@ import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { EVENT_EXTRAS, EVENT_UNITS } from '../../data.js';
 import { addDays, fmtDate, today, uid } from '../../lib/dates.js';
 import { eventTotals, venueConflict } from '../../lib/events.js';
+import { isAvailable } from '../../lib/hotel.js';
 import { useStore } from '../../store/store.jsx';
 
 // Cantidad sugerida del menú según su unidad
@@ -14,7 +15,12 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
   const { state, fmt } = useStore();
   const [f, setF] = useState(() =>
     ev
-      ? { ...ev, client: { ...ev.client }, extras: [...ev.extras] }
+      ? {
+          ...ev,
+          client: { ...ev.client },
+          extras: [...ev.extras],
+          roomBlock: { rooms: [], nights: 1, rate: '', ...ev.roomBlock },
+        }
       : {
           id: uid('e'),
           name: '',
@@ -30,6 +36,7 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
           extras: [],
           payments: [],
           notes: '',
+          roomBlock: { rooms: [], nights: 1, rate: '' },
           createdAt: Date.now(),
         },
   );
@@ -51,6 +58,24 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
         f.guests,
       ),
     });
+  // Habitaciones para invitados: libres esas noches o ya ligadas a este evento
+  const rb = f.roomBlock;
+  const setBlock = (patch) => set({ roomBlock: { ...rb, ...patch } });
+  const blockOut = addDays(f.date, Math.max(1, rb.nights || 1));
+  const linked = state.reservations.filter(
+    (r) => r.eventId === f.id && (r.status === 'reservada' || r.status === 'hospedado'),
+  );
+  const ownIds = new Set(linked.map((r) => r.id));
+  const roomFree = (n) =>
+    isAvailable(
+      state.reservations.filter((r) => !ownIds.has(r.id)),
+      n,
+      f.date,
+      blockOut,
+    );
+  const guestNamed = linked.filter((r) => !r.block).map((r) => r.roomN);
+  const toggleRoom = (n) =>
+    setBlock({ rooms: rb.rooms.includes(n) ? rb.rooms.filter((x) => x !== n) : [...rb.rooms, n] });
   const addExtra = (desc, amt) => set({ extras: [...f.extras, { id: uid('x'), desc, amt: Number(amt) }] });
 
   let problem = '';
@@ -58,6 +83,8 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
   else if (!f.client.name.trim()) problem = 'Falta el cliente';
   else if (f.end <= f.start) problem = 'La hora de fin debe ser después del inicio';
   else if (conflict) problem = `${venue.name} ocupado: ${conflict.name}`;
+  else if (rb.rooms.filter((n) => !guestNamed.includes(n) && !roomFree(n)).length)
+    problem = `Hab. ${rb.rooms.filter((n) => !guestNamed.includes(n) && !roomFree(n)).join(', ')} ocupada esas noches`;
 
   return (
     <Modal
@@ -180,6 +207,58 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
           Hay más invitados ({f.guests}) que la capacidad del {venue.name} ({venue.capacity}).
         </div>
       )}
+
+      <div className="stack-tight gap-8">
+        <div className="row items-center">
+          <div className="eyebrow">Habitaciones para invitados</div>
+          <span className="panel-sub text-sm">
+            {rb.rooms.length
+              ? `${rb.rooms.length} bloqueada${rb.rooms.length === 1 ? '' : 's'} · entrada ${fmtDate(f.date)}, salida ${fmtDate(blockOut)}`
+              : 'Opcional: aparta habitaciones a nombre del evento'}
+          </span>
+        </div>
+        <div className="chips">
+          {state.rooms.map((r) => {
+            const on = rb.rooms.includes(r.n);
+            const fixed = guestNamed.includes(r.n);
+            const free = roomFree(r.n);
+            return (
+              <button
+                key={r.n}
+                className={'chip' + (on ? ' active' : '')}
+                disabled={fixed || (!on && !free)}
+                title={fixed ? 'Ya tiene huésped asignado' : !free ? 'Ocupada esas noches' : ''}
+                onClick={() => toggleRoom(r.n)}
+              >
+                {r.n}
+                {!free && !on ? ' · ocupada' : ''}
+              </button>
+            );
+          })}
+        </div>
+        {rb.rooms.length > 0 && (
+          <div className="form-grid two">
+            <Field label="Noches">
+              <input
+                className="input"
+                type="number"
+                min="1"
+                max="14"
+                value={rb.nights}
+                onChange={(e) => setBlock({ nights: Math.min(14, Math.max(1, parseInt(e.target.value) || 1)) })}
+              />
+            </Field>
+            <Field label="Tarifa especial por noche" hint="vacío = tarifa normal de cada habitación">
+              <input
+                className="input"
+                type="number"
+                value={rb.rate}
+                onChange={(e) => setBlock({ rate: e.target.value })}
+              />
+            </Field>
+          </div>
+        )}
+      </div>
 
       <div className="stack-tight gap-8">
         <div className="eyebrow">Extras</div>

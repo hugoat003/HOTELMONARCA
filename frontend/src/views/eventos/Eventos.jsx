@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../../data.js';
-import { dateOf, fmtDate, fmtTime, today, uid } from '../../lib/dates.js';
+import { dateOf, fmtDate, fmtTime, nightsBetween, today, uid } from '../../lib/dates.js';
 import { eventTotals, isActiveEvent } from '../../lib/events.js';
 import { BeoDoc, EventDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
@@ -241,6 +241,10 @@ function EventPanel({ ev, onEdit }) {
     ui.preview(final ? 'Comprobante del evento' : 'Recibo', <TicketDoc sale={sale} />);
   };
 
+  const rooms = state.reservations
+    .filter((r) => r.eventId === ev.id && (r.status === 'reservada' || r.status === 'hospedado'))
+    .sort((a, b) => a.roomN.localeCompare(b.roomN));
+
   const setStatus = (status, msg) => {
     update((d) => A.setEventStatus(d, ev.id, status));
     ui.notify(msg);
@@ -265,6 +269,16 @@ function EventPanel({ ev, onEdit }) {
         <strong>{ev.client.name}</strong>
         <span>Teléfono</span>
         <strong>{ev.client.phone || '—'}</strong>
+        {rooms.length > 0 && (
+          <>
+            <span>Habitaciones</span>
+            <strong>
+              {rooms.map((r) => (r.block ? r.roomN : `${r.roomN} (${r.guest.name})`)).join(', ')} ·{' '}
+              {nightsBetween(rooms[0].checkIn, rooms[0].checkOut)} noche
+              {nightsBetween(rooms[0].checkIn, rooms[0].checkOut) === 1 ? '' : 's'}
+            </strong>
+          </>
+        )}
         {ev.notes && (
           <>
             <span>Notas</span>
@@ -374,7 +388,7 @@ function EventPanel({ ev, onEdit }) {
             ui.confirm(
               {
                 title: 'Cancelar evento',
-                message: `¿Cancelar “${ev.name}”? El salón queda libre para esa fecha.`,
+                message: `¿Cancelar “${ev.name}”? El salón y las habitaciones apartadas quedan libres.`,
                 confirmLabel: 'Cancelar evento',
                 danger: true,
               },

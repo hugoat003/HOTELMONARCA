@@ -4,7 +4,8 @@
 export const NAV = [
   { key: 'dashboard', label: 'Resumen', group: 'General' },
   { key: 'mesas', label: 'Mesas', group: 'Restaurante' },
-  { key: 'pedido', label: 'Pedido' },
+  // El pedido no está en el menú: se abre al tocar una mesa o cuenta en Mesas
+  { key: 'pedido', label: 'Pedido', hidden: true, parent: 'mesas' },
   { key: 'ventas', label: 'Ventas' },
   { key: 'inventario', label: 'Inventario' },
   { key: 'habitaciones', label: 'Habitaciones', group: 'Hotel' },
@@ -15,6 +16,7 @@ export const NAV = [
   { key: 'eventos', label: 'Eventos', group: 'Eventos' },
   { key: 'caja', label: 'Caja', group: 'Administración' },
   { key: 'reporte', label: 'Reporte / RDP' },
+  { key: 'bitacora', label: 'Bitácora' },
   { key: 'admin', label: 'Configuración' },
 ];
 export const TITLES = {
@@ -31,7 +33,27 @@ export const TITLES = {
   eventos: 'Eventos',
   caja: 'Caja',
   reporte: 'Reporte diario',
+  bitacora: 'Bitácora',
   admin: 'Configuración',
+};
+
+// Tiempos de la comanda: los fuertes y postres esperan hasta que el mesero los marcha
+export const COURSES = { entrada: 'Entradas', fuerte: 'Plato fuerte', postre: 'Postres' };
+export const COURSE_ORDER = { entrada: 1, fuerte: 2, postre: 3 };
+
+// Bitácora de operaciones sensibles
+export const AUDIT_TYPES = {
+  anulacion: 'Platillo anulado',
+  cortesia: 'Cortesía',
+  descuento: 'Descuento',
+  comprobante: 'Comprobante anulado',
+  devolucion: 'Devolución',
+  cancelacion: 'Cancelación',
+  cargo: 'Cargo quitado',
+  inventario: 'Inventario',
+  precio: 'Cambio de precio',
+  catalogo: 'Producto eliminado',
+  caja: 'Caja',
 };
 
 export const ROLES = {
@@ -86,7 +108,7 @@ export const RES_STATUS = {
   cancelada: 'Cancelada',
   noshow: 'No se presentó',
 };
-export const CHANNELS = ['Directo', 'Teléfono', 'WhatsApp', 'Booking.com', 'Expedia', 'Agencia'];
+export const CHANNELS = ['Directo', 'Teléfono', 'WhatsApp', 'Booking.com', 'Expedia', 'Agencia', 'Evento'];
 
 export const QUICK_NOTES = [
   'Sin cebolla',

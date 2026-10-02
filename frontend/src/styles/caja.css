@@ -81,3 +81,17 @@
 .kpi-button:hover {
   border-color: var(--ink);
 }
+.arqueo-result {
+  font-family: var(--condensed);
+  font-size: 30px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 14px 16px;
+  border-radius: 6px;
+  background: #e3ede4;
+  color: #2f5e38;
+}
+.arqueo-result.off {
+  background: #fbf1ec;
+  color: #9b2c1f;
+}

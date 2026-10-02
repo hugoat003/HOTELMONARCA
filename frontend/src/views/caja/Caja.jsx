@@ -3,6 +3,7 @@ import KpiCard from '../../components/KpiCard.jsx';
 import DataTable from '../../components/DataTable.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
+import { DEMO } from '../../config.js';
 import { DENOMINATIONS } from '../../data.js';
 import { fmtDateTime, fmtTime } from '../../lib/dates.js';
 import { linesTotal, round2 } from '../../lib/money.js';
@@ -18,19 +19,23 @@ export default function Caja() {
   const [movement, setMovement] = useState(null); // 'entrada' | 'salida'
   const [arqueo, setArqueo] = useState(false);
   const shift = state.shift;
+  const manager = user.role === 'gerente';
   const userName = (id) => state.users.find((u) => u.id === id)?.name || '—';
 
   const report = shift && buildReport(state, shift);
 
-  const closeShift = (counted, denominations) => {
+  const closeShift = (counted, denominations, blind) => {
     const closed = {
       ...shift,
       closedAt: Date.now(),
       closedBy: user.id,
       counted,
       difference: round2(counted - report.cash.expected),
+      ...blind,
     };
-    update((d) => A.closeShift(d, { counted, denominations, userId: user.id, report }));
+    update((d) =>
+      A.closeShift(d, { counted, denominations, userId: user.id, authId: arqueo.authId, report, ...blind }),
+    );
     setArqueo(false);
     ui.notify('Turno cerrado');
     ui.preview('Reporte de cierre', <ReportDoc report={report} shift={closed} />, { wide: true });
@@ -77,7 +82,7 @@ export default function Caja() {
                 className="btn btn-primary"
                 onClick={() => {
                   const open = state.orders.filter((o) => o.lines.length);
-                  const start = () => ui.authorize('Cerrar el turno de caja', () => setArqueo(true));
+                  const start = () => ui.authorize('Cerrar el turno de caja', (mgr) => setArqueo({ authId: mgr.id }));
                   if (!open.length) return start();
                   const amount = open.reduce((a, o) => a + linesTotal(o.lines), 0);
                   ui.confirm(
@@ -103,9 +108,14 @@ export default function Caja() {
               ['Entradas', report.cash.entradas],
               ['Salidas', report.cash.salidas],
               ['Efectivo esperado', report.cash.expected],
-            ].map(([l, v], i) => (
-              <KpiCard key={l} label={l} value={fmt(v)} tone={i === 4 ? 'dark' : undefined} />
-            ))}
+            ].map(([l, v], i) =>
+              // Cierre ciego: solo gerencia ve el efectivo que debería haber
+              !manager && (i === 1 || i === 4) ? (
+                <KpiCard key={l} label={l} value="—" note="Lo ve gerencia" tone={i === 4 ? 'dark' : undefined} />
+              ) : (
+                <KpiCard key={l} label={l} value={fmt(v)} tone={i === 4 ? 'dark' : undefined} />
+              ),
+            )}
           </div>
 
           <div className="report-grid">
@@ -116,7 +126,7 @@ export default function Caja() {
                   <span>
                     {m.label} <span className="panel-sub">· {m.count}</span>
                   </span>
-                  <strong>{fmt(m.amount)}</strong>
+                  <strong>{!manager && m.key === 'efectivo' ? '—' : fmt(m.amount)}</strong>
                 </div>
               ))}
             </div>
@@ -152,7 +162,10 @@ export default function Caja() {
             <span className="panel-sub">{userName(s.closedBy)}</span>
             <span>{fmt(s.report.cash.expected)}</span>
             <span>{fmt(s.counted)}</span>
-            <strong className={s.difference < 0 ? 'urgent' : ''}>{fmt(s.difference)}</strong>
+            <strong className={s.difference < 0 ? 'urgent' : ''} title={s.differenceNote || ''}>
+              {fmt(s.difference)}
+              {s.recounts > 0 && <span className="tag">recontado</span>}
+            </strong>
             <button
               className="link"
               onClick={() => ui.preview('Reporte de cierre', <ReportDoc report={s.report} shift={s} />, { wide: true })}
@@ -238,10 +251,68 @@ function MovementModal({ type, onClose, onSave }) {
   );
 }
 
+// Cierre ciego: primero se cuenta sin ver lo esperado; al confirmar el conteo aparece la diferencia.
+// Recontar queda registrado (con el primer conteo) en el cierre y en la bitácora.
 function ArqueoModal({ expected, fmt, onClose, onConfirm }) {
   const [counts, setCounts] = useState({});
+  const [step, setStep] = useState('contar'); // 'contar' | 'resultado'
+  const [firstCounted, setFirstCounted] = useState(null);
+  const [recounts, setRecounts] = useState(0);
+  const [note, setNote] = useState('');
   const counted = round2(DENOMINATIONS.reduce((a, d) => a + d * (parseInt(counts[d]) || 0), 0));
   const diff = round2(counted - expected);
+  const needsNote = step === 'resultado' && diff !== 0 && !note.trim();
+
+  if (step === 'resultado')
+    return (
+      <Modal
+        title="Resultado del arqueo"
+        onClose={onClose}
+        width={520}
+        footer={
+          <>
+            <button
+              className="btn"
+              onClick={() => {
+                setRecounts(recounts + 1);
+                setStep('contar');
+              }}
+            >
+              Volver a contar
+            </button>
+            <button
+              className="btn btn-primary"
+              disabled={needsNote}
+              onClick={() => onConfirm(counted, counts, { firstCounted, recounts, note: note.trim() })}
+            >
+              {needsNote ? 'Explica la diferencia' : 'Cerrar turno'}
+            </button>
+          </>
+        }
+      >
+        <div className="kv">
+          <span>Contado</span>
+          <strong>{fmt(counted)}</strong>
+          <span>Esperado por el sistema</span>
+          <strong>{fmt(expected)}</strong>
+        </div>
+        <div className={'arqueo-result' + (diff === 0 ? ' ok' : ' off')}>
+          {diff === 0 ? 'La caja cuadra' : `${diff > 0 ? 'Sobrante' : 'Faltante'} de ${fmt(Math.abs(diff))}`}
+        </div>
+        {recounts > 0 && (
+          <div className="panel-sub text-sm">
+            Recontado {recounts} {recounts === 1 ? 'vez' : 'veces'} · primer conteo {fmt(firstCounted)}. Queda en la
+            bitácora.
+          </div>
+        )}
+        {diff !== 0 && (
+          <Field label="Explicación de la diferencia">
+            <input className="input" autoFocus value={note} onChange={(e) => setNote(e.target.value)} />
+          </Field>
+        )}
+      </Modal>
+    );
+
   return (
     <Modal
       title="Arqueo de caja"
@@ -252,13 +323,21 @@ function ArqueoModal({ expected, fmt, onClose, onConfirm }) {
           <button className="btn" onClick={onClose}>
             Cancelar
           </button>
-          <button className="btn btn-primary" onClick={() => onConfirm(counted, counts)}>
-            Cerrar turno
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              if (firstCounted === null) setFirstCounted(counted);
+              setStep('resultado');
+            }}
+          >
+            Confirmar conteo · {fmt(counted)}
           </button>
         </>
       }
     >
-      <div className="panel-sub text-sm">Cuenta el efectivo por denominación.</div>
+      <div className="panel-sub text-sm">
+        Cuenta el efectivo por denominación. El monto esperado se muestra al confirmar el conteo.
+      </div>
       <div className="denoms">
         {DENOMINATIONS.map((d) => (
           <label key={d} className="denom">
@@ -266,6 +345,7 @@ function ArqueoModal({ expected, fmt, onClose, onConfirm }) {
             <input
               className="input"
               type="number"
+              inputMode="numeric"
               min="0"
               placeholder="0"
               value={counts[d] || ''}
@@ -276,35 +356,30 @@ function ArqueoModal({ expected, fmt, onClose, onConfirm }) {
         ))}
       </div>
       <div className="summary-bar">
-        <span>
-          Esperado <strong>{fmt(expected)}</strong>
-        </span>
-        <span>
-          Contado <strong>{fmt(counted)}</strong>
-        </span>
-        <span className={diff === 0 ? '' : 'urgent'}>
-          {diff === 0 ? 'Cuadra' : diff > 0 ? 'Sobrante' : 'Faltante'} <strong>{fmt(Math.abs(diff))}</strong>
-        </span>
+        <span>Total contado</span>
+        <strong>{fmt(counted)}</strong>
       </div>
-      <button
-        className="link"
-        onClick={() => {
-          // llena el arqueo con el monto esperado usando billetes grandes primero
-          let rest = Math.round(expected * 100);
-          const c = {};
-          for (const d of DENOMINATIONS) {
-            const cents = Math.round(d * 100);
-            const n = Math.floor(rest / cents);
-            if (n) {
-              c[d] = String(n);
-              rest -= n * cents;
+      {DEMO && (
+        <button
+          className="link"
+          onClick={() => {
+            // llena el arqueo con el monto esperado usando billetes grandes primero
+            let rest = Math.round(expected * 100);
+            const c = {};
+            for (const d of DENOMINATIONS) {
+              const cents = Math.round(d * 100);
+              const n = Math.floor(rest / cents);
+              if (n) {
+                c[d] = String(n);
+                rest -= n * cents;
+              }
             }
-          }
-          setCounts(c);
-        }}
-      >
-        Llenar con el monto esperado (demo)
-      </button>
+            setCounts(c);
+          }}
+        >
+          Llenar con el monto esperado (demo)
+        </button>
+      )}
     </Modal>
   );
 }

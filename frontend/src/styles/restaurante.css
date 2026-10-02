@@ -193,6 +193,10 @@
   border-radius: 8px;
   background: #fafaf8;
   user-select: none;
+  /* En vista se puede desplazar la página con el dedo sobre el mapa; al editar, el dedo arrastra mesas */
+  touch-action: manipulation;
+}
+.table-map.editing {
   touch-action: none;
 }
 .map-floor {
@@ -330,4 +334,99 @@
 .line-mods {
   font-size: 13px;
   color: var(--muted);
+}
+.line-tag.held {
+  color: var(--accent);
+}
+
+/* Mesas: una zona a la vez, con pestañas grandes para la tablet */
+.zone-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: var(--line-soft);
+  border-radius: 8px;
+  flex: 1;
+  max-width: 560px;
+}
+.zone-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.zone-tab.active {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.zone-tab-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.zone-tab-count .pulse-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+}
+
+/* Pedido: barra superior y categorías en una sola fila deslizable */
+.pedido-top {
+  justify-content: flex-start;
+}
+.pedido-top .search {
+  flex: 1;
+  max-width: 420px;
+  margin-left: auto;
+}
+/* El nombre de la cuenta solo hace falta cuando la cuenta está oculta (tablet vertical) */
+@media (min-width: 901px) {
+  .pedido-label {
+    display: none;
+  }
+}
+.pedido-label {
+  font-family: var(--condensed);
+  font-size: 24px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.cat-scroll {
+  flex: none;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.cat-scroll::-webkit-scrollbar {
+  display: none;
+}
+.cat-scroll .chip {
+  flex: none;
+}
+.menu-item-cat {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-item-price {
+  white-space: nowrap;
+  flex: none;
+  margin-left: 8px;
 }

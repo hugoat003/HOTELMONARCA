@@ -3,9 +3,9 @@ import KpiCard from '../components/KpiCard.jsx';
 import { EVENT_STATUS } from '../data.js';
 import { addDays, fmtDate, fmtTime, today } from '../lib/dates.js';
 import { eventTotals, isActiveEvent } from '../lib/events.js';
-import { folio, roomState } from '../lib/hotel.js';
-import { stockStatus } from '../lib/inventory.js';
+import { roomState } from '../lib/hotel.js';
 import { linesTotal, sum } from '../lib/money.js';
+import { buildReminders } from '../lib/reminders.js';
 import { buildReport, dailySeries } from '../lib/report.js';
 import { useStore } from '../store/store.jsx';
 import { usePersisted } from '../store/usePersisted.js';
@@ -27,52 +27,12 @@ export default function Dashboard({ go, mobile = false }) {
   const occupied = state.rooms.filter((rm) => roomState(rm, state.reservations, d0).status === 'ocupada').length;
   const occ = state.rooms.length ? Math.round((occupied / state.rooms.length) * 100) : 0;
 
-  const lowStock = state.inventory.filter((it) => stockStatus(it) !== 'ok');
-  const shopLow = (state.shopItems || []).filter((it) => stockStatus(it) !== 'ok');
   const dirty = state.rooms.filter((rm) => rm.hk === 'sucia' || rm.hk === 'limpiando');
-  const monthlyDue = inHouse
-    .filter((x) => x.rateType === 'mensual')
-    .map((x) => ({ res: x, due: folio(x, state).dueToday }))
-    .filter((x) => x.due > 0.004);
   const events = state.events
     .filter((e) => isActiveEvent(e) && e.date >= d0 && e.date <= addDays(d0, 30))
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
-  const eventsDue = events.filter((e) => e.date <= addDays(d0, 7) && eventTotals(e, state).balance > 0.004);
 
-  const toInvoice = state.sales.filter((x) => x.status === 'ok' && x.invoice && !x.invoice.number);
-  const alerts = [
-    toInvoice.length > 0 && {
-      text: `${toInvoice.length} venta${toInvoice.length === 1 ? '' : 's'} por facturar · ${fmt(toInvoice.reduce((a, x) => a + x.grand, 0))}`,
-      view: 'ventas',
-      level: 'mid',
-    },
-    !state.shift && { text: 'La caja está cerrada: no se puede cobrar.', view: 'caja', level: 'high' },
-    ...monthlyDue.map((x) => ({
-      text: `Hab. ${x.res.roomN} · ${x.res.guest.name}: pendiente de su mensualidad ${fmt(x.due)}`,
-      view: 'habitaciones',
-      level: 'high',
-    })),
-    ...eventsDue.map((e) => ({
-      text: `${e.name} (${fmtDate(e.date)}): saldo ${fmt(eventTotals(e, state).balance)}`,
-      view: 'eventos',
-      level: 'mid',
-    })),
-    ...lowStock.map((it) => ({
-      text: `${it.name}: ${it.stock <= 0 ? 'agotado' : `quedan ${it.stock} ${it.unit} (mínimo ${it.min})`}`,
-      view: 'inventario',
-      level: it.stock <= 0 ? 'high' : 'mid',
-    })),
-    ...shopLow.map((it) => ({
-      text: `Tienda · ${it.name}: ${it.stock <= 0 ? 'agotado' : `quedan ${it.stock} (mínimo ${it.min})`}`,
-      view: 'tienda',
-      level: it.stock <= 0 ? 'high' : 'mid',
-    })),
-    dirty.length > 0 && {
-      text: `${dirty.length} habitación(es) por limpiar: ${dirty.map((x) => x.n).join(', ')}`,
-      view: 'limpieza',
-      level: 'low',
-    },
-  ].filter(Boolean);
+  const alerts = buildReminders(state, fmt);
 
   const methodTotal = r
     ? Math.max(
@@ -177,9 +137,10 @@ export default function Dashboard({ go, mobile = false }) {
         </section>
 
         <section className="card dash-card">
-          <div className="card-label">Alertas · {alerts.length}</div>
+          <div className="card-label">Pendientes · {alerts.length}</div>
           {alerts.map((a, i) => (
             <button key={i} className={'dash-alert ' + a.level} onClick={link(a.view)} disabled={!link(a.view)}>
+              <span className="dash-alert-area">{a.area}</span>
               {a.text}
             </button>
           ))}

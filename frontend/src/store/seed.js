@@ -1,8 +1,9 @@
 import { addDays, addMonths, today } from '../lib/dates.js';
 import { linesTotal, round2 } from '../lib/money.js';
 import { buildReport } from '../lib/report.js';
+import { A } from './actions.js';
 
-export const VERSION = 9;
+export const VERSION = 10;
 
 const CATEGORIES = ['Desayunos', 'Entradas', 'Platos fuertes', 'Postres', 'Bebidas', 'Bar', 'Especiales'];
 
@@ -874,6 +875,7 @@ export function seed() {
         payments: [
           { id: 'ep1', ts: at(addDays(d0, -10), '11:30'), method: 'transferencia', amount: 8000, desc: 'Anticipo' },
         ],
+        roomBlock: { rooms: ['301', '302'], nights: 1, rate: 900 },
       },
     ),
     E(
@@ -999,6 +1001,7 @@ export function seed() {
       weekendPct: 15,
       extraPersonFrom: 2,
       extraPersonRate: 150,
+      catCourse: { Entradas: 'entrada', 'Platos fuertes': 'fuerte', Postres: 'postre', Especiales: 'fuerte' },
     },
     users: USERS,
     categories: CATEGORIES,
@@ -1021,6 +1024,48 @@ export function seed() {
     orders,
     sales,
     voids: [],
+    audit: [
+      {
+        id: 'au1',
+        ts: at(addDays(d0, -2), '16:20'),
+        type: 'precio',
+        userId: 'u1',
+        authId: null,
+        ref: 'Menú · Lomito a la parrilla',
+        detail: 'Cambio de precio: Q 155.00 → Q 165.00',
+        amount: 10,
+      },
+      {
+        id: 'au2',
+        ts: at(y, '13:42'),
+        type: 'anulacion',
+        userId: 'u3',
+        authId: 'u1',
+        ref: 'Mesa 4',
+        detail: '1 × Limonada con soda · Error del mesero (sin enviar)',
+        amount: 25,
+      },
+      {
+        id: 'au3',
+        ts: at(y, '20:15'),
+        type: 'cortesia',
+        userId: 'u4',
+        authId: 'u1',
+        ref: 'Mesa 7',
+        detail: '1 × Flan de la casa · Cumpleaños',
+        amount: 38,
+      },
+      {
+        id: 'au4',
+        ts: at(d0, '09:10'),
+        type: 'inventario',
+        userId: 'u2',
+        authId: 'u1',
+        ref: 'Tienda · Agua pura 600 ml',
+        detail: 'Merma de 2 unidad · Botellas dañadas',
+        amount: 8,
+      },
+    ],
     shift,
     shiftHistory: [],
     counters: { doc, comanda: 14, llevar: 1 },
@@ -1030,8 +1075,22 @@ export function seed() {
   shiftY.closedAt = at(y, '22:05');
   shiftY.closedBy = 'u1';
   const repY = buildReport(state, shiftY);
-  shiftY.counted = repY.cash.expected;
-  shiftY.difference = 0;
+  // Ayer faltaron Q20 en el arqueo: aparece en Caja, en la bitácora y en los pendientes
+  shiftY.counted = round2(repY.cash.expected - 20);
+  shiftY.firstCounted = shiftY.counted;
+  shiftY.recounts = 0;
+  shiftY.differenceNote = 'Vuelto mal dado en la tarde';
+  shiftY.difference = -20;
+  state.audit.push({
+    id: 'au5',
+    ts: shiftY.closedAt,
+    type: 'caja',
+    userId: 'u1',
+    authId: null,
+    ref: 'Cierre de turno',
+    detail: 'Faltante · Vuelto mal dado en la tarde',
+    amount: -20,
+  });
   shiftY.report = repY;
   state.shiftHistory.push(shiftY);
   // Cierres de los días anteriores (más reciente primero)
@@ -1043,6 +1102,9 @@ export function seed() {
     sh.difference = 0;
     state.shiftHistory.push(sh);
   }
+
+  // Habitaciones apartadas para los invitados de la boda
+  A.syncEventRooms(state, 'e1');
 
   return state;
 }
