@@ -2,7 +2,6 @@ import { expect, fresh, login, modalClick, nav, state, test, typePin } from './h
 
 const openTable = async (page, n) => {
   await page.getByRole('button', { name: new RegExp(`^Mesa ${n} ·`) }).click();
-  await modalClick(page, 'Abrir mesa');
 };
 const inv = async (page, name) => (await state(page)).inventory.find((i) => i.name === name).stock;
 

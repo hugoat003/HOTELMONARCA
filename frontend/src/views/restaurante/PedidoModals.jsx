@@ -292,9 +292,10 @@ export function SplitModal({ lines, fmt, onClose, onPay }) {
 }
 
 // Opciones de la cuenta: cambiar mesa, unir, pasar platillos, cambiar mesero
-export function OrderOptionsModal({ order, state, fmt, onClose, onMove, onJoin, onTransfer, onWaiter }) {
+export function OrderOptionsModal({ order, state, fmt, onClose, onMove, onJoin, onTransfer, onWaiter, onCustomer }) {
   const [step, setStep] = useState('menu');
   const [sel, setSel] = useState({});
+  const [customer, setCustomer] = useState(order.customer || '');
   const free = state.tables.filter((t) => !tableOrder(state.orders, t.id));
   const others = state.orders.filter((o) => o.type === 'mesa' && o.id !== order.id);
   const targets = state.tables.filter((t) => tableOrder(state.orders, t.id)?.id !== order.id);
@@ -307,6 +308,7 @@ export function OrderOptionsModal({ order, state, fmt, onClose, onMove, onJoin, 
     pasar: 'Pasar platillos a otra mesa',
     destino: 'Pasar a la mesa…',
     mesero: 'Cambiar mesero',
+    cliente: 'Nombre del cliente',
   };
   const back = (
     <button className="btn btn-quiet" onClick={() => setStep('menu')}>
@@ -331,10 +333,35 @@ export function OrderOptionsModal({ order, state, fmt, onClose, onMove, onJoin, 
           <button className="btn" disabled={!order.lines.length} onClick={() => setStep('pasar')}>
             Pasar platillos a otra mesa
           </button>
+          {!isTable && (
+            <button className="btn" onClick={() => setStep('cliente')}>
+              {order.customer ? `Cliente: ${order.customer}` : 'Poner nombre del cliente'}
+            </button>
+          )}
           <button className="btn" onClick={() => setStep('mesero')}>
             Cambiar mesero
           </button>
         </div>
+      )}
+
+      {step === 'cliente' && (
+        <>
+          <Field label="Nombre del cliente" hint="opcional, para llamarlo cuando esté listo">
+            <input
+              className="input"
+              autoFocus
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onCustomer(customer.trim())}
+            />
+          </Field>
+          <div className="btn-row">
+            {back}
+            <button className="btn btn-primary" onClick={() => onCustomer(customer.trim())}>
+              Guardar
+            </button>
+          </div>
+        </>
       )}
 
       {step === 'mover' && (
@@ -357,13 +384,12 @@ export function OrderOptionsModal({ order, state, fmt, onClose, onMove, onJoin, 
       {step === 'unir' && (
         <>
           <div className="panel-sub text-sm">
-            Sus platillos y personas pasan a esta cuenta y la mesa queda unida hasta que se cobre.
+            Sus platillos pasan a esta cuenta y la mesa queda unida hasta que se cobre.
           </div>
           <div className="stack-tight gap-8">
             {others.map((o) => (
               <button key={o.id} className="room-opt" onClick={() => onJoin(o)}>
-                <strong>{orderLabel(o, state.tables)}</strong> · {o.guests} pers. ·{' '}
-                {fmt(o.lines.reduce((a, l) => a + l.price * l.qty, 0))}
+                <strong>{orderLabel(o, state.tables)}</strong> · {fmt(o.lines.reduce((a, l) => a + l.price * l.qty, 0))}
               </button>
             ))}
           </div>

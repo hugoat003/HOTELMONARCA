@@ -1,6 +1,7 @@
 import { METHOD_LABELS } from '../data.js';
 import { addDays, dateOf, nightsBetween, today } from './dates.js';
 import { nightlyRate } from './hotel.js';
+import { dishCost } from './inventory.js';
 import { round2, sum } from './money.js';
 
 // Reporte Diario de Producción de un turno (abierto o cerrado)
@@ -185,6 +186,25 @@ export function buildRangeReport(state, from, to) {
   const share = byWaiter.length ? round2(tips / byWaiter.length) : 0;
   for (const w of byWaiter) w.tipShare = split === 'iguales' ? share : w.tips;
 
+  // Rentabilidad por platillo: lo vendido contra el costo de su receta (las cortesías cuestan aunque no se cobren)
+  const dishMap = {};
+  for (const l of rest.flatMap((s) => s.lines)) {
+    const m = state.menu.find((x) => x.id === l.mid);
+    const unit = dishCost(m, state.inventory);
+    if (unit === null) continue;
+    const x = (dishMap[l.mid] ||= { mid: l.mid, name: m.name, cat: m.cat, qty: 0, sales: 0, cost: 0 });
+    x.qty += l.qty;
+    x.sales = round2(x.sales + l.price * l.qty);
+    x.cost = round2(x.cost + unit * l.qty);
+  }
+  const dishes = Object.values(dishMap)
+    .map((x) => ({
+      ...x,
+      profit: round2(x.sales - x.cost),
+      margin: x.sales ? Math.round(((x.sales - x.cost) / x.sales) * 100) : 0,
+    }))
+    .sort((a, b) => b.profit - a.profit);
+
   const lodging = lodgingByDay(state, from, to);
   const rooms = state.rooms.length;
   const roomNights = sum(lodging, (x) => x.occupied);
@@ -214,6 +234,7 @@ export function buildRangeReport(state, from, to) {
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 5),
     byWaiter,
+    dishes,
     voids: {
       lines: rangeVoids.length,
       linesAmount: sum(rangeVoids, (v) => v.amount),

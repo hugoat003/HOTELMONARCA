@@ -19,7 +19,7 @@
   align-items: center;
 }
 .tx-row.admin-menu {
-  grid-template-columns: 1.6fr 1fr 110px 110px 140px;
+  grid-template-columns: 1.6fr 1fr 100px 100px 80px 110px 140px;
   align-items: center;
 }
 .tx-row.admin-tables {
@@ -85,4 +85,8 @@
 .tag.audit-precio {
   background: #f1ead8;
   color: #6b5413;
+}
+.tx-row.dishes {
+  grid-template-columns: 2fr 90px 1fr 1fr 1fr 80px;
+  align-items: center;
 }

@@ -46,7 +46,7 @@ test('exportar el reporte a Excel', async ({ page }) => {
   ]);
   expect(download.suggestedFilename()).toMatch(/\.xlsx$/);
   const wb = XLSX.read(await (await download.createReadStream()).toArray().then(Buffer.concat));
-  expect(wb.SheetNames).toEqual(['Resumen', 'Por día', 'Por mesero', 'Por categoría', 'Cobros']);
+  expect(wb.SheetNames).toEqual(['Resumen', 'Por día', 'Por mesero', 'Por categoría', 'Rentabilidad', 'Cobros']);
   expect(XLSX.utils.sheet_to_json(wb.Sheets['Por día'])).toHaveLength(30);
   expect(XLSX.utils.sheet_to_json(wb.Sheets['Cobros']).length).toBeGreaterThan(100);
 });

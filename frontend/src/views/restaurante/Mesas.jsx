@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import TableMap from '../../components/TableMap.jsx';
-import Modal, { Field } from '../../components/ui/Modal.jsx';
+import { useUI } from '../../components/ui/UIProvider.jsx';
 import { TABLE_COLORS } from '../../data.js';
 import { uid } from '../../lib/dates.js';
 import { linesTotal } from '../../lib/money.js';
@@ -25,8 +25,7 @@ const shortMinutes = (ts) => {
 
 export default function Mesas({ go }) {
   const { state, user, fmt, update } = useStore();
-  const [opening, setOpening] = useState(null); // mesa a abrir
-  const [takeout, setTakeout] = useState(false);
+  const ui = useUI();
   const [savedZone, setZone] = usePersisted('mesas.zona', null);
   const [editing, setEditing] = useState(false);
   const [, tick] = useState(0);
@@ -40,21 +39,29 @@ export default function Mesas({ go }) {
   const tables = state.tables.map(placed);
   const zones = [...new Set([...tables.map((t) => t.zone), ...state.mapDecor.map((d) => d.zone)])];
   const orderFor = (tableId) => tableOrder(state.orders, tableId);
-  const waiters = state.users.filter((u) => u.active && (u.role === 'mesero' || u.id === user.id));
   const open = [...state.orders].sort((a, b) => a.openedAt - b.openedAt);
   const occupied = state.orders.filter((o) => o.type === 'mesa').length;
 
+  // Tocar una mesa libre abre la cuenta a nombre de quien tiene la sesión y pasa directo al menú
   const openOrder = (data) => {
     const id = uid('o');
-    update((d) => (data.tableId ? A.openTable(d, { id, ...data }) : A.openTakeout(d, { id, ...data })));
-    setOpening(null);
-    setTakeout(false);
+    update((d) =>
+      data.tableId ? A.openTable(d, { id, ...data, waiterId: user.id }) : A.openTakeout(d, { id, waiterId: user.id }),
+    );
     go('pedido', { orderId: id });
   };
   const clickTable = (t) => {
     const o = orderFor(t.id);
-    if (o) go('pedido', { orderId: o.id });
-    else setOpening(t);
+    if (o) return go('pedido', { orderId: o.id });
+    if (!t.reservedAt) return openOrder({ tableId: t.id });
+    ui.confirm(
+      {
+        title: `${t.name} está reservada`,
+        message: `Tiene una reserva para las ${t.reservedAt}. Si la abres ahora, la reserva se libera.`,
+        confirmLabel: 'Abrir mesa',
+      },
+      () => openOrder({ tableId: t.id }),
+    );
   };
 
   // Apariencia de cada mesa en el mapa según su estado
@@ -164,7 +171,7 @@ export default function Mesas({ go }) {
               {occupied} de {state.tables.length} mesas · {open.length} cuenta{open.length === 1 ? '' : 's'}
             </div>
           </div>
-          <button className="btn-small" onClick={() => setTakeout(true)}>
+          <button className="btn-small" onClick={() => openOrder({})}>
             + Para llevar
           </button>
         </div>
@@ -181,7 +188,7 @@ export default function Mesas({ go }) {
                 </span>
                 <span className="account-meta">
                   {t ? t.zone + ' · ' : ''}
-                  {o.guests} pers. · {firstName(state.users, o.waiterId)} · {items} producto{items === 1 ? '' : 's'}
+                  {firstName(state.users, o.waiterId)} · {items} producto{items === 1 ? '' : 's'}
                 </span>
                 <span className="account-meta">
                   <span className={minutesNum(o.openedAt) >= 90 ? 'urgent' : ''}>
@@ -201,102 +208,6 @@ export default function Mesas({ go }) {
           </div>
         </div>
       </div>
-
-      {opening && (
-        <OpenTableModal
-          table={opening}
-          waiters={waiters}
-          defaultWaiter={user.role === 'mesero' ? user.id : waiters.find((w) => w.role === 'mesero')?.id}
-          onClose={() => setOpening(null)}
-          onOpen={(guests, waiterId) => openOrder({ tableId: opening.id, guests, waiterId })}
-        />
-      )}
-      {takeout && (
-        <TakeoutModal
-          onClose={() => setTakeout(false)}
-          onOpen={(customer) => openOrder({ customer, waiterId: user.id })}
-        />
-      )}
     </div>
-  );
-}
-
-function OpenTableModal({ table, waiters, defaultWaiter, onClose, onOpen }) {
-  const [guests, setGuests] = useState(Math.min(2, table.seats));
-  const [waiterId, setWaiterId] = useState(defaultWaiter || waiters[0]?.id);
-  return (
-    <Modal
-      title={`Abrir ${table.name}`}
-      onClose={onClose}
-      width={420}
-      footer={
-        <>
-          <button className="btn" onClick={onClose}>
-            Cancelar
-          </button>
-          <button className="btn btn-primary" onClick={() => onOpen(guests, waiterId)}>
-            Abrir mesa
-          </button>
-        </>
-      }
-    >
-      {table.reservedAt && (
-        <div className="note-box">
-          Esta mesa está reservada para las {table.reservedAt}. Al abrirla se libera la reserva.
-        </div>
-      )}
-      <Field as="div" label="Comensales">
-        <div className="stepper big">
-          <button onClick={() => setGuests(Math.max(1, guests - 1))}>−</button>
-          <span>{guests}</span>
-          <button onClick={() => setGuests(guests + 1)}>+</button>
-        </div>
-      </Field>
-      <Field as="div" label="Mesero">
-        <div className="chips">
-          {waiters.map((w) => (
-            <button
-              key={w.id}
-              className={'chip' + (waiterId === w.id ? ' active' : '')}
-              onClick={() => setWaiterId(w.id)}
-            >
-              {w.name}
-            </button>
-          ))}
-        </div>
-      </Field>
-    </Modal>
-  );
-}
-
-function TakeoutModal({ onClose, onOpen }) {
-  const [customer, setCustomer] = useState('');
-  return (
-    <Modal
-      title="Orden para llevar"
-      onClose={onClose}
-      width={420}
-      footer={
-        <>
-          <button className="btn" onClick={onClose}>
-            Cancelar
-          </button>
-          <button className="btn btn-primary" onClick={() => onOpen(customer.trim())}>
-            Crear orden
-          </button>
-        </>
-      }
-    >
-      <Field label="Nombre del cliente" hint="opcional">
-        <input
-          className="input"
-          autoFocus
-          value={customer}
-          onChange={(e) => setCustomer(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onOpen(customer.trim())}
-          placeholder="Ej. Sr. López"
-        />
-      </Field>
-    </Modal>
   );
 }

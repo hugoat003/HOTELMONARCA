@@ -5,6 +5,7 @@ import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DEMO } from '../../config.js';
 import { COURSES, EVENT_UNITS, ROLE_LABELS } from '../../data.js';
+import { dishCost, marginPct } from '../../lib/inventory.js';
 import { uid } from '../../lib/dates.js';
 import { isActiveRes } from '../../lib/hotel.js';
 import { A } from '../../store/actions.js';
@@ -134,43 +135,54 @@ function MenuTab() {
           </button>
         </div>
       </div>
-      <DataTable variant="admin-menu" columns={['Platillo', 'Categoría', 'Precio', 'Disponible', '']}>
-        {items.map((m) => (
-          <div key={m.id} className="tx-row admin-menu">
-            <span>{m.name}</span>
-            <span className="panel-sub">{m.cat}</span>
-            <strong>{fmt(m.price)}</strong>
-            <span>
-              <button
-                className={'toggle' + (m.active ? ' on' : '')}
-                onClick={() => update((d) => A.upsert(d, 'menu', { ...m, active: !m.active }))}
-              >
-                {m.active ? 'Sí' : 'Agotado'}
-              </button>
-            </span>
-            <span className="row-actions">
-              <button className="link" onClick={() => setEdit({ ...m, price: String(m.price) })}>
-                Editar
-              </button>
-              <button
-                className="link danger"
-                onClick={() =>
-                  ui.confirm(
-                    {
-                      title: 'Eliminar platillo',
-                      message: `¿Eliminar “${m.name}” del menú?`,
-                      confirmLabel: 'Eliminar',
-                      danger: true,
-                    },
-                    () => update((d) => A.remove(d, 'menu', m.id)),
-                  )
-                }
-              >
-                Eliminar
-              </button>
-            </span>
-          </div>
-        ))}
+      <DataTable
+        variant="admin-menu"
+        columns={['Platillo', 'Categoría', 'Precio', 'Costo', 'Margen', 'Disponible', '']}
+      >
+        {items.map((m) => {
+          const cost = dishCost(m, state.inventory);
+          const margin = marginPct(m.price, cost);
+          return (
+            <div key={m.id} className="tx-row admin-menu">
+              <span>{m.name}</span>
+              <span className="panel-sub">{m.cat}</span>
+              <strong>{fmt(m.price)}</strong>
+              <span className="panel-sub">{cost === null ? 'Sin receta' : fmt(cost)}</span>
+              <span className={margin !== null && margin < 50 ? 'urgent' : ''}>
+                {margin === null ? '—' : margin + '%'}
+              </span>
+              <span>
+                <button
+                  className={'toggle' + (m.active ? ' on' : '')}
+                  onClick={() => update((d) => A.upsert(d, 'menu', { ...m, active: !m.active }))}
+                >
+                  {m.active ? 'Sí' : 'Agotado'}
+                </button>
+              </span>
+              <span className="row-actions">
+                <button className="link" onClick={() => setEdit({ ...m, price: String(m.price) })}>
+                  Editar
+                </button>
+                <button
+                  className="link danger"
+                  onClick={() =>
+                    ui.confirm(
+                      {
+                        title: 'Eliminar platillo',
+                        message: `¿Eliminar “${m.name}” del menú?`,
+                        confirmLabel: 'Eliminar',
+                        danger: true,
+                      },
+                      () => update((d) => A.remove(d, 'menu', m.id)),
+                    )
+                  }
+                >
+                  Eliminar
+                </button>
+              </span>
+            </div>
+          );
+        })}
       </DataTable>
 
       <ModifierGroups />

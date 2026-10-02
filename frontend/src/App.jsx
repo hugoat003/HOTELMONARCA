@@ -198,6 +198,19 @@ function Shell() {
           </div>
         </header>
 
+        {!state.shift && view !== 'caja' && (
+          <div className="shift-banner" role="status">
+            <span>
+              <strong>Caja cerrada.</strong> No se puede cobrar en restaurante, hotel, eventos ni tienda hasta abrir el
+              turno.
+            </span>
+            {allowed.includes('caja') && (
+              <button className="btn small" onClick={() => go('caja')}>
+                Abrir caja
+              </button>
+            )}
+          </div>
+        )}
         <div className="content">
           <ErrorBoundary key={view} onReset={() => setView(allowed[0])}>
             {view === 'dashboard' && <Dashboard go={go} />}

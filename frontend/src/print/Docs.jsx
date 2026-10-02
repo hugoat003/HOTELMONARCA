@@ -113,7 +113,7 @@ export function TicketDoc({ sale }) {
 
 // Comanda agrupada por tiempos. held: tiempos que esperan a que el mesero los marche.
 // march: comanda corta para marchar un tiempo que estaba en espera.
-export function ComandaDoc({ label, lines, number, waiterId, guests, held = [], march = null }) {
+export function ComandaDoc({ label, lines, number, waiterId, held = [], march = null }) {
   const { state } = useStore();
   const groups = [
     ...Object.keys(COURSES).map((c) => ({ key: c, title: COURSES[c], lines: lines.filter((l) => l.course === c) })),
@@ -124,7 +124,7 @@ export function ComandaDoc({ label, lines, number, waiterId, guests, held = [], 
     <div className="doc comanda">
       <div className="doc-title">{march ? `Marchar · ${COURSES[march]}` : `Comanda #${number}`}</div>
       <Row l={label} r={fmtTime(Date.now())} strong />
-      <Row l={`Mesero: ${userName(state.users, waiterId)}`} r={`${guests} pers.`} />
+      <Row l={`Mesero: ${userName(state.users, waiterId)}`} r="" />
       {groups.map((g) => (
         <div key={g.key}>
           <div className="doc-sep" />
@@ -151,7 +151,7 @@ export function ComandaDoc({ label, lines, number, waiterId, guests, held = [], 
   );
 }
 
-export function PrecuentaDoc({ label, lines, waiterId, guests }) {
+export function PrecuentaDoc({ label, lines, waiterId }) {
   const { state, fmt } = useStore();
   const total = linesTotal(lines);
   const tip = round2((total * state.config.tipPct) / 100);
@@ -162,7 +162,7 @@ export function PrecuentaDoc({ label, lines, waiterId, guests }) {
       <div className="doc-center doc-small">No es un documento fiscal</div>
       <div className="doc-sep" />
       <Row l={label} r={fmtDateTime(Date.now())} />
-      <Row l={`Atendió: ${userName(state.users, waiterId)}`} r={`${guests} pers.`} />
+      <Row l={`Atendió: ${userName(state.users, waiterId)}`} r="" />
       <div className="doc-sep" />
       {lines.map((l) => (
         <div key={l.id} className="doc-line">

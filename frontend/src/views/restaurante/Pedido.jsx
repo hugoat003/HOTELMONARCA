@@ -72,14 +72,7 @@ export default function Pedido({ orderId, go }) {
     update((d) => A.sendKitchen(d, order.id, { userId: user.id, label }));
     ui.preview(
       'Comanda enviada a cocina',
-      <ComandaDoc
-        label={label}
-        lines={lines}
-        number={number}
-        waiterId={order.waiterId}
-        guests={order.guests}
-        held={held}
-      />,
+      <ComandaDoc label={label} lines={lines} number={number} waiterId={order.waiterId} held={held} />,
     );
   };
 
@@ -94,7 +87,6 @@ export default function Pedido({ orderId, go }) {
         lines={lines}
         number={state.counters.comanda + 1}
         waiterId={order.waiterId}
-        guests={order.guests}
         march={nextCourse}
       />,
     );
@@ -215,7 +207,7 @@ export default function Pedido({ orderId, go }) {
             <div className="panel-title">{label}</div>
             <div className="panel-sub">
               {table ? table.zone + ' · ' : ''}
-              {order.guests} pers. · {waiter?.name} · desde {fmtTime(order.openedAt)}
+              {waiter?.name} · desde {fmtTime(order.openedAt)}
             </div>
           </div>
           <button className="btn-small" onClick={() => setOptions(true)}>
@@ -286,12 +278,7 @@ export default function Pedido({ orderId, go }) {
                   onClick={() =>
                     ui.preview(
                       'Precuenta',
-                      <PrecuentaDoc
-                        label={label}
-                        lines={order.lines}
-                        waiterId={order.waiterId}
-                        guests={order.guests}
-                      />,
+                      <PrecuentaDoc label={label} lines={order.lines} waiterId={order.waiterId} />,
                     )
                   }
                 >
@@ -418,7 +405,7 @@ export default function Pedido({ orderId, go }) {
           onTransfer={(qtys, t, targetOrder) => {
             const target = targetOrder
               ? { toOrderId: targetOrder.id }
-              : { newOrder: { id: uid('o'), tableId: t.id, guests: 1, waiterId: order.waiterId } };
+              : { newOrder: { id: uid('o'), tableId: t.id, waiterId: order.waiterId } };
             update((d) => A.transferLines(d, order.id, qtys, target));
             setOptions(false);
             ui.notify(`Platillos pasados a ${t.name}`);
@@ -429,6 +416,10 @@ export default function Pedido({ orderId, go }) {
             update((d) => A.setOrderWaiter(d, order.id, w.id));
             setOptions(false);
             ui.notify(`Ahora atiende ${w.name}`);
+          }}
+          onCustomer={(name) => {
+            update((d) => A.setOrderCustomer(d, order.id, name));
+            setOptions(false);
           }}
         />
       )}

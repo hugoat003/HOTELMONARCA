@@ -91,6 +91,18 @@ export default function RangeReport() {
       },
       { name: 'Por categoría', rows: r.byCategory.map((c) => ({ Categoría: c.cat, Total: c.amount })) },
       {
+        name: 'Rentabilidad',
+        rows: r.dishes.map((x) => ({
+          Platillo: x.name,
+          Categoría: x.cat,
+          Vendidos: x.qty,
+          Ventas: x.sales,
+          Costo: x.cost,
+          Ganancia: x.profit,
+          'Margen %': x.margin,
+        })),
+      },
+      {
         name: 'Cobros',
         rows: r.sales.map((s) => ({
           No: s.number,
@@ -243,6 +255,30 @@ export default function RangeReport() {
           </div>
         ))}
       </DataTable>
+
+      <DataTable
+        title="Rentabilidad por platillo"
+        variant="dishes"
+        columns={['Platillo', 'Vendidos', 'Ventas', 'Costo', 'Ganancia', 'Margen']}
+        empty="Sin ventas de platillos con receta en estas fechas."
+      >
+        {r.dishes.map((x) => (
+          <div key={x.mid} className={rowClass('dishes')}>
+            <span>
+              <strong>{x.name}</strong> <span className="panel-sub">· {x.cat}</span>
+            </span>
+            <span>{x.qty}</span>
+            <span>{fmt(x.sales)}</span>
+            <span className="panel-sub">{fmt(x.cost)}</span>
+            <strong>{fmt(x.profit)}</strong>
+            <span className={x.margin < 50 ? 'urgent' : ''}>{x.margin}%</span>
+          </div>
+        ))}
+      </DataTable>
+      <div className="panel-sub text-sm">
+        Costo según la receta y el costo actual de los insumos. Los platillos sin receta no aparecen. Margen en rojo:
+        menos de 50%.
+      </div>
 
       <BreakdownCards r={r} />
     </>

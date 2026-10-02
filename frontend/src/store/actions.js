@@ -72,9 +72,9 @@ export const A = {
   },
 
   // Restaurante
-  openTable(d, { id, tableId, guests, waiterId }) {
+  openTable(d, { id, tableId, waiterId }) {
     byId(d.tables, tableId).reservedAt = null;
-    d.orders.push({ id, type: 'mesa', tableId, guests, waiterId, openedAt: Date.now(), lines: [] });
+    d.orders.push({ id, type: 'mesa', tableId, waiterId, openedAt: Date.now(), lines: [] });
   },
   openTakeout(d, { id, customer, waiterId }) {
     d.counters.llevar++;
@@ -82,8 +82,7 @@ export const A = {
       id,
       type: 'llevar',
       number: d.counters.llevar,
-      customer,
-      guests: 1,
+      customer: customer || '',
       waiterId,
       openedAt: Date.now(),
       lines: [],
@@ -130,6 +129,9 @@ export const A = {
       delete l.courtesy;
     }
   },
+  setOrderCustomer(d, orderId, customer) {
+    byId(d.orders, orderId).customer = customer;
+  },
   setOrderWaiter(d, orderId, waiterId) {
     byId(d.orders, orderId).waiterId = waiterId;
   },
@@ -138,7 +140,6 @@ export const A = {
     const t = byId(d.orders, targetId);
     const s = byId(d.orders, sourceId);
     t.lines.push(...s.lines);
-    t.guests += s.guests;
     t.joined = [...(t.joined || []), s.tableId, ...(s.joined || [])];
     d.orders = d.orders.filter((o) => o.id !== sourceId);
   },

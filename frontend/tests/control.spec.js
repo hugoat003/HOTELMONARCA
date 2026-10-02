@@ -4,7 +4,6 @@ test('tiempos: los fuertes y postres esperan y se marchan desde el pedido', asyn
   await fresh(page);
   await login(page, 'Juan');
   await page.getByRole('button', { name: /^Mesa 3 ·/ }).click();
-  await modalClick(page, 'Abrir mesa');
   for (const n of ['Guacamole de la casa', 'Pepián de pollo', 'Flan de la casa', 'Café de Antigua'])
     await page.locator('.menu-item', { hasText: n }).click();
   await page.getByRole('button', { name: /Enviar a cocina/ }).click();

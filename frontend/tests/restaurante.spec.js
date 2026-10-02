@@ -4,7 +4,6 @@ test('mesero abre mesa, agrega platillos con nota, envía a cocina y cobra con p
   await fresh(page);
   await login(page, 'Juan');
   await page.getByRole('button', { name: /^Mesa 3 ·/ }).click();
-  await modalClick(page, 'Abrir mesa');
   await page.locator('.menu-item', { hasText: 'Pepián de pollo' }).click();
   await page.locator('.menu-item', { hasText: 'Pepián de pollo' }).click();
   await page.locator('.menu-item', { hasText: 'Cerveza Gallo' }).click();

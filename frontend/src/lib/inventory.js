@@ -21,3 +21,13 @@ export const canMake = (menuItem, inventory, reserved = {}) =>
     const it = inventory.find((i) => i.id === r.itemId);
     return !it || it.stock - (reserved[r.itemId] || 0) >= r.qty - 1e-9;
   });
+
+// Costo de una porción según su receta y el costo actual de los insumos (null si no tiene receta)
+export function dishCost(menuItem, inventory) {
+  if (!menuItem?.recipe?.length) return null;
+  const c = menuItem.recipe.reduce((a, r) => a + (inventory.find((i) => i.id === r.itemId)?.cost || 0) * r.qty, 0);
+  return Math.round(c * 100) / 100;
+}
+
+// Margen sobre el precio de venta, en % (null si no se puede calcular)
+export const marginPct = (price, cost) => (cost === null || !price ? null : Math.round(((price - cost) / price) * 100));

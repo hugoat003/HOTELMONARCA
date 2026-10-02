@@ -123,3 +123,62 @@ test('salida de efectivo mayor a lo que hay en caja se rechaza', async ({ page }
   await modalClick(page, 'Registrar');
   await expect(page.getByText('No hay tanto efectivo en caja para esa salida')).toBeVisible();
 });
+
+test('mesas: tocar una mesa libre o "Para llevar" pasa directo al menú', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Juan');
+  await page.getByRole('button', { name: /^Mesa 1 ·/ }).click();
+  await expect(page.locator('.menu-grid')).toBeVisible();
+  let s = await state(page);
+  expect(s.orders.find((o) => o.tableId === 1).waiterId).toBe('u3');
+
+  await page.getByRole('button', { name: '← Mesas' }).click();
+  await page.getByRole('button', { name: '+ Para llevar' }).click();
+  await expect(page.locator('.menu-grid')).toBeVisible();
+  await page.getByRole('button', { name: 'Opciones', exact: true }).click();
+  await page.getByRole('button', { name: 'Poner nombre del cliente' }).click();
+  await page.locator('.modal input').fill('Sra. Pérez');
+  await modalClick(page, 'Guardar');
+  await expect(page.locator('.side-panel .panel-title')).toContainText('Sra. Pérez');
+  s = await state(page);
+  expect(s.orders.at(-1)).toMatchObject({ type: 'llevar', waiterId: 'u3', customer: 'Sra. Pérez' });
+});
+
+test('mesa reservada pide confirmación antes de abrirla', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Juan');
+  await page.getByRole('tab', { name: /Terraza/ }).click();
+  await page.getByRole('button', { name: /^Mesa 9 ·/ }).click();
+  await expect(page.locator('.modal')).toContainText('Tiene una reserva para las 20:00');
+  await modalClick(page, 'Abrir mesa');
+  await expect(page.locator('.menu-grid')).toBeVisible();
+  expect((await state(page)).tables.find((t) => t.id === 9).reservedAt).toBeNull();
+});
+
+test('caja cerrada: aviso en todas las pantallas y no se cobra', async ({ page }) => {
+  await fresh(page);
+  await patch(page, (s) => {
+    s.shift = null;
+  });
+  await login(page, 'Luis Recepción');
+  await nav(page, 'Tienda');
+  await expect(page.locator('.shift-banner')).toContainText('Caja cerrada');
+  await page.locator('.menu-item').first().click();
+  await page.locator('.shop-cart').getByRole('button', { name: 'Cobrar' }).click();
+  await expect(page.getByText('Abre el turno de caja para cobrar.')).toBeVisible();
+  await page.locator('.shift-banner').getByRole('button', { name: 'Abrir caja' }).click();
+  await expect(page.getByRole('heading', { name: 'Caja' })).toBeVisible();
+});
+
+test('rentabilidad: costo y margen por platillo', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Marta Gerente');
+  await nav(page, 'Configuración');
+  await expect(page.locator('.tx-row.admin-menu', { hasText: 'Pepián de pollo' })).toContainText('%');
+  await nav(page, 'Reporte / RDP');
+  await page.getByRole('button', { name: 'Por fechas' }).click();
+  const rows = page.locator('.tx-row.dishes:not(.head)');
+  await expect(rows.first()).toBeVisible();
+  const s = await state(page);
+  expect(s.menu.find((m) => m.name === 'Pepián de pollo').recipe.length).toBeGreaterThan(0);
+});

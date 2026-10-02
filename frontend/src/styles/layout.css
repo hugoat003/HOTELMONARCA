@@ -313,3 +313,14 @@
   margin-left: 8px;
   color: var(--faint);
 }
+.shift-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 28px;
+  background: #fbf1ec;
+  border-bottom: 1px solid #ecd2c4;
+  color: #8a3a1b;
+  font-size: 15px;
+}
