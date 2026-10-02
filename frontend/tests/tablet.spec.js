@@ -47,16 +47,18 @@ test('tablet vertical: menú en cajón y cuenta como hoja inferior', async ({ br
   await expect(page.locator('.sidebar')).not.toBeInViewport();
 
   await page.locator('.account', { hasText: 'Mesa 7' }).click();
+  await expect(page.locator('.pedido-label')).toHaveText('Mesa 7');
+  // Con la hoja cerrada, Enviar y Cobrar están en la barra de abajo
   const bar = page.locator('.sheet-bar');
-  await expect(bar).toContainText('Mesa 7');
-  await expect(bar).toContainText('sin enviar');
-  await expect(page.getByRole('button', { name: 'Cobrar', exact: true })).toBeHidden();
+  await expect(bar.getByRole('button', { name: 'Enviar (2)' })).toBeVisible();
+  await expect(bar.getByRole('button', { name: 'Cobrar', exact: true })).toBeVisible();
   await page.locator('.menu-item', { hasText: 'Café de Antigua' }).click();
-  await bar.click();
-  await expect(page.getByRole('button', { name: 'Cobrar', exact: true })).toBeVisible();
+  await expect(bar.getByRole('button', { name: 'Enviar (3)' })).toBeVisible();
+  await bar.locator('.sheet-toggle').click();
   // El café sin enviar se suma a la misma línea (2 → 3)
   await expect(page.locator('.side-panel .line', { hasText: 'Café de Antigua' }).locator('.stepper span')).toHaveText(
     '3',
   );
+  await expect(page.locator('.ticket-totals').getByRole('button', { name: 'Cobrar', exact: true })).toBeVisible();
   await page.close();
 });

@@ -175,6 +175,22 @@ function Vender() {
         </div>
       </div>
 
+      {/* Tablet vertical: la venta queda abajo de los productos; esta barra deja el cobro a un toque */}
+      {lines.length > 0 && (
+        <div className="shop-bar">
+          <button className="shop-bar-info" onClick={() => document.querySelector('.shop-cart')?.scrollIntoView()}>
+            Venta · {lines.reduce((a, l) => a + l.qty, 0)} productos
+            <span className="sheet-total">{fmt(total)}</span>
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => (state.shift ? setPaying(true) : ui.notify('Abre el turno de caja para cobrar.'))}
+          >
+            Cobrar
+          </button>
+        </div>
+      )}
+
       {paying && (
         <Cobro
           title="Cobrar venta de tienda"

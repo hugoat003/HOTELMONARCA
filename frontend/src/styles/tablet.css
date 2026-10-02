@@ -132,7 +132,10 @@
   .shop-cart {
     position: static;
   }
+}
 
+/* Tablet vertical: la cuenta del pedido es una hoja que sube desde abajo */
+@media (max-width: 900px) and (orientation: portrait) {
   /* Pedido: la cuenta es una hoja que sube desde abajo */
   .pedido-main {
     padding-bottom: 96px;
@@ -144,6 +147,7 @@
     bottom: 0;
     z-index: 20;
     max-height: 78vh;
+    max-height: 85dvh;
     border-top: 1px solid var(--line);
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.12);
     border-radius: 12px 12px 0 0;
@@ -175,6 +179,124 @@
   .sheet-bar .sheet-total {
     font-family: var(--condensed);
     font-size: 22px;
+  }
+  .sheet-toggle {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 48px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+  }
+  .sheet-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .sheet-actions .btn {
+    min-height: 48px;
+    padding: 0 18px;
+  }
+  .sheet-actions .btn:not(.btn-primary):not(.btn-accent) {
+    background: transparent;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+  .sheet-actions .btn-primary {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid #fff;
+  }
+}
+
+/* Tienda en tablet vertical: barra fija con el total y Cobrar */
+@media (max-width: 900px) and (orientation: portrait) {
+  .shop-split {
+    padding-bottom: 84px;
+  }
+  .shop-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    padding: 12px 20px;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.12);
+  }
+  .shop-bar-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 48px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
+  }
+  .shop-bar .sheet-total {
+    font-family: var(--condensed);
+    font-size: 22px;
+  }
+  .shop-bar .btn-primary {
+    min-height: 48px;
+    padding: 0 22px;
+    background: #fff;
+    color: var(--ink);
+  }
+}
+
+/* Tablet pequeña en horizontal: la cuenta sigue al lado, con sus botones siempre a la vista */
+@media (max-width: 900px) and (orientation: landscape) {
+  .split.shop-split {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+  .shop-cart {
+    position: sticky;
+  }
+  .split.pedido-split {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    height: 100%;
+  }
+  .pedido-split .split-main {
+    overflow: auto;
+  }
+  .pedido-split .side-panel {
+    border-top: none;
+    border-left: 1px solid var(--line);
+  }
+}
+
+/* Pantallas bajas (tablets en horizontal): encabezados más compactos para dejar espacio a la cuenta */
+@media (max-height: 820px) {
+  .header {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .ticket-head {
+    padding: 12px 16px;
+  }
+  .ticket-totals {
+    padding: 12px 16px;
+  }
+  .ticket-totals .btn-row {
+    margin-top: 6px;
+  }
+  .ticket-totals .btn {
+    padding: 11px;
   }
 }
 

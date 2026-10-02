@@ -4,6 +4,7 @@
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
   height: 100vh;
+  height: 100dvh; /* en tablets, 100vh incluye la barra del navegador y esconde lo de abajo */
   min-width: 1100px;
 }
 .sidebar {
@@ -176,6 +177,7 @@
 }
 .login {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -273,6 +275,7 @@
 }
 .phone {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
 }
 .phone-head {

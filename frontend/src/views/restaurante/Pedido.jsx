@@ -195,13 +195,32 @@ export default function Pedido({ orderId, go }) {
 
       <div className={'side-panel' + (sheetOpen ? ' open' : '')}>
         {/* En tablet vertical la cuenta es una hoja inferior; esta barra la abre y la cierra */}
-        <button className="sheet-bar" onClick={() => setSheetOpen(!sheetOpen)} aria-expanded={sheetOpen}>
-          <span>
-            {sheetOpen ? '▼ Ocultar cuenta' : `▲ ${label} · ${order.lines.reduce((a, l) => a + l.qty, 0)} productos`}
-            {!sheetOpen && pendingQty > 0 ? ` · ${pendingQty} sin enviar` : ''}
-          </span>
-          <span className="sheet-total">{fmt(total)}</span>
-        </button>
+        <div className="sheet-bar">
+          <button className="sheet-toggle" onClick={() => setSheetOpen(!sheetOpen)} aria-expanded={sheetOpen}>
+            <span>
+              {sheetOpen ? '▼ Ocultar cuenta' : `▲ Ver cuenta · ${order.lines.reduce((a, l) => a + l.qty, 0)}`}
+            </span>
+            <span className="sheet-total">{fmt(total)}</span>
+          </button>
+          {/* Con la hoja cerrada, las dos acciones del mesero quedan a un toque */}
+          {!sheetOpen && order.lines.length > 0 && (
+            <span className="sheet-actions">
+              {pendingQty > 0 && (
+                <button className="btn" onClick={sendKitchen}>
+                  Enviar ({pendingQty})
+                </button>
+              )}
+              {nextCourse && !pendingQty && (
+                <button className="btn btn-accent" onClick={fireCourse}>
+                  Marchar
+                </button>
+              )}
+              <button className="btn btn-primary" onClick={payAll}>
+                Cobrar
+              </button>
+            </span>
+          )}
+        </div>
         <div className="ticket-head">
           <div>
             <div className="panel-title">{label}</div>

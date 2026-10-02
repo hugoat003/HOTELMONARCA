@@ -171,6 +171,9 @@
   top: 0;
   gap: 10px;
 }
+.shop-bar {
+  display: none;
+}
 .shop-lines {
   max-height: 46vh;
   overflow: auto;
