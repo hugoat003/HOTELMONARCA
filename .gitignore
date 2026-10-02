@@ -7,3 +7,6 @@ dist/
 test-results/
 playwright-report/
 .test-dist/
+
+# Cotización: documento comercial, se guarda solo en local
+docs/cotizacion/
