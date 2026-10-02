@@ -20,7 +20,7 @@ const TABS = [
   ['habitaciones', 'Habitaciones'],
   ['eventos', 'Eventos'],
   ['usuarios', 'Usuarios'],
-  ['negocio', 'Negocio e impuestos'],
+  ['negocio', 'Negocio'],
   ['datos', DEMO ? 'Datos de demo' : 'Respaldo'],
 ];
 
@@ -258,7 +258,7 @@ function HabitacionesTab() {
           + Tipo
         </button>
       </div>
-      <DataTable variant="admin-types" columns={['Tipo', 'Por noche / mensual (sin impuestos)', 'Habitaciones', '']}>
+      <DataTable variant="admin-types" columns={['Tipo', 'Por noche / mensual', 'Habitaciones', '']}>
         {state.roomTypes.map((t) => (
           <div key={t.id} className="tx-row admin-types">
             <strong>{t.name}</strong>
@@ -332,8 +332,8 @@ function HabitacionesTab() {
           onClose={() => setEditType(null)}
           fields={[
             { key: 'name', label: 'Nombre', span: true },
-            { key: 'rate', label: 'Tarifa por noche', type: 'number', hint: 'sin impuestos' },
-            { key: 'monthlyRate', label: 'Tarifa mensual', type: 'number', hint: 'sin impuestos' },
+            { key: 'rate', label: 'Tarifa por noche', type: 'number' },
+            { key: 'monthlyRate', label: 'Tarifa mensual', type: 'number' },
           ]}
           validate={(v) =>
             !v.name.trim()
@@ -522,7 +522,7 @@ function EventosTab() {
           onClose={() => setMenu(null)}
           fields={[
             { key: 'name', label: 'Nombre', span: true },
-            { key: 'price', label: 'Precio', type: 'number', hint: 'IVA incluido' },
+            { key: 'price', label: 'Precio', type: 'number' },
             { key: 'unit', label: 'Se cobra', type: 'select', options: Object.entries(EVENT_UNITS) },
             { key: 'description', label: 'Qué incluye', span: true },
           ]}
@@ -634,8 +634,6 @@ function NegocioTab() {
     update((d) =>
       A.setConfig(d, {
         ...c,
-        iva: parseFloat(c.iva) || 0,
-        inguat: parseFloat(c.inguat) || 0,
         tipPct: parseFloat(c.tipPct) || 0,
         lockMinutes: Math.max(0, parseInt(c.lockMinutes) || 0),
       }),
@@ -668,12 +666,6 @@ function NegocioTab() {
         <Field label="Moneda">
           <input className="input" value={c.currency} onChange={set('currency')} />
         </Field>
-        <Field label="IVA %">
-          <input className="input" type="number" value={c.iva} onChange={set('iva')} />
-        </Field>
-        <Field label="INGUAT %" hint="hospedaje">
-          <input className="input" type="number" value={c.inguat} onChange={set('inguat')} />
-        </Field>
         <Field label="Propina sugerida %">
           <input className="input" type="number" value={c.tipPct} onChange={set('tipPct')} />
         </Field>
@@ -684,8 +676,7 @@ function NegocioTab() {
         </Field>
       </div>
       <div className="panel-sub text-sm">
-        Los precios del restaurante incluyen IVA. La tarifa de hospedaje es sin impuestos: al cobrar se suman IVA e
-        INGUAT.
+        Todos los precios (restaurante, hospedaje, eventos y tienda) incluyen impuestos.
       </div>
       <div>
         <button className="btn btn-primary" onClick={save}>

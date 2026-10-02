@@ -190,7 +190,7 @@ function SeasonModal({ season, types, onClose, onSave, onDelete }) {
           <input className="input" type="date" value={s.to} onChange={(e) => setS({ ...s, to: e.target.value })} />
         </Field>
       </div>
-      <Field as="div" label="Precio por noche" hint="sin impuestos · vacío = tarifa normal">
+      <Field as="div" label="Precio por noche" hint="vacío = tarifa normal">
         <div className="form-grid">
           {types.map((t) => (
             <Field key={t.id} label={t.name} hint={`normal ${t.rate}`}>

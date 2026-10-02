@@ -54,7 +54,7 @@ export default function RangeReport() {
       {
         name: 'Resumen',
         rows: [
-          ['Ventas restaurante (IVA incluido)', r.restTotal],
+          ['Ventas restaurante', r.restTotal],
           ['Cuentas cobradas', r.restCount],
           ['Ticket promedio', r.avgTicket],
           ['Propinas', r.tips],
@@ -62,7 +62,7 @@ export default function RangeReport() {
           ['Cortesías', r.courtesies.amount],
           ['Ocupación promedio %', r.hotel.occupancy],
           ['Noches ocupadas', r.hotel.roomNights],
-          ['Ingreso hospedaje (sin impuestos)', r.hotel.lodgingRevenue],
+          ['Ingreso hospedaje', r.hotel.lodgingRevenue],
           ['ADR', r.hotel.adr],
           ['RevPAR', r.hotel.revpar],
           ['Eventos cobrados', r.events.collected],
@@ -175,7 +175,7 @@ export default function RangeReport() {
           value={r.hotel.occupancy + '%'}
           note={`${r.hotel.roomNights} noches ocupadas`}
         />
-        <KpiCard label="Ingreso hospedaje" value={fmt(r.hotel.lodgingRevenue)} note="Sin impuestos" />
+        <KpiCard label="Ingreso hospedaje" value={fmt(r.hotel.lodgingRevenue)} />
         <KpiCard
           label="Producción total"
           value={fmt(r.production)}

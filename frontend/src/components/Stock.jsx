@@ -182,7 +182,7 @@ export function ItemModal({ item, cats = INV_CATS, withPrice = false, onClose, o
           <input className="input" type="number" value={v.cost} onChange={set('cost')} />
         </Field>
         {withPrice && (
-          <Field label="Precio de venta" hint={margin !== null ? `margen ${margin}%` : 'IVA incluido'}>
+          <Field label="Precio de venta" hint={margin !== null ? `margen ${margin}%` : undefined}>
             <input className="input" type="number" value={v.price} onChange={set('price')} />
           </Field>
         )}

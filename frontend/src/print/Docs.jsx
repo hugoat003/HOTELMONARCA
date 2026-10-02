@@ -3,7 +3,7 @@ import { EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../data.js';
 import { fmtDate, fmtDateTime, fmtTime } from '../lib/dates.js';
 import { eventTotals } from '../lib/events.js';
 import { folio as calcFolio, groupText } from '../lib/hotel.js';
-import { ivaIncluded, linesTotal, round2 } from '../lib/money.js';
+import { linesTotal, round2 } from '../lib/money.js';
 import { modsText } from '../lib/orders.js';
 import { useStore } from '../store/store.jsx';
 
@@ -83,12 +83,6 @@ export function TicketDoc({ sale }) {
           <Row l={`Descuento ${sale.discount.label}`} r={'− ' + fmt(sale.discount.amount)} />
         </>
       )}
-      {hotel && sale.taxes && (
-        <>
-          <Row l={`IVA (${state.config.iva}%) hospedaje`} r={fmt(sale.taxes.iva)} />
-          <Row l={`INGUAT (${state.config.inguat}%)`} r={fmt(sale.taxes.inguat)} />
-        </>
-      )}
       {sale.credits > 0 && (
         <>
           <Row l={hotel ? 'Total estancia' : 'Total del evento'} r={fmt(sale.subtotal)} />
@@ -96,7 +90,6 @@ export function TicketDoc({ sale }) {
         </>
       )}
       <Row l={sale.credits > 0 ? 'Saldo pagado' : 'Total'} r={fmt(sale.total)} strong />
-      {!hotel && <Row l={`IVA incluido (${state.config.iva}%)`} r={fmt(ivaIncluded(sale.total, state.config.iva))} />}
       {sale.tip > 0 && (
         <>
           <Row l="Propina" r={fmt(sale.tip)} />
@@ -192,8 +185,6 @@ export function FolioDoc({ res }) {
             />
           ))
         : f.groups.map((g) => <Row key={g.from} l={`Hospedaje ${groupText(g, fmt)}`} r={fmt(g.amount)} />)}
-      <Row l={`IVA (${state.config.iva}%)`} r={fmt(f.lodging.iva)} />
-      <Row l={`INGUAT (${state.config.inguat}%)`} r={fmt(f.lodging.inguat)} />
       {res.charges.map((c) => (
         <Row key={c.id} l={c.desc} r={fmt(c.amt)} />
       ))}
@@ -224,7 +215,7 @@ export function ReportDoc({ report: r, shift }) {
       <div className="doc-cols">
         <div>
           <h4>Restaurante</h4>
-          <Row l="Ventas (IVA incluido)" r={fmt(r.restTotal)} />
+          <Row l="Ventas" r={fmt(r.restTotal)} />
           <Row l="Cuentas cobradas" r={r.restCount} />
           <Row l="Ticket promedio" r={fmt(r.avgTicket)} />
           <Row l="Descuentos" r={fmt(r.discounts)} />
@@ -249,7 +240,6 @@ export function ReportDoc({ report: r, shift }) {
           <Row l="RevPAR" r={fmt(r.hotel.revpar)} />
           <Row l="Llegadas / salidas" r={`${r.hotel.arrivals} / ${r.hotel.departures}`} />
           <Row l="Cobrado en recepción" r={fmt(r.hotel.collected)} />
-          <Row l="INGUAT cobrado" r={fmt(r.hotel.inguat)} />
           <Row l={`Cobros de eventos (${r.events?.count || 0})`} r={fmt(r.events?.collected)} />
           <Row l={`Tienda de recepción (${r.shop?.count || 0})`} r={fmt(r.shop?.total)} />
           <Row l="Ganancia de la tienda" r={fmt(r.shop?.margin)} />
@@ -313,7 +303,7 @@ export function EventDoc({ ev }) {
         <Row key={x.id} l={x.desc} r={fmt(x.amt)} />
       ))}
       <div className="doc-sep" />
-      <Row l="Total (IVA incluido)" r={fmt(t.total)} strong />
+      <Row l="Total" r={fmt(t.total)} strong />
       {ev.payments.map((p) => (
         <Row key={p.id} l={`${p.desc} · ${METHOD_LABELS[p.method]}`} r={'− ' + fmt(p.amount)} />
       ))}

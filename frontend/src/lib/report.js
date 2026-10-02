@@ -95,7 +95,6 @@ export function buildReport(state, shift) {
       adr: inHouse.length ? round2(lodgingRevenue / inHouse.length) : 0,
       revpar: rooms ? round2(lodgingRevenue / rooms) : 0,
       collected: sum(hotel, (s) => s.grand),
-      inguat: sum(hotel, (s) => s.taxes?.inguat),
       arrivals: state.reservations.filter(
         (r) => r.checkIn === day && (r.status === 'hospedado' || r.status === 'salida'),
       ).length,
@@ -229,7 +228,6 @@ export function buildRangeReport(state, from, to) {
       adr: roomNights ? round2(lodgingRevenue / roomNights) : 0,
       revpar: available ? round2(lodgingRevenue / available) : 0,
       collected: sum(hotel, (s) => s.grand),
-      inguat: sum(hotel, (s) => s.taxes?.inguat),
     },
     events: { collected: sum(events, (s) => s.grand), count: events.length },
     shop: { total: sum(shop, (s) => s.total), count: shop.length },

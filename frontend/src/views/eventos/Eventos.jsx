@@ -308,7 +308,7 @@ function EventPanel({ ev, onEdit }) {
         ))}
         <div className="folio-line">
           <span>
-            <strong>Total</strong> <span className="panel-sub">IVA incluido</span>
+            <strong>Total</strong>
           </span>
           <strong>{fmt(t.total)}</strong>
         </div>

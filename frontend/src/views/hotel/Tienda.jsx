@@ -8,7 +8,7 @@ import { SHOP_CATS, SHOP_MOVE_LABELS, SHOP_MOVES } from '../../data.js';
 import { today, uid } from '../../lib/dates.js';
 import { exportXlsx } from '../../lib/excel.js';
 import { qtyFmt, stockStatus } from '../../lib/inventory.js';
-import { ivaIncluded, linesTotal, sum } from '../../lib/money.js';
+import { linesTotal, sum } from '../../lib/money.js';
 import { TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
@@ -158,10 +158,6 @@ function Vender() {
               </div>
             );
           })}
-        </div>
-        <div className="row muted">
-          <span>IVA incluido ({state.config.iva}%)</span>
-          <span>{fmt(ivaIncluded(total, state.config.iva))}</span>
         </div>
         <div className="row grand">
           <span>Total</span>

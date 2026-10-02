@@ -994,8 +994,6 @@ export function seed() {
       phone: '7832 0000',
       footer: '¡Gracias por su visita! Propina no incluida en el precio del menú.',
       currency: 'Q',
-      iva: 12,
-      inguat: 10,
       tipPct: 10,
       lockMinutes: 5,
       weekendPct: 15,

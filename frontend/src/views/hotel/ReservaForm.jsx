@@ -252,11 +252,11 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
           </select>
         </Field>
         {monthly ? (
-          <Field label="Tarifa mensual" hint="sin impuestos">
+          <Field label="Tarifa mensual">
             <input className="input" type="number" value={f.rate} onChange={(e) => set({ rate: e.target.value })} />
           </Field>
         ) : (
-          <Field as="div" label="Precio por noche" hint="sin impuestos">
+          <Field as="div" label="Precio por noche">
             <div className="segmented row two">
               <button
                 type="button"
@@ -326,10 +326,6 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
               : quote.groups.length === 1
                 ? groupText(quote.groups[0], fmt)
                 : `${nights} noches`}{' '}
-            = {fmt(quote.lodging.base)}
-          </span>
-          <span>
-            IVA {fmt(quote.lodging.iva)} · INGUAT {fmt(quote.lodging.inguat)}
           </span>
           <strong>Total {fmt(quote.lodging.total)}</strong>
         </div>

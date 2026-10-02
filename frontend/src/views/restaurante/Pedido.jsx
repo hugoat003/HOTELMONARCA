@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { fmtTime, uid } from '../../lib/dates.js';
 import { canMake } from '../../lib/inventory.js';
-import { ivaIncluded, linesTotal } from '../../lib/money.js';
+import { linesTotal } from '../../lib/money.js';
 import { modsText, orderLabel } from '../../lib/orders.js';
 import { ComandaDoc, PrecuentaDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
@@ -232,10 +232,6 @@ export default function Pedido({ orderId, go }) {
         </div>
 
         <div className="ticket-totals">
-          <div className="row muted">
-            <span>IVA incluido ({state.config.iva}%)</span>
-            <span>{fmt(ivaIncluded(total, state.config.iva))}</span>
-          </div>
           <div className="row grand">
             <span>Total</span>
             <span>{fmt(total)}</span>

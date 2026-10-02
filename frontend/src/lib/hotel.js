@@ -24,12 +24,10 @@ export function roomState(room, reservations, day) {
   return { status: 'libre' };
 }
 
-// Impuestos del hospedaje sobre la tarifa sin impuestos: IVA + INGUAT
-export function lodgingFromBase(base, config) {
+// Las tarifas de hospedaje ya incluyen impuestos: el total es la suma de las noches o meses
+function lodgingFromBase(base) {
   base = round2(base);
-  const iva = round2((base * config.iva) / 100);
-  const inguat = round2((base * config.inguat) / 100);
-  return { base, iva, inguat, total: round2(base + iva + inguat) };
+  return { base, total: base };
 }
 
 // Estancia mensual partida en periodos; el último se prorratea por días
@@ -58,7 +56,7 @@ const isWeekendNight = (date) => {
   return day === 5 || day === 6; // noches de viernes y sábado
 };
 
-// Precio de una noche sin impuestos y su descripción (temporada, fin de semana, persona extra)
+// Precio de una noche (impuestos incluidos) y su descripción (temporada, fin de semana, persona extra)
 export function nightRate(res, date, state) {
   const cfg = state.config;
   const tags = [];
@@ -103,7 +101,6 @@ export const nightlyRate = (res, state, day = today()) =>
   res.rateType === 'mensual' ? round2(res.rate / 30) : nightRate(res, day, state).rate;
 
 export function folio(res, state) {
-  const config = state.config;
   const nights = Math.max(1, nightsBetween(res.checkIn, res.checkOut));
   const chargesTotal = sum(res.charges, (c) => c.amt);
   const paid = sum(res.payments, (p) => p.amount);
@@ -113,25 +110,18 @@ export function folio(res, state) {
     dueToday = null;
   if (res.rateType === 'mensual') {
     periods = monthlyPeriods(res.checkIn, res.checkOut).map((p) => ({ ...p, amount: round2(res.rate * p.frac) }));
-    lodging = lodgingFromBase(
-      sum(periods, (p) => p.amount),
-      config,
-    );
+    lodging = lodgingFromBase(sum(periods, (p) => p.amount));
     // Lo que ya debería estar pagado: periodos iniciados + cargos
     const accrued = lodgingFromBase(
       sum(
         periods.filter((p) => p.start <= today()),
         (p) => p.amount,
       ),
-      config,
     );
     dueToday = round2(accrued.total + chargesTotal - paid);
   } else {
     groups = nightGroups(res, state);
-    lodging = lodgingFromBase(
-      sum(groups, (g) => g.amount),
-      config,
-    );
+    lodging = lodgingFromBase(sum(groups, (g) => g.amount));
   }
   const total = round2(lodging.total + chargesTotal);
   const months = periods ? round2(sum(periods, (p) => p.frac)) : 0;

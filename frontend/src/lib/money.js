@@ -6,6 +6,3 @@ export const makeFmt = (currency) => (n) =>
   currency + ' ' + (n || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export const linesTotal = (lines) => sum(lines, (l) => l.price * l.qty);
-
-// Precios del restaurante con IVA incluido: devuelve la parte de IVA
-export const ivaIncluded = (total, ivaPct) => round2(total - total / (1 + ivaPct / 100));

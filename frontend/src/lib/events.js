@@ -4,7 +4,7 @@ import { round2, sum } from './money.js';
 export const menuCovers = (menu, qty, guests) =>
   !menu ? 0 : menu.unit === 'evento' ? (qty > 0 ? guests : 0) : menu.unit === 'pareja' ? qty * 2 : qty;
 
-// Totales de un evento: menú o paquete + extras + renta del salón (IVA incluido).
+// Totales de un evento: menú o paquete + extras + renta del salón.
 // La renta del salón no se cobra si se sirve comida del hotel a todos los invitados.
 export function eventTotals(ev, state) {
   const venue = state.venues.find((v) => v.id === ev.venueId);

@@ -115,7 +115,6 @@ export default function ReservaPanel({ res, onRoomChanged }) {
             : [{ name: `${f.label} × ${fmt(res.rate)}`, qty: 1, price: f.lodging.base, cat: 'Hospedaje' }]),
           ...res.charges.map((c) => ({ name: c.desc, qty: 1, price: c.amt, cat: 'Cargos' })),
         ],
-        taxes: { iva: f.lodging.iva, inguat: f.lodging.inguat },
         credits: f.paid,
         subtotal: f.total,
         ...r,
@@ -277,12 +276,6 @@ export default function ReservaPanel({ res, onRoomChanged }) {
                     <strong>{fmt(g.amount)}</strong>
                   </div>
                 ))}
-            <div className="folio-line muted">
-              <span>
-                IVA {state.config.iva}% + INGUAT {state.config.inguat}%
-              </span>
-              <strong>{fmt(f.lodging.iva + f.lodging.inguat)}</strong>
-            </div>
             {res.charges.map((c) => (
               <div key={c.id} className="folio-line">
                 <span>
@@ -498,7 +491,7 @@ function ChargeModal({ fmt, onClose, onSave }) {
         <Field label="Concepto">
           <input className="input" value={desc} onChange={(e) => setDesc(e.target.value)} />
         </Field>
-        <Field label="Monto" hint="IVA incluido">
+        <Field label="Monto">
           <input className="input" type="number" value={amt} onChange={(e) => setAmt(e.target.value)} />
         </Field>
       </div>

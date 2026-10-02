@@ -171,7 +171,7 @@ export default function Habitaciones() {
               <div className="panel-title">Habitación {room.n}</div>
               <div className="panel-sub">
                 {state.roomTypes.find((t) => t.id === room.typeId)?.name} ·{' '}
-                {fmt(state.roomTypes.find((t) => t.id === room.typeId)?.rate)} / noche + impuestos
+                {fmt(state.roomTypes.find((t) => t.id === room.typeId)?.rate)} / noche
               </div>
               <div
                 className="badge"

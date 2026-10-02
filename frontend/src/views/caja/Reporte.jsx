@@ -49,10 +49,10 @@ function ShiftReport({ go }) {
 
   const r = shift.closedAt ? shift.report : buildReport(state, shift);
   const kpis = [
-    ['Ventas restaurante', fmt(r.restTotal), 'IVA incluido, sin propinas'],
+    ['Ventas restaurante', fmt(r.restTotal), 'Sin propinas'],
     ['Cuentas cobradas', String(r.restCount), 'Ticket promedio ' + fmt(r.avgTicket)],
     ['Ocupación', r.hotel.occupancy + '%', `${r.hotel.occupied} de ${r.hotel.rooms} habitaciones`],
-    ['Ingreso hospedaje', fmt(r.hotel.lodgingRevenue), 'Noche del día, sin impuestos'],
+    ['Ingreso hospedaje', fmt(r.hotel.lodgingRevenue), 'Noche del día'],
     ['ADR', fmt(r.hotel.adr), 'Tarifa promedio por habitación ocupada'],
     ['RevPAR', fmt(r.hotel.revpar), 'Ingreso por habitación disponible'],
     ['Llegadas / Salidas', `${r.hotel.arrivals} / ${r.hotel.departures}`, 'Movimientos del día'],
@@ -187,10 +187,6 @@ export function BreakdownCards({ r }) {
         <div className="row text-md">
           <span>Comprobantes anulados · {r.voids.sales}</span>
           <strong>{fmt(r.voids.salesAmount)}</strong>
-        </div>
-        <div className="row text-md">
-          <span>INGUAT cobrado</span>
-          <strong>{fmt(r.hotel.inguat)}</strong>
         </div>
         <div className="row text-md">
           <span>Cobros de eventos · {r.events?.count || 0}</span>

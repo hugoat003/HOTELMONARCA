@@ -66,7 +66,7 @@ export function MenuItemModal({ item, onClose, onSave }) {
             ))}
           </select>
         </Field>
-        <Field label="Precio" hint="IVA incluido">
+        <Field label="Precio">
           <input className="input" type="number" value={v.price} onChange={(e) => set({ price: e.target.value })} />
         </Field>
       </div>
