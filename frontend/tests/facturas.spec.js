@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, payAll, state, test } from './helpers.js';
+import { expect, fresh, login, modalClick, pickMethod, nav, payAll, state, test } from './helpers.js';
 
 test('cobro sin factura no pide NIT; con "Requiere factura" queda pendiente y la gerencia la marca', async ({
   page,
@@ -20,7 +20,7 @@ test('cobro sin factura no pide NIT; con "Requiere factura" queda pendiente y la
   // Con factura: pide NIT y nombre
   await page.locator('.account', { hasText: 'Mesa 5' }).click();
   await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
-  await page.locator('.pay-row select').first().selectOption('tarjeta');
+  await pickMethod(page, 0, 'tarjeta');
   await page.getByLabel(/Requiere factura/).check();
   await expect(page.getByRole('button', { name: 'Falta el NIT para la factura' })).toBeDisabled();
   await page.getByLabel('NIT').fill('7654321-0');

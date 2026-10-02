@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, state, test, typePin } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, pickMethod, state, test, typePin } from './helpers.js';
 
 const item = async (page, id) => (await state(page)).shopItems.find((x) => x.id === id);
 
@@ -14,8 +14,8 @@ test('venta con cargo a habitación, existencias y anulación', async ({ page })
   await expect(page.locator('.shop-cart .line', { hasText: 'Galletas' }).locator('.stepper span')).toHaveText('4');
 
   await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
-  await page.locator('.pay-row select').first().selectOption('habitacion');
-  await page.locator('.pay-row select').nth(1).selectOption({ label: '201 · Ing. Mariela Gómez' });
+  await pickMethod(page, 0, 'habitacion');
+  await page.locator('.pay-rooms').getByRole('button', { name: '201 · Ing. Mariela Gómez' }).click();
   await modalClick(page, 'Confirmar pago');
   await modalClick(page, 'Cerrar');
   expect((await item(page, 't1')).stock).toBe(agua0 - 2);

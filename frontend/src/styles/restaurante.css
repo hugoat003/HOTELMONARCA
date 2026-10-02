@@ -177,9 +177,38 @@
 }
 .pay-row {
   display: grid;
-  grid-template-columns: 170px 130px minmax(0, 1fr) auto;
+  grid-template-columns: 130px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'methods methods remove'
+    'amount extra extra';
   gap: 8px;
   align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+/* Forma de pago con botones (en tablet es más fácil que una lista desplegable) */
+.pay-methods {
+  grid-area: methods;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pay-row .amount {
+  grid-area: amount;
+}
+.pay-row .amount[readonly] {
+  background: var(--line-soft);
+}
+.pay-row > :nth-child(3) {
+  grid-area: extra;
+}
+.pay-row .icon-btn {
+  grid-area: remove;
+}
+.pay-rooms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .pay-row .quick button {
   padding: 9px 6px;

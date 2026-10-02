@@ -321,7 +321,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: 100; /* por encima del menú en cajón (30) y de las barras fijas de tablet (20) */
 }
 .modal {
   background: #fff;
@@ -367,7 +367,7 @@
   border-radius: 6px;
   font-size: 15px;
   font-weight: 500;
-  z-index: 20;
+  z-index: 110; /* el aviso se ve aun con una ventana abierta */
 }
 .overlay .modal {
   max-height: 92vh;

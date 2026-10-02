@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, state, test, typePin } from './helpers.js';
+import { expect, fresh, login, modalClick, pickMethod, nav, state, test, typePin } from './helpers.js';
 
 test('mesero abre mesa, agrega platillos con nota, envía a cocina y cobra con pago mixto', async ({ page }) => {
   await fresh(page);
@@ -28,10 +28,11 @@ test('mesero abre mesa, agrega platillos con nota, envía a cocina y cobra con p
   await typePin(page, '1111');
   await page.getByPlaceholder(/Motivo/).fill('Cliente frecuente');
   await page.getByRole('button', { name: 'Aplicar', exact: true }).click();
-  await page.locator('.pay-row select').first().selectOption('tarjeta');
-  await page.locator('.pay-row input.amount').first().fill('100');
+  await pickMethod(page, 0, 'tarjeta');
+  // Una sola tarjeta toma el total sola; al agregar otra forma de pago se puede repartir
   await page.getByRole('button', { name: '+ Agregar otra forma de pago' }).click();
-  await page.locator('.pay-row select').nth(1).selectOption('efectivo');
+  await page.locator('.pay-row input.amount').first().fill('100');
+  await pickMethod(page, 1, 'efectivo');
   await page.locator('.pay-row input.amount').nth(1).fill('500');
   await modalClick(page, 'Confirmar pago');
   await expect(page.getByText('Pago registrado')).toBeVisible();

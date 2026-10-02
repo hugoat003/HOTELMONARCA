@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, state, test } from './helpers.js';
+import { expect, fresh, login, modalClick, pickMethod, nav, state, test } from './helpers.js';
 
 // Cambia los datos guardados y recarga (para preparar casos que la demo no trae)
 async function patch(page, fn) {
@@ -101,7 +101,7 @@ test('cobrar con productos sin enviar los envía primero y el vuelto sale del ef
   // Dos pagos en efectivo: Q 200 y Q 10; el vuelto sale primero del último
   await page.locator('.pay-row input.amount').first().fill('200');
   await page.getByRole('button', { name: '+ Agregar otra forma de pago' }).click();
-  await page.locator('.pay-row select').nth(1).selectOption('efectivo');
+  await pickMethod(page, 1, 'efectivo');
   await page.locator('.pay-row input.amount').nth(1).fill('10');
   await page.locator('.cobro').getByRole('button', { name: 'Sin propina' }).click();
   await modalClick(page, 'Confirmar pago');
@@ -247,4 +247,40 @@ test('revisión de la mañana: no-show con devolución y aviso de Booking', asyn
   // "Ver reserva" abre la reserva en la pantalla de Reservas
   await review.locator('.review-row', { hasText: 'Lucía Tarde' }).getByRole('button', { name: 'Ver reserva' }).click();
   await expect(page.locator('.side-panel')).toContainText('Avisó que llega tarde');
+});
+
+test('cargo a habitación: sin escribir el monto, queda pendiente y se cobra en el check-out', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Juan');
+  await page.locator('.account', { hasText: 'Mesa 2' }).click();
+  await page.locator('.ticket-totals').getByRole('button', { name: 'Cobrar', exact: true }).click();
+  // No se abre el teclado solo: ningún campo tiene el foco
+  expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe('INPUT');
+  await pickMethod(page, 0, 'habitacion');
+  await expect(page.locator('.pay-row input.amount').first()).toHaveValue('264'); // Q240 + 10% de propina
+  await page
+    .locator('.pay-rooms')
+    .getByRole('button', { name: /^104 ·/ })
+    .click();
+  await modalClick(page, 'Confirmar pago');
+  await modalClick(page, 'Cerrar');
+
+  let s = await state(page);
+  const sale = s.sales.at(-1);
+  expect(sale.payments).toEqual([expect.objectContaining({ method: 'habitacion', amount: 264, roomN: '104' })]);
+  expect(s.reservations.find((x) => x.id === 'r2').charges.at(-1)).toMatchObject({ amt: 264, saleId: sale.id });
+
+  // En el folio queda pendiente y se cobra al salir
+  await login(page, 'Luis Recepción');
+  await nav(page, 'Habitaciones');
+  await page.locator('.tile.room', { hasText: '104' }).click();
+  await expect(page.locator('.side-panel')).toContainText('Restaurante · Mesa 2');
+  await page.getByRole('button', { name: /Check-out y cobrar/ }).click();
+  await pickMethod(page, 0, 'tarjeta');
+  await modalClick(page, 'Confirmar pago');
+  await expect(page.locator('.print-doc')).toContainText('Restaurante · Mesa 2');
+  await modalClick(page, 'Cerrar');
+  s = await state(page);
+  expect(s.reservations.find((x) => x.id === 'r2').status).toBe('salida');
+  expect(s.sales.at(-1).lines.some((l) => l.name.includes('Restaurante · Mesa 2') && l.price === 264)).toBe(true);
 });

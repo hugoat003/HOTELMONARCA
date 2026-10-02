@@ -29,6 +29,9 @@ export async function typePin(page, pin) {
 export async function login(page, name) {
   const logout = page.getByRole('button', { name: 'Cerrar sesión' });
   if (await logout.count()) {
+    // El mesero tiene el menú en cajón: hay que abrirlo para llegar a "Cerrar sesión"
+    if (!(await logout.isVisible()) || (await page.locator('.app.compact').count()))
+      await page.locator('.menu-toggle').click();
     await logout.click();
     await page.locator('.modal').getByRole('button', { name: 'Cerrar sesión' }).click();
   }
@@ -48,8 +51,18 @@ export const modalClick = (page, label) =>
 export const state = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('monarca-pos-v1')));
 
 // Paga lo que muestre la pantalla de cobro con la forma indicada
+const METHOD = {
+  efectivo: 'Efectivo',
+  tarjeta: 'Tarjeta',
+  transferencia: 'Transferencia',
+  habitacion: 'Cargo a habitación',
+};
+// Elige la forma de pago de la fila indicada (botones, ya no lista desplegable)
+export const pickMethod = (page, row, method) =>
+  page.locator('.pay-row').nth(row).getByRole('radio', { name: METHOD[method], exact: true }).click();
+
 export async function payAll(page, method = 'tarjeta') {
-  await page.locator('.pay-row select').first().selectOption(method);
+  await pickMethod(page, 0, method);
   if (method === 'efectivo') await page.locator('.pay-row .quick button', { hasText: 'Exacto' }).first().click();
   await modalClick(page, 'Confirmar pago');
 }

@@ -28,7 +28,7 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
   const [discForm, setDiscForm] = useState(null);
   const [tipMode, setTipMode] = useState(allowTip ? 'sugerida' : 'none');
   const [tipCustom, setTipCustom] = useState('');
-  const [rows, setRows] = useState([newRow('efectivo')]);
+  const [rawRows, setRows] = useState([newRow('efectivo')]);
   const [wantsInvoice, setWantsInvoice] = useState(false);
   const [nit, setNit] = useState('');
   const [name, setName] = useState(invoice?.name || '');
@@ -41,6 +41,9 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
   const tip =
     tipMode === 'sugerida' ? round2((total * cfg.tipPct) / 100) : tipMode === 'otra' ? round2(num(tipCustom)) : 0;
   const grand = round2(total + tip);
+  // Con una sola forma de pago que no es efectivo, el monto es siempre el total (sigue a la propina y al descuento)
+  const single = rawRows.length === 1 && rawRows[0].method !== 'efectivo';
+  const rows = single ? [{ ...rawRows[0], amount: String(grand) }] : rawRows;
   const paid = sum(rows, (r) => num(r.amount));
   const remaining = round2(grand - paid);
   const change = remaining < 0 ? -remaining : 0;
@@ -65,14 +68,18 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
   if (!problem && wantsInvoice && !name.trim()) problem = 'Falta el nombre para la factura';
 
   const setRow = (id, patch) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  // Al elegir tarjeta, transferencia o habitación el monto se llena solo con lo que falta.
+  // En efectivo se deja vacío para tocar Exacto o el billete con que paga.
   const changeMethod = (row, method) => {
+    if (method === row.method) return;
     const others = sum(
       rows.filter((r) => r.id !== row.id),
       (r) => num(r.amount),
     );
-    const fill = method !== 'efectivo' && !row.amount ? String(Math.max(0, round2(grand - others))) : row.amount;
-    setRow(row.id, { method, amount: fill });
+    const due = String(Math.max(0, round2(grand - others)));
+    setRow(row.id, { method, amount: method === 'efectivo' ? '' : due });
   };
+
   const splitEqual = (n) => {
     const part = Math.floor((grand / n) * 100) / 100;
     setRows(
@@ -265,30 +272,43 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
         </div>
         {rows.map((row) => (
           <div key={row.id} className="pay-row">
-            <select className="input" value={row.method} onChange={(e) => changeMethod(row, e.target.value)}>
+            <div className="pay-methods" role="radiogroup" aria-label="Forma de pago">
               {methods.map((k) => (
-                <option key={k} value={k}>
+                <button
+                  key={k}
+                  role="radio"
+                  aria-checked={row.method === k}
+                  className={'chip' + (row.method === k ? ' active' : '')}
+                  onClick={() => changeMethod(row, k)}
+                >
                   {METHOD_LABELS[k]}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
+            {/* Sin teclado automático: en tablet se toca Exacto o el billete; el monto se escribe solo si hace falta */}
             <input
               className="input amount"
               type="number"
+              inputMode="decimal"
+              aria-label="Monto"
               placeholder={row.method === 'efectivo' ? 'Recibido' : '0.00'}
               value={row.amount}
+              readOnly={single}
               onChange={(e) => setRow(row.id, { amount: e.target.value })}
-              autoFocus={rows.length === 1}
             />
             {row.method === 'habitacion' ? (
-              <select className="input" value={row.resId} onChange={(e) => setRow(row.id, { resId: e.target.value })}>
-                <option value="">Habitación…</option>
+              <div className="pay-rooms">
                 {inHouse.map((r) => (
-                  <option key={r.id} value={r.id}>
+                  <button
+                    key={r.id}
+                    className={'chip small' + (row.resId === r.id ? ' active' : '')}
+                    onClick={() => setRow(row.id, { resId: r.id })}
+                  >
                     {r.roomN} · {r.guest.name}
-                  </option>
+                  </button>
                 ))}
-              </select>
+                {!inHouse.length && <span className="panel-sub">No hay huéspedes hospedados.</span>}
+              </div>
             ) : row.method === 'efectivo' ? (
               <div className="quick">
                 {quickCash(row).map(([l, v]) => (
@@ -318,7 +338,13 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
         <div className="row">
           <button
             className="link"
-            onClick={() => setRows((rs) => [...rs, newRow('tarjeta', remaining > 0 ? remaining : '')])}
+            onClick={() =>
+              setRows((rs) => [
+                // Si había una sola forma de pago con el total, se fija ese monto para poder repartirlo
+                ...rs.map((r, i) => (single && i === 0 ? { ...r, amount: String(grand) } : r)),
+                newRow('tarjeta', remaining > 0 ? remaining : ''),
+              ])
+            }
           >
             + Agregar otra forma de pago
           </button>

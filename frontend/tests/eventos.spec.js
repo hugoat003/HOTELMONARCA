@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, state, test } from './helpers.js';
+import { expect, fresh, login, modalClick, pickMethod, nav, state, test } from './helpers.js';
 
 test('el salón no se cobra si el menú cubre a todos los invitados', async ({ page }) => {
   await fresh(page);
@@ -28,8 +28,8 @@ test('conflicto de salón, anticipo y liquidación', async ({ page }) => {
   await page.getByRole('button', { name: 'Registrar pago' }).click();
   await page.locator('.modal input').first().fill('1000');
   await modalClick(page, 'Continuar');
-  await page.locator('.pay-row select').first().selectOption('transferencia');
-  await page.locator('.pay-row input.amount').first().fill('1000');
+  await pickMethod(page, 0, 'transferencia');
+  await expect(page.locator('.pay-row input.amount').first()).toHaveValue('1000');
   await modalClick(page, 'Confirmar pago');
   await expect(page.locator('.print-doc')).toContainText('Recibo No.');
   await modalClick(page, 'Cerrar');
@@ -38,7 +38,7 @@ test('conflicto de salón, anticipo y liquidación', async ({ page }) => {
   await page.getByRole('button', { name: 'Registrar pago' }).click();
   await page.getByRole('button', { name: /^Saldo completo/ }).click();
   await modalClick(page, 'Continuar');
-  await page.locator('.pay-row select').first().selectOption('tarjeta');
+  await pickMethod(page, 0, 'tarjeta');
   await modalClick(page, 'Confirmar pago');
   await modalClick(page, 'Cerrar');
   const ev = (await state(page)).events.find((e) => e.name === 'Cumpleaños Pérez');
