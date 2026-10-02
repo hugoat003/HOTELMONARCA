@@ -188,7 +188,10 @@ export default function Inventario() {
         <ItemModal
           item={edit}
           onClose={() => setEdit(null)}
-          onDelete={() =>
+          onDelete={() => {
+            const used = state.menu.filter((m) => (m.recipe || []).some((r) => r.itemId === edit.id));
+            if (used.length)
+              return ui.notify(`Está en la receta de ${used.map((m) => m.name).join(', ')}. Quítalo de ahí primero.`);
             ui.confirm(
               {
                 title: 'Eliminar producto',
@@ -200,8 +203,8 @@ export default function Inventario() {
                 update((d) => A.remove(d, 'inventory', edit.id));
                 setEdit(null);
               },
-            )
-          }
+            );
+          }}
           onSave={({ isNew, authId, ...v }) => {
             update((d) =>
               A.upsert(

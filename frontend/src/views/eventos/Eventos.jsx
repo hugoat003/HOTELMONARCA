@@ -7,6 +7,7 @@ import { BeoDoc, EventDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import Cobro, { AmountModal } from '../restaurante/Cobro.jsx';
+import { CloseReservationModal } from '../hotel/ReservaModals.jsx';
 import EventCalendar from './EventCalendar.jsx';
 import EventoForm from './EventoForm.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
@@ -188,6 +189,7 @@ function EventPanel({ ev, onEdit }) {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
   const [pay, setPay] = useState(null); // null | 'monto' | número
+  const [cancelling, setCancelling] = useState(false);
   const t = eventTotals(ev, state);
 
   const registerPayment = (amount, r) => {
@@ -245,6 +247,36 @@ function EventPanel({ ev, onEdit }) {
     .filter((r) => r.eventId === ev.id && (r.status === 'reservada' || r.status === 'hospedado'))
     .sort((a, b) => a.roomN.localeCompare(b.roomN));
 
+  // Cancelación con anticipo: se retiene o se devuelve (sale de caja)
+  const cancelEvent = ({ reason, refund }) => {
+    if (refund && !state.shift) return ui.notify('Abre el turno de caja para registrar la devolución.');
+    const sale = refund && {
+      id: uid('s'),
+      number: state.counters.doc + 1,
+      kind: 'evento',
+      docType: 'devolucion',
+      ts: Date.now(),
+      ref: ev.name,
+      eventId: ev.id,
+      lines: [{ name: 'Devolución de anticipo', qty: 1, price: -refund.amount, cat: 'Eventos' }],
+      subtotal: -refund.amount,
+      total: -refund.amount,
+      tip: 0,
+      grand: -refund.amount,
+      discount: null,
+      payments: [{ method: refund.method, amount: -refund.amount }],
+      change: 0,
+      invoice: null,
+      cashierId: user.id,
+      shiftId: state.shift?.id,
+      status: 'ok',
+    };
+    update((d) => A.cancelEvent(d, ev.id, { reason, refund: sale }));
+    setCancelling(false);
+    ui.notify('Evento cancelado');
+    if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />);
+  };
+
   const setStatus = (status, msg) => {
     update((d) => A.setEventStatus(d, ev.id, status));
     ui.notify(msg);
@@ -277,6 +309,12 @@ function EventPanel({ ev, onEdit }) {
               {nightsBetween(rooms[0].checkIn, rooms[0].checkOut)} noche
               {nightsBetween(rooms[0].checkIn, rooms[0].checkOut) === 1 ? '' : 's'}
             </strong>
+          </>
+        )}
+        {ev.cancelReason && (
+          <>
+            <span>Cancelación</span>
+            <strong>{ev.cancelReason}</strong>
           </>
         )}
         {ev.notes && (
@@ -382,24 +420,20 @@ function EventPanel({ ev, onEdit }) {
         {ev.payments.length ? 'Imprimir estado de cuenta' : 'Imprimir cotización'}
       </button>
       {isActiveEvent(ev) && (
-        <button
-          className="btn btn-quiet"
-          onClick={() =>
-            ui.confirm(
-              {
-                title: 'Cancelar evento',
-                message: `¿Cancelar “${ev.name}”? El salón y las habitaciones apartadas quedan libres.`,
-                confirmLabel: 'Cancelar evento',
-                danger: true,
-              },
-              () => setStatus('cancelado', 'Evento cancelado'),
-            )
-          }
-        >
+        <button className="btn btn-quiet" onClick={() => setCancelling(true)}>
           Cancelar evento
         </button>
       )}
 
+      {cancelling && (
+        <CloseReservationModal
+          mode="evento"
+          subject={`${ev.name}. El salón y las habitaciones apartadas quedan libres.`}
+          paid={t.paid}
+          onClose={() => setCancelling(false)}
+          onConfirm={cancelEvent}
+        />
+      )}
       {pay === 'monto' && (
         <AmountModal
           title={t.paid > 0 ? 'Abono al evento' : 'Anticipo del evento'}

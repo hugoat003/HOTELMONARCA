@@ -116,10 +116,18 @@ test('evento con habitaciones apartadas: se liberan al cancelar', async ({ page 
   await page.locator('.event-row', { hasText: 'Boda Castillo' }).click();
   await expect(page.locator('.kv')).toContainText('301, 302 · 1 noche');
   await page.getByRole('button', { name: 'Cancelar evento' }).click();
+  // Tiene anticipo: pide motivo y si se devuelve o se retiene
+  await page.locator('.modal input').first().fill('Cambio de fecha');
+  await page.getByText('Devolver', { exact: true }).click();
   await modalClick(page, 'Cancelar evento');
+  await expect(page.locator('.print-doc')).toContainText('Devolución de anticipo');
+  await modalClick(page, 'Cerrar');
   s = await state(page);
   expect(block(s)).toHaveLength(0);
-  expect(s.audit.at(-1).detail).toBe('Evento cancelado');
+  const ev = s.events.find((e) => e.id === 'e1');
+  expect(ev.payments.reduce((a, p) => a + p.amount, 0)).toBe(0);
+  expect(s.audit.slice(-2).map((a) => a.type)).toEqual(['cancelacion', 'devolucion']);
+  expect(s.audit.at(-2).detail).toBe('Evento cancelado · Cambio de fecha');
 });
 
 test('resumen: pendientes del día ordenados por urgencia', async ({ page }) => {

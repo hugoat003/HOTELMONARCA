@@ -71,8 +71,10 @@ export function ChangeRoomModal({ res, onClose, onConfirm }) {
   );
 }
 
-// mode: 'noshow' | 'cancel'. onConfirm({ reason, refund: { amount, method } | null })
-export function CloseReservationModal({ res, mode, paid, onClose, onConfirm }) {
+// mode: 'noshow' | 'cancel' | 'evento'. onConfirm({ reason, refund: { amount, method } | null })
+// subject: texto de lo que se cancela (para eventos); con una reserva se arma solo
+export function CloseReservationModal({ res, subject, mode, paid, onClose, onConfirm }) {
+  const label = { noshow: 'Marcar no-show', cancel: 'Cancelar reserva', evento: 'Cancelar evento' }[mode];
   const { fmt } = useStore();
   const [reason, setReason] = useState(mode === 'noshow' ? 'No se presentó' : '');
   const [refundMode, setRefundMode] = useState('retener');
@@ -86,7 +88,7 @@ export function CloseReservationModal({ res, mode, paid, onClose, onConfirm }) {
       : '';
   return (
     <Modal
-      title={mode === 'noshow' ? 'Marcar no-show' : 'Cancelar reserva'}
+      title={label}
       onClose={onClose}
       width={480}
       footer={
@@ -101,15 +103,15 @@ export function CloseReservationModal({ res, mode, paid, onClose, onConfirm }) {
               onConfirm({ reason: reason.trim(), refund: refundMode === 'devolver' ? { amount: n, method } : null })
             }
           >
-            {problem || (mode === 'noshow' ? 'Marcar no-show' : 'Cancelar reserva')}
+            {problem || label}
           </button>
         </>
       }
     >
       <div className="panel-sub text-md">
-        {res.guest.name} · Hab. {res.roomN}. La habitación queda libre para esas fechas.
+        {subject || `${res.guest.name} · Hab. ${res.roomN}. La habitación queda libre para esas fechas.`}
       </div>
-      {mode === 'cancel' && (
+      {mode !== 'noshow' && (
         <Field label="Motivo">
           <input className="input" autoFocus value={reason} onChange={(e) => setReason(e.target.value)} />
         </Field>

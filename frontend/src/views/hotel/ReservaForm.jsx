@@ -147,7 +147,24 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
             onChange={(e) => setGuest({ name: e.target.value })}
             placeholder="Nombre completo o documento"
           />
-          {f.guestId && <span className="field-hint">Ficha de huésped vinculada</span>}
+          {f.guestId && (
+            <span className="field-hint">
+              Ficha de huésped vinculada ·{' '}
+              <button
+                type="button"
+                className="link"
+                onClick={() =>
+                  setF((x) => ({
+                    ...x,
+                    guestId: undefined,
+                    guest: { name: '', phone: '', email: '', doc: '', nationality: 'Guatemala' },
+                  }))
+                }
+              >
+                es otra persona
+              </button>
+            </span>
+          )}
           {matches.length > 0 && (
             <div className="suggest">
               {matches.map((g) => (

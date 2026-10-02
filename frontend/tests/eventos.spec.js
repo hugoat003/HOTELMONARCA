@@ -36,7 +36,7 @@ test('conflicto de salón, anticipo y liquidación', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Confirmar evento' }).click();
   await page.getByRole('button', { name: 'Registrar pago' }).click();
-  await page.getByRole('button', { name: 'Usar el saldo completo' }).click();
+  await page.getByRole('button', { name: /^Saldo completo/ }).click();
   await modalClick(page, 'Continuar');
   await page.locator('.pay-row select').first().selectOption('tarjeta');
   await modalClick(page, 'Confirmar pago');

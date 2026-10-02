@@ -70,37 +70,45 @@ export default function ReservaPanel({ res, onRoomChanged }) {
     ui.preview('Recibo', <TicketDoc sale={sale} />);
   };
 
+  // Venta de devolución (monto negativo): sale de caja y baja lo pagado en el folio
+  const refundSale = (amount, method, name) => ({
+    id: uid('s'),
+    number: state.counters.doc + 1,
+    kind: 'hotel',
+    docType: 'devolucion',
+    ts: Date.now(),
+    ref: label,
+    resId: res.id,
+    lines: [{ name, qty: 1, price: -amount, cat: 'Hospedaje' }],
+    subtotal: -amount,
+    total: -amount,
+    tip: 0,
+    grand: -amount,
+    discount: null,
+    payments: [{ method, amount: -amount }],
+    change: 0,
+    invoice: null,
+    cashierId: user.id,
+    shiftId: state.shift?.id,
+    status: 'ok',
+  });
+
   const closeReservation = ({ reason, refund }) => {
     if (refund && !state.shift) return ui.notify('Abre el turno de caja para registrar la devolución.');
     const status = closing === 'noshow' ? 'noshow' : 'cancelada';
-    const sale = refund && {
-      id: uid('s'),
-      number: state.counters.doc + 1,
-      kind: 'hotel',
-      docType: 'devolucion',
-      ts: Date.now(),
-      ref: label,
-      resId: res.id,
-      lines: [{ name: 'Devolución de anticipo', qty: 1, price: -refund.amount, cat: 'Hospedaje' }],
-      subtotal: -refund.amount,
-      total: -refund.amount,
-      tip: 0,
-      grand: -refund.amount,
-      discount: null,
-      payments: [{ method: refund.method, amount: -refund.amount }],
-      change: 0,
-      invoice: null,
-      cashierId: user.id,
-      shiftId: state.shift?.id,
-      status: 'ok',
-    };
+    const sale = refund && refundSale(refund.amount, refund.method, 'Devolución de anticipo');
     update((d) => A.closeReservation(d, res.id, { status, reason, refund: sale, userId: user.id }));
     setClosing(null);
     ui.notify(status === 'noshow' ? 'Reserva marcada como no-show' : 'Reserva cancelada');
     if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />);
   };
 
-  const finishCheckout = (r) => {
+  // En la salida anticipada el folio se calcula hasta hoy (la reserva no cambia si se cancela el check-out)
+  const fOut = checkout?.early ? calcFolio({ ...res, checkOut: d0 }, state) : f;
+
+  // r: resultado del cobro del saldo; refund: { method } para devolver el saldo a favor
+  const finishCheckout = (r, refund) => {
+    const f = fOut;
     let sale = null;
     if (r) {
       sale = baseSale({
@@ -120,16 +128,21 @@ export default function ReservaPanel({ res, onRoomChanged }) {
         ...r,
       });
     }
-    update((d) => A.checkOutWith(d, res.id, sale));
+    const back = refund ? refundSale(-f.balance, refund.method, 'Devolución de saldo a favor') : null;
+    if (back && sale) back.number = sale.number + 1;
+    update((d) => A.checkOutWith(d, res.id, sale, { checkOut: checkout.early ? d0 : undefined, refund: back }));
     setCheckout(false);
     ui.notify(`Check-out · Habitación ${res.roomN}`);
     if (sale) ui.preview('Comprobante de salida', <TicketDoc sale={sale} />);
+    else if (back) ui.preview('Devolución', <TicketDoc sale={back} />);
   };
 
   const startCheckout = () => {
-    if (f.balance > 0.004 && !needShift()) return;
     const usedNights = nightsBetween(res.checkIn, d0);
-    if (res.checkOut > d0 && usedNights >= 1) {
+    const early = res.checkOut > d0 && usedNights >= 1;
+    const balance = early ? calcFolio({ ...res, checkOut: d0 }, state).balance : f.balance;
+    if (Math.abs(balance) > 0.004 && !needShift()) return;
+    if (early) {
       ui.confirm(
         {
           title: 'Check-out anticipado',
@@ -138,13 +151,13 @@ export default function ReservaPanel({ res, onRoomChanged }) {
             : `Se cobrarán ${usedNights} noche(s) hasta hoy en lugar de ${f.nights}. La salida se ajusta a hoy.`,
           confirmLabel: 'Continuar',
         },
-        () => {
-          update((d) => A.saveReservation(d, { id: res.id, checkOut: d0 }));
-          setCheckout(true);
-        },
+        () => setCheckout({ early: true }),
       );
-    } else setCheckout(true);
+    } else setCheckout({ early: false });
   };
+
+  // Otro huésped sigue en la habitación (salida tardía): no se puede registrar la llegada
+  const occupant = state.reservations.find((x) => x.id !== res.id && x.roomN === res.roomN && x.status === 'hospedado');
 
   return (
     <div className="stack gap-16">
@@ -217,7 +230,12 @@ export default function ReservaPanel({ res, onRoomChanged }) {
             <strong>{fmt(f.total)}</strong>
           </div>
           {res.checkIn <= d0 ? (
-            room?.hk === 'limpia' ? (
+            occupant ? (
+              <div className="note-box">
+                {occupant.guest.name} sigue en la habitación {res.roomN}. Haz su check-out o cambia esta reserva de
+                habitación.
+              </div>
+            ) : room?.hk === 'limpia' ? (
               <button className="btn btn-primary" onClick={() => setForm('checkin')}>
                 Registrar llegada
               </button>
@@ -402,7 +420,8 @@ export default function ReservaPanel({ res, onRoomChanged }) {
       {abono === 'monto' && (
         <AmountModal
           title={res.status === 'reservada' ? 'Anticipo de reserva' : 'Abono a cuenta'}
-          max={f.dueToday > 0.004 ? f.dueToday : f.balance}
+          max={f.balance}
+          suggest={f.dueToday > 0.004 && f.dueToday < f.balance - 0.004 ? [['Pendiente a hoy', f.dueToday]] : []}
           fmt={fmt}
           onClose={() => setAbono(null)}
           onNext={(v) => setAbono(v)}
@@ -418,13 +437,21 @@ export default function ReservaPanel({ res, onRoomChanged }) {
         />
       )}
       {checkout &&
-        (f.balance > 0.004 ? (
+        (fOut.balance > 0.004 ? (
           <Cobro
             title={`Check-out Hab. ${res.roomN}`}
-            amount={f.balance}
+            amount={fOut.balance}
             invoice={{ name: res.guest.name }}
             onCancel={() => setCheckout(false)}
-            onConfirm={finishCheckout}
+            onConfirm={(r) => finishCheckout(r)}
+          />
+        ) : fOut.balance < -0.004 ? (
+          <RefundCheckoutModal
+            res={res}
+            credit={-fOut.balance}
+            fmt={fmt}
+            onClose={() => setCheckout(false)}
+            onConfirm={(refund) => finishCheckout(null, refund)}
           />
         ) : (
           <Modal
@@ -446,6 +473,50 @@ export default function ReservaPanel({ res, onRoomChanged }) {
           </Modal>
         ))}
     </div>
+  );
+}
+
+// Salida con saldo a favor (pagó de más o se va antes): devolver o dejarlo sin devolver
+function RefundCheckoutModal({ res, credit, fmt, onClose, onConfirm }) {
+  const [mode, setMode] = useState('devolver');
+  const [method, setMethod] = useState('efectivo');
+  return (
+    <Modal
+      title={`Check-out Hab. ${res.roomN}`}
+      onClose={onClose}
+      width={460}
+      footer={
+        <>
+          <button className="btn" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn btn-primary" onClick={() => onConfirm(mode === 'devolver' ? { method } : null)}>
+            {mode === 'devolver' ? `Devolver ${fmt(credit)} y salir` : 'Hacer check-out'}
+          </button>
+        </>
+      }
+    >
+      <div className="note-box warn">
+        {res.guest.name} tiene un saldo a favor de <strong>{fmt(credit)}</strong>.
+      </div>
+      <label className="check">
+        <input type="radio" checked={mode === 'devolver'} onChange={() => setMode('devolver')} />
+        <span>Devolver al huésped</span>
+      </label>
+      {mode === 'devolver' && (
+        <div className="chips">
+          {['efectivo', 'tarjeta', 'transferencia'].map((k) => (
+            <button key={k} className={'chip small' + (method === k ? ' active' : '')} onClick={() => setMethod(k)}>
+              {METHOD_LABELS[k]}
+            </button>
+          ))}
+        </div>
+      )}
+      <label className="check">
+        <input type="radio" checked={mode === 'retener'} onChange={() => setMode('retener')} />
+        <span>No devolver (política de cancelación)</span>
+      </label>
+    </Modal>
   );
 }
 

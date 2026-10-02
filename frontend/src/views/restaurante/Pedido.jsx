@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { COURSES } from '../../data.js';
 import { fmtTime, uid } from '../../lib/dates.js';
-import { canMake } from '../../lib/inventory.js';
+import { canMake, reservedStock } from '../../lib/inventory.js';
 import { linesTotal } from '../../lib/money.js';
 import { isHeldOnSend, modsText, orderLabel } from '../../lib/orders.js';
 import { ComandaDoc, PrecuentaDoc, TicketDoc } from '../../print/Docs.jsx';
@@ -49,6 +49,7 @@ export default function Pedido({ orderId, go }) {
   const total = linesTotal(order.lines);
   const pending = order.lines.filter((l) => !l.sent);
   const pendingQty = pending.reduce((a, l) => a + l.qty, 0);
+  const reserved = reservedStock(state.orders, state.menu);
   const q = search.trim().toLowerCase();
   const items = state.menu.filter(
     (m) => (cat === 'Todos' || m.cat === cat) && (!q || m.name.toLowerCase().includes(q)),
@@ -104,6 +105,20 @@ export default function Pedido({ orderId, go }) {
       ui.notify('La caja está cerrada. Pide a recepción o gerencia que abra el turno.');
       return;
     }
+    // Lo que se cobra sin haber pasado por cocina no descuenta insumos: primero se envía
+    const unsent = lines.filter((l) => !l.sent && paidQty[l.id] > 0);
+    if (unsent.length)
+      return ui.confirm(
+        {
+          title: 'Hay productos sin enviar',
+          message: `${unsent.map((l) => `${l.qty} × ${l.name}`).join(', ')} no se ha enviado a cocina. Se enviará antes de cobrar.`,
+          confirmLabel: 'Enviar y cobrar',
+        },
+        () => {
+          sendKitchen();
+          setPaying({ lines, paidQty });
+        },
+      );
     setPaying({ lines, paidQty });
   };
 
@@ -157,7 +172,7 @@ export default function Pedido({ orderId, go }) {
         </div>
         <div className="menu-grid">
           {items.map((m) => {
-            const enough = canMake(m, state.inventory);
+            const enough = canMake(m, state.inventory, reserved);
             const available = m.active && enough;
             return (
               <button
@@ -219,16 +234,23 @@ export default function Pedido({ orderId, go }) {
                 <span>{l.qty}</span>
                 <button
                   onClick={() =>
-                    update((d) =>
-                      l.sent
-                        ? A.addItem(
-                            d,
-                            order.id,
-                            menuItem(l.mid) || { id: l.mid, name: l.name, cat: l.cat, price: l.basePrice ?? l.price },
-                            l.mods || [],
-                          )
-                        : A.changeQty(d, order.id, l.id, 1),
-                    )
+                    menuItem(l.mid) && !canMake(menuItem(l.mid), state.inventory, reserved)
+                      ? ui.notify(`No alcanzan los insumos para otro ${l.name}`)
+                      : update((d) =>
+                          l.sent
+                            ? A.addItem(
+                                d,
+                                order.id,
+                                menuItem(l.mid) || {
+                                  id: l.mid,
+                                  name: l.name,
+                                  cat: l.cat,
+                                  price: l.basePrice ?? l.price,
+                                },
+                                l.mods || [],
+                              )
+                            : A.changeQty(d, order.id, l.id, 1),
+                        )
                   }
                 >
                   +

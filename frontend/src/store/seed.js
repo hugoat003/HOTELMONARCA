@@ -1,9 +1,10 @@
 import { addDays, addMonths, today } from '../lib/dates.js';
 import { linesTotal, round2 } from '../lib/money.js';
 import { buildReport } from '../lib/report.js';
+import { folio } from '../lib/hotel.js';
 import { A } from './actions.js';
 
-export const VERSION = 10;
+export const VERSION = 11;
 
 const CATEGORIES = ['Desayunos', 'Entradas', 'Platos fuertes', 'Postres', 'Bebidas', 'Bar', 'Especiales'];
 
@@ -1101,6 +1102,19 @@ export function seed() {
     sh.counted = sh.report.cash.expected;
     sh.difference = 0;
     state.shiftHistory.push(sh);
+  }
+
+  // Las estancias pasadas quedaron pagadas al salir
+  for (const r of state.reservations.filter((x) => x.status === 'salida')) {
+    const due = folio(r, state).balance;
+    if (due > 0.004)
+      r.payments.push({
+        id: 'p_' + r.id,
+        ts: at(r.checkOut, '11:00'),
+        method: 'tarjeta',
+        amount: due,
+        desc: 'Pago al salir',
+      });
   }
 
   // Habitaciones apartadas para los invitados de la boda

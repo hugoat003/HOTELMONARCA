@@ -182,6 +182,8 @@ export default function Caja() {
           type={movement}
           onClose={() => setMovement(null)}
           onSave={(amount, reason) => {
+            if (movement === 'salida' && amount > report.cash.expected + 0.004)
+              return ui.notify('No hay tanto efectivo en caja para esa salida');
             update((d) => A.addMovement(d, { type: movement, amount, reason, userId: user.id }));
             setMovement(null);
             ui.notify(`${movement === 'entrada' ? 'Entrada' : 'Salida'} registrada · ${fmt(amount)}`);

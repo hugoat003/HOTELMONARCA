@@ -448,9 +448,21 @@ export const A = {
     r.checkedOutOn = today();
     byId(d.rooms, r.roomN, 'n').hk = 'sucia';
   },
-  // Check-out con su cobro final (sale puede ser null si la cuenta ya está saldada)
-  checkOutWith(d, resId, sale) {
+  // Check-out con su cobro final (sale puede ser null si la cuenta ya está saldada).
+  // checkOut: nueva fecha de salida si se va antes. refund: venta de devolución del saldo a favor.
+  checkOutWith(d, resId, sale, { checkOut, refund } = {}) {
+    if (checkOut) byId(d.reservations, resId).checkOut = checkOut;
     if (sale) A.addFolioPayment(d, resId, sale);
+    if (refund) {
+      A.addFolioPayment(d, resId, refund);
+      const r = byId(d.reservations, resId);
+      audit(d, 'devolucion', {
+        ref: `Hab. ${r.roomN} · ${r.guest.name}`,
+        detail: `Saldo a favor al salir · ${refund.payments[0].method}`,
+        amount: Math.abs(refund.grand),
+        userId: refund.cashierId,
+      });
+    }
     A.checkOut(d, resId);
   },
   setHk(d, roomN, hk) {
@@ -468,6 +480,23 @@ export const A = {
     const ev = byId(d.events, id);
     ev.status = status;
     if (status === 'cancelado') audit(d, 'cancelacion', { ref: ev.name, detail: 'Evento cancelado' });
+    A.syncEventRooms(d, id);
+  },
+  // Cancelar un evento: motivo y, si hubo anticipo, su devolución (venta con monto negativo)
+  cancelEvent(d, id, { reason, refund }) {
+    const ev = byId(d.events, id);
+    ev.status = 'cancelado';
+    ev.cancelReason = reason;
+    audit(d, 'cancelacion', { ref: ev.name, detail: `Evento cancelado · ${reason}` });
+    if (refund) {
+      A.addEventPayment(d, id, refund);
+      audit(d, 'devolucion', {
+        ref: ev.name,
+        detail: `Devolución de anticipo · ${refund.payments[0].method}`,
+        amount: Math.abs(refund.grand),
+        userId: refund.cashierId,
+      });
+    }
     A.syncEventRooms(d, id);
   },
   // Habitaciones bloqueadas para los invitados de un evento: crea, mueve o libera sus reservas.

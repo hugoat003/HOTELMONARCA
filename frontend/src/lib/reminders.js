@@ -65,6 +65,11 @@ export function buildReminders(state, fmt) {
         'habitaciones',
       );
   }
+  // Estancias cerradas o eventos realizados que quedaron con saldo (en los últimos 30 días)
+  for (const r of res.filter((x) => x.status === 'salida' && (x.checkedOutOn || x.checkOut) >= addDays(d0, -30))) {
+    const b = folio(r, state).balance;
+    if (b > 0.004) add('Hotel', 'mid', `Hab. ${r.roomN} · ${r.guest.name} salió con saldo ${fmt(b)}`, 'reservas');
+  }
   const dirty = state.rooms.filter((rm) => rm.hk === 'sucia' || rm.hk === 'limpiando');
   if (dirty.length) add('Hotel', 'low', `Por limpiar: ${dirty.map((x) => x.n).join(', ')}`, 'limpieza');
 
@@ -83,6 +88,11 @@ export function buildReminders(state, fmt) {
       add('Eventos', 'mid', `${e.name} (${fmtDate(e.date)}) sigue en cotización, sin anticipo`, 'eventos');
     else if (e.date <= addDays(d0, 7) && t.balance > 0.004)
       add('Eventos', 'mid', `${e.name} (${fmtDate(e.date)}): saldo ${fmt(t.balance)}`, 'eventos');
+  }
+
+  for (const e of state.events.filter((x) => x.status === 'realizado' && x.date >= addDays(d0, -30))) {
+    const b = eventTotals(e, state).balance;
+    if (b > 0.004) add('Eventos', 'mid', `${e.name} ya se realizó y tiene saldo ${fmt(b)}`, 'eventos');
   }
 
   // Restaurante y tienda

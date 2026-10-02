@@ -104,9 +104,13 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
       if (r.ref.trim()) p.ref = r.ref.trim();
       return p;
     });
-    if (change > 0) {
-      const lastCash = payments.map((p) => p.method).lastIndexOf('efectivo');
-      payments[lastCash].amount = round2(payments[lastCash].amount - change);
+    // El vuelto sale del efectivo, empezando por el último pago en efectivo
+    let rest = change;
+    for (let i = payments.length - 1; i >= 0 && rest > 0.004; i--) {
+      if (payments[i].method !== 'efectivo') continue;
+      const take = Math.min(rest, payments[i].amount);
+      payments[i].amount = round2(payments[i].amount - take);
+      rest = round2(rest - take);
     }
     const d = discount
       ? {
@@ -121,7 +125,7 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
       total,
       tip,
       grand,
-      payments: grand > 0 ? payments : [],
+      payments: grand > 0 ? payments.filter((p) => p.amount > 0) : [],
       change,
       invoice: wantsInvoice
         ? { nit: nit.trim().toUpperCase(), name: name.trim(), email: email.trim(), number: null }
@@ -365,9 +369,11 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
 }
 
 // Paso previo al cobro cuando el monto es libre (anticipos y abonos)
-export function AmountModal({ title, max, fmt, onClose, onNext }) {
+// max: saldo total (no se puede cobrar más). suggest: montos sugeridos [[etiqueta, monto]]
+export function AmountModal({ title, max, suggest = [], fmt, onClose, onNext }) {
   const [v, setV] = useState('');
-  const n = parseFloat(v) || 0;
+  const n = round2(parseFloat(v) || 0);
+  const tooMuch = max > 0 && n > max + 0.004;
   return (
     <Modal
       title={title}
@@ -378,8 +384,8 @@ export function AmountModal({ title, max, fmt, onClose, onNext }) {
           <button className="btn" onClick={onClose}>
             Cancelar
           </button>
-          <button className="btn btn-primary" disabled={n <= 0} onClick={() => onNext(n)}>
-            Continuar
+          <button className="btn btn-primary" disabled={n <= 0 || tooMuch} onClick={() => onNext(n)}>
+            {tooMuch ? 'Mayor que el saldo' : 'Continuar'}
           </button>
         </>
       }
@@ -391,14 +397,21 @@ export function AmountModal({ title, max, fmt, onClose, onNext }) {
           autoFocus
           value={v}
           onChange={(e) => setV(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && n > 0 && onNext(n)}
+          onKeyDown={(e) => e.key === 'Enter' && n > 0 && !tooMuch && onNext(n)}
         />
       </Field>
-      {max > 0 && (
-        <button className="link" onClick={() => setV(String(max))}>
-          Usar el saldo completo
-        </button>
-      )}
+      <div className="chips">
+        {suggest.map(([label, amount]) => (
+          <button key={label} className="chip small" onClick={() => setV(String(amount))}>
+            {label} · {fmt(amount)}
+          </button>
+        ))}
+        {max > 0 && (
+          <button className="chip small" onClick={() => setV(String(max))}>
+            Saldo completo · {fmt(max)}
+          </button>
+        )}
+      </div>
     </Modal>
   );
 }

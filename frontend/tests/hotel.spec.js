@@ -31,7 +31,7 @@ test('tarifa mensual: periodos, pendiente a hoy y abono', async ({ page }) => {
   await expect(page.getByText(/Mes 1 ·/)).toBeVisible();
   await expect(page.getByText(/Pendiente a hoy/)).toBeVisible();
   await page.getByRole('button', { name: 'Abono', exact: true }).click();
-  await page.getByRole('button', { name: 'Usar el saldo completo' }).click();
+  await page.getByRole('button', { name: /^Saldo completo/ }).click();
   await modalClick(page, 'Continuar');
   await payAll(page, 'efectivo');
   await modalClick(page, 'Cerrar');

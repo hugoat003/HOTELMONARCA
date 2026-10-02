@@ -51,6 +51,16 @@ function Cobros({ embedded = false }) {
     .sort((a, b) => b.ts - a.ts);
   const userName = (id) => state.users.find((u) => u.id === id)?.name || '—';
 
+  // Solo se anula lo cobrado en el turno abierto (el efectivo de turnos cerrados ya se entregó),
+  // y no un cargo a habitación que el huésped ya pagó al salir
+  const voidBlock = (s) => {
+    if (s.shiftId !== state.shift?.id) return 'Solo se anulan cobros del turno abierto';
+    const room = s.payments.find((p) => p.method === 'habitacion');
+    const r = room && state.reservations.find((x) => x.id === room.resId);
+    if (r && r.status !== 'hospedado') return `${r.guest.name} ya pagó este cargo en su check-out`;
+    return '';
+  };
+
   const doVoid = () => {
     const s = voiding;
     ui.authorize(`Anular el comprobante #${s.number}`, (mgr) => {
@@ -131,7 +141,10 @@ function Cobros({ embedded = false }) {
                 Ver
               </button>
               {s.status === 'ok' && (s.kind === 'restaurante' || s.kind === 'tienda') && (
-                <button className="link danger" onClick={() => setVoiding(s)}>
+                <button
+                  className="link danger"
+                  onClick={() => (voidBlock(s) ? ui.notify(voidBlock(s)) : setVoiding(s))}
+                >
                   Anular
                 </button>
               )}
