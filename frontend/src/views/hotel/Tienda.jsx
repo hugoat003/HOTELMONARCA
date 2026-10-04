@@ -83,7 +83,7 @@ function Vender() {
     setPaying(false);
     setCart({});
     ui.notify(`Venta registrada · ${fmt(sale.grand)}`);
-    ui.preview('Venta de tienda', <TicketDoc sale={sale} />);
+    ui.preview('Venta de tienda', <TicketDoc sale={sale} />, { print: { doc: 'ticket', id: sale.id } });
   };
 
   return (

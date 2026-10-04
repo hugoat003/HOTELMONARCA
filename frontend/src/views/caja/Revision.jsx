@@ -59,7 +59,7 @@ export function MorningReview({ go }) {
     update((d) => A.closeReservation(d, r.id, { status: 'noshow', reason, refund: sale, userId: user.id }));
     setClosing(null);
     ui.notify(`Hab. ${r.roomN} liberada · ${r.guest.name} no llegó`);
-    if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />);
+    if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />, { print: { doc: 'ticket', id: sale.id } });
   };
 
   return (

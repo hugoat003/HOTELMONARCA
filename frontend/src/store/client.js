@@ -52,6 +52,7 @@ export class SyncClient {
     this.publicData = null; // usuarios y negocio para la pantalla de ingreso
     this.status = 'connecting'; // connecting | online | offline
     this.notice = null; // { id, text } aviso para mostrar
+    this.printers = null; // { printers: { cocina, caja }, jobs } estado de las impresoras
     this.ws = null;
     this.retry = 0;
     this.sending = false;
@@ -74,6 +75,7 @@ export class SyncClient {
       status: this.status,
       pending: this.pending.length,
       notice: this.notice,
+      printers: loggedIn ? this.printers : null,
     };
   }
   emit() {
@@ -152,6 +154,7 @@ export class SyncClient {
         const { rev, state } = await this.api('/api/state');
         this.setBase(state, rev);
         this.connect();
+        this.loadPrinters();
         return;
       } catch (e) {
         if (e instanceof ApiError && e.status === 401) return this.expire();
@@ -214,6 +217,11 @@ export class SyncClient {
       this.setStatus('online');
       if (msg.rev !== this.rev) this.resync();
       this.flush();
+    } else if (msg.type === 'printers') {
+      // El aviso en tiempo real no trae la lista de tickets: se conserva la última que se pidió
+      const { type: _t, ...status } = msg;
+      this.printers = { ...status, jobs: this.printers?.jobs || [] };
+      this.emit();
     } else if (msg.type === 'reload') {
       this.resync();
     } else if (msg.type === 'patch') {
@@ -348,6 +356,36 @@ export class SyncClient {
     this.rev = 0;
     this.emit();
     this.loadPublic();
+  }
+
+  // ----- Impresión
+  // doc: ticket | precuenta | folio | cierre | comanda | prueba. Devuelve { ok, mode } o { ok: false, error }
+  async print(doc, id) {
+    // Primero que el servidor tenga lo último de esta pantalla (ej. el platillo recién agregado)
+    await Promise.race([this.whenIdle(), sleep(5000)]);
+    try {
+      const r = await this.api('/api/print', { body: { doc, id } });
+      return { ok: true, ...r };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  }
+  async loadPrinters() {
+    try {
+      this.printers = await this.api('/api/printers');
+      this.emit();
+    } catch {
+      /* sin conexión: se actualiza con el siguiente aviso */
+    }
+  }
+  async printerAction(action, body) {
+    try {
+      await this.api('/api/printers/' + action, { body });
+      await this.loadPrinters();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
   }
 
   // ----- Respaldo (gerencia)

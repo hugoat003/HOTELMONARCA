@@ -75,9 +75,47 @@ Variables de entorno:
 | `POST /api/admin/reset-demo` | gerente, demo | Volver a los datos de ejemplo.                                                |
 | `GET /ws?token=`             | sesión        | Tiempo real: `hello`, `patch` (`rev`, `aid`, `patches`) y `reload`.           |
 
+## Impresión (B2)
+
+Dos impresoras térmicas **3nstar RPT004** (80 mm, 48 columnas, ESC/POS, corte automático). Las dos
+se conectan por red:
+
+| Impresora | Qué imprime                                                                       | Cuándo                      |
+| --------- | --------------------------------------------------------------------------------- | --------------------------- |
+| Cocina    | Comandas por tiempos, "marchar", avisos de anulación                              | Solo, al enviar a cocina    |
+| Caja      | Comprobantes y devoluciones (abre la gaveta si hubo efectivo), resumen del cierre | Solo, al cobrar y al cerrar |
+| Caja      | Precuenta, estado de cuenta, copia de un comprobante                              | A pedido, con "Imprimir"    |
+
+- **El servidor arma los tickets** con los datos guardados (`shared/tickets.js`) y los envía en
+  ESC/POS (`src/printing/escpos.js`). Los envía al puerto 9100 de la impresora, o a `/dev/usb/lp0`
+  si va por USB. Usa la página de códigos PC850 para acentos y ñ.
+- **Cola** (`src/printing/queue.js`, tabla `print_jobs`):
+  - Cada ticket se guarda antes de enviarse.
+  - Si la impresora no responde (sin papel, apagada, cable suelto), el ticket espera y se reintenta
+    a los 2 s, 5 s, 15 s, 30 s y luego cada minuto. Mientras tanto, todas las pantallas muestran un aviso con "Reintentar".
+  - Los tickets en espera sobreviven a un reinicio del NUC.
+  - Se guardan 30 días.
+- **Modos de cada impresora:** Red, USB, Simulada o Apagada.
+  - Simulada guarda el texto del ticket para verlo en Configuración → Impresoras. Es la opción para la demostración.
+- **Configuración → Impresoras:**
+  - IP y puerto de cada impresora, con "Imprimir prueba".
+  - Comprobante automático, abrir la gaveta, copias de comanda y logo guardado en la impresora.
+  - Lista de los últimos tickets: ver, reimprimir y descartar.
+
+**Al instalar:**
+
+1. Imprime la hoja de configuración de cada impresora para ver su IP actual. En la mayoría de las
+   impresoras ESC/POS se imprime al encenderla con el botón FEED presionado.
+2. Asigna a cada una una IP fija dentro de la red del hotel con la utilidad de 3nstar, por ejemplo
+   `192.168.1.50` para caja y `192.168.1.51` para cocina. Resérvalas también en el router.
+3. Conecta la gaveta al puerto RJ11 de la impresora de **caja**.
+4. Captura las IP en Configuración → Impresoras, guarda e imprime la prueba de cada una. La prueba
+   incluye acentos y ñ.
+5. Opcional: carga el logo del hotel en la memoria de la impresora de caja con la utilidad de 3nstar
+   (posición 1) y activa "Usar el logo guardado".
+
 ## Pendiente (siguientes fases)
 
-- **B2:** impresión ESC/POS. Cocina por red (`IP:9100`), cliente por USB, con cola y reintento.
 - **B3:** Cloudflare Tunnel y Access para entrar desde fuera.
 - **B4:** respaldos automáticos (local y externo cifrado) y restauración probada.
 - **B5:**

@@ -5,6 +5,7 @@ import { fmtTime, uid } from '@shared/dates.js';
 import { canMake, reservedStock } from '@shared/inventory.js';
 import { linesTotal } from '@shared/money.js';
 import { isHeldOnSend, modsText, orderLabel } from '@shared/orders.js';
+import { printerConfig } from '@shared/tickets.js';
 import { ComandaDoc, PrecuentaDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
@@ -65,14 +66,24 @@ export default function Pedido({ orderId, go }) {
   const nextCourse = Object.keys(COURSES).find((c) => heldLines.some((l) => l.course === c));
   const nextQty = heldLines.filter((l) => l.course === nextCourse).reduce((a, l) => a + l.qty, 0);
 
+  // Con la impresora de cocina conectada la comanda sale sola: basta un aviso.
+  // Simulada o apagada, se muestra en pantalla cómo saldría.
+  const printers = printerConfig(state.config);
+  const kitchenLive = printers.cocina.mode === 'red' || printers.cocina.mode === 'usb';
+  const cajaLive = printers.caja.mode === 'red' || printers.caja.mode === 'usb';
+  const kitchenNote =
+    printers.cocina.mode === 'simulada' ? 'Impresora de cocina simulada: así saldría la comanda.' : '';
+
   const sendKitchen = () => {
     const number = state.counters.comanda + 1;
     const lines = pending.map((l) => ({ ...l, held: isHeldOnSend(order, l) }));
     const held = [...new Set(lines.filter((l) => l.held).map((l) => l.course))];
     update((d) => A.sendKitchen(d, order.id, { userId: user.id, label }));
+    if (kitchenLive) return ui.notify(`Comanda #${number} enviada a cocina · ${label}`);
     ui.preview(
       'Comanda enviada a cocina',
       <ComandaDoc label={label} lines={lines} number={number} waiterId={order.waiterId} held={held} />,
+      { note: kitchenNote },
     );
   };
 
@@ -80,6 +91,7 @@ export default function Pedido({ orderId, go }) {
     const lines = heldLines.filter((l) => l.course === nextCourse);
     update((d) => A.fireCourse(d, order.id, nextCourse));
     ui.notify(`${COURSES[nextCourse]} marchado · ${label}`);
+    if (kitchenLive) return;
     ui.preview(
       'Marchar a cocina',
       <ComandaDoc
@@ -89,6 +101,7 @@ export default function Pedido({ orderId, go }) {
         waiterId={order.waiterId}
         march={nextCourse}
       />,
+      { note: kitchenNote },
     );
   };
 
@@ -135,7 +148,10 @@ export default function Pedido({ orderId, go }) {
     const closed = paying.lines.reduce((a, l) => a + l.qty, 0) === order.lines.reduce((a, l) => a + l.qty, 0);
     if (closed) go('mesas');
     ui.notify(`${label} · cobrado ${fmt(sale.grand)}`);
-    ui.preview('Pago registrado', <TicketDoc sale={sale} />);
+    ui.preview('Pago registrado', <TicketDoc sale={sale} />, {
+      print: { doc: 'ticket', id: sale.id },
+      note: cajaLive && printers.autoReceipt ? 'El comprobante salió en la impresora de caja.' : '',
+    });
   };
 
   const payAll = () => startPay(order.lines, Object.fromEntries(order.lines.map((l) => [l.id, l.qty])));
@@ -298,6 +314,7 @@ export default function Pedido({ orderId, go }) {
                     ui.preview(
                       'Precuenta',
                       <PrecuentaDoc label={label} lines={order.lines} waiterId={order.waiterId} />,
+                      { print: { doc: 'precuenta', id: order.id } },
                     )
                   }
                 >

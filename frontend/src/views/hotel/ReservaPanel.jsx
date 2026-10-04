@@ -68,7 +68,7 @@ export default function ReservaPanel({ res, onRoomChanged }) {
     update((d) => A.addFolioPayment(d, res.id, sale));
     setAbono(null);
     ui.notify(`Abono registrado · ${fmt(sale.grand)}`);
-    ui.preview('Recibo', <TicketDoc sale={sale} />);
+    ui.preview('Recibo', <TicketDoc sale={sale} />, { print: { doc: 'ticket', id: sale.id } });
   };
 
   const makeRefund = (amount, method, name) =>
@@ -81,7 +81,7 @@ export default function ReservaPanel({ res, onRoomChanged }) {
     update((d) => A.closeReservation(d, res.id, { status, reason, refund: sale, userId: user.id }));
     setClosing(null);
     ui.notify(status === 'noshow' ? 'Reserva marcada como no-show' : 'Reserva cancelada');
-    if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />);
+    if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />, { print: { doc: 'ticket', id: sale.id } });
   };
 
   // En la salida anticipada el folio se calcula hasta hoy (la reserva no cambia si se cancela el check-out)
@@ -114,8 +114,8 @@ export default function ReservaPanel({ res, onRoomChanged }) {
     update((d) => A.checkOutWith(d, res.id, sale, { checkOut: checkout.early ? d0 : undefined, refund: back }));
     setCheckout(false);
     ui.notify(`Check-out · Habitación ${res.roomN}`);
-    if (sale) ui.preview('Comprobante de salida', <TicketDoc sale={sale} />);
-    else if (back) ui.preview('Devolución', <TicketDoc sale={back} />);
+    if (sale) ui.preview('Comprobante de salida', <TicketDoc sale={sale} />, { print: { doc: 'ticket', id: sale.id } });
+    else if (back) ui.preview('Devolución', <TicketDoc sale={back} />, { print: { doc: 'ticket', id: back.id } });
   };
 
   const startCheckout = () => {
@@ -338,7 +338,12 @@ export default function ReservaPanel({ res, onRoomChanged }) {
             </button>
           </div>
           <div className="btn-row">
-            <button className="btn btn-quiet" onClick={() => ui.preview('Estado de cuenta', <FolioDoc res={res} />)}>
+            <button
+              className="btn btn-quiet"
+              onClick={() =>
+                ui.preview('Estado de cuenta', <FolioDoc res={res} />, { print: { doc: 'folio', id: res.id } })
+              }
+            >
               Estado de cuenta
             </button>
             <button className="btn btn-quiet" onClick={() => setForm('edit')}>
@@ -355,7 +360,12 @@ export default function ReservaPanel({ res, onRoomChanged }) {
       )}
 
       {(res.status === 'salida' || res.status === 'cancelada') && (
-        <button className="btn btn-quiet" onClick={() => ui.preview('Estado de cuenta', <FolioDoc res={res} />)}>
+        <button
+          className="btn btn-quiet"
+          onClick={() =>
+            ui.preview('Estado de cuenta', <FolioDoc res={res} />, { print: { doc: 'folio', id: res.id } })
+          }
+        >
           Ver estado de cuenta
         </button>
       )}

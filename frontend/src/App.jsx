@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { UIProvider, useUI } from './components/ui/UIProvider.jsx';
 import { NAV, ROLE_LABELS, ROLES, TITLES } from '@shared/data.js';
+import { PRINTER_NAMES } from '@shared/tickets.js';
 import { fmtLongDate, today } from '@shared/dates.js';
 import { roomState } from '@shared/hotel.js';
 import { A } from './store/actions.js';
@@ -115,7 +116,7 @@ function useIdleLock(minutes, onLock) {
 }
 
 function Shell() {
-  const { state, user, update, logout, status, pending } = useStore();
+  const { state, user, update, logout, status, pending, printers, printerAction } = useStore();
   const ui = useUI();
   const allowed = ROLES[user.role];
   const [savedView, setView] = usePersisted('vista', allowed[0]);
@@ -225,6 +226,20 @@ function Shell() {
             </span>
           </div>
         )}
+        {Object.entries(printers?.printers || {})
+          .filter(([, p]) => p.pending && p.error)
+          .map(([name, p]) => (
+            <div key={name} className="shift-banner printer" role="status">
+              <span>
+                <strong>La impresora de {PRINTER_NAMES[name].toLowerCase()} no responde</strong> ({p.error}).{' '}
+                {p.pending} {p.pending === 1 ? 'ticket en espera' : 'tickets en espera'}: revisa que esté encendida, con
+                papel y conectada. Salen solos al volver.
+              </span>
+              <button className="btn small" onClick={() => printerAction('retry', { printer: name })}>
+                Reintentar
+              </button>
+            </div>
+          ))}
         {!state.shift && view !== 'caja' && (
           <div className="shift-banner" role="status">
             <span>

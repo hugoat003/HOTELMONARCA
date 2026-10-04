@@ -10,7 +10,19 @@ import { Auth } from './auth.js';
 import { openDb } from './db.js';
 import { Engine } from './engine.js';
 import { checkRole, claimedApprovers, Forbidden, needsManager, stampActors } from './policy.js';
+import { autoJobs } from './printing/hooks.js';
+import { PrintQueue } from './printing/queue.js';
 import { initialState } from './seed.js';
+import {
+  cierreTicket,
+  comandaTicket,
+  folioTicket,
+  precuentaTicket,
+  PRINTER_NAMES,
+  printerConfig,
+  pruebaTicket,
+  saleTicket,
+} from '../../shared/tickets.js';
 
 const ROLES = ['gerente', 'recepcion', 'mesero'];
 const MAX_TEST_HOTELS = 300;
@@ -24,13 +36,27 @@ class BadRequest extends Error {
 
 // Un "hotel" es una base de datos con su estado, sus sesiones y los dispositivos conectados.
 // En producción hay uno solo; en modo prueba cada prueba tiene el suyo (aislado por namespace).
-function createHotel({ dbFile, seed }) {
+function createHotel({ dbFile, seed, printing = {} }) {
   const db = openDb(dbFile);
   const engine = new Engine(db);
   const auth = new Auth(db);
-  const hotel = { db, engine, auth, sockets: new Set() };
+  const hotel = { db, engine, auth, sockets: new Set(), onPrinters: () => {} };
   if (!engine.initialized) install(hotel, initialState(seed));
+  hotel.printing = new PrintQueue(db, {
+    ...printing,
+    getConfig: () => hotel.engine.state.config,
+    onChange: () => hotel.onPrinters(),
+  });
   return hotel;
+}
+
+// Encola lo que una operación imprime sola. Un error al imprimir nunca deshace la operación.
+function autoPrint(hotel, prev, next, calls, userId, log) {
+  try {
+    for (const job of autoJobs(prev, next, calls)) hotel.printing.enqueue(job.printer, job.ticket, { ...job, userId });
+  } catch (e) {
+    log.error(e, 'impresión automática');
+  }
 }
 
 // Carga un estado completo. Los PIN que traiga (datos de ejemplo) pasan a credenciales con hash
@@ -81,13 +107,14 @@ export async function buildApp({
   demo = false,
   test = false,
   logger = false,
+  printing = {}, // pruebas: { retryMs, send }
 } = {}) {
   const app = Fastify({ logger, bodyLimit: 50 * 1024 * 1024 });
   await app.register(fastifyWebsocket, {
     options: { maxPayload: 1024 * 1024 },
   });
 
-  const main = createHotel({ dbFile, seed });
+  const main = watchPrinters(createHotel({ dbFile, seed, printing }));
   const testHotels = new Map();
   const nsOf = (req) => (test ? req.headers['x-monarca-ns'] || req.query?.ns || '' : '');
   const hotelFor = (req) => {
@@ -97,10 +124,11 @@ export async function buildApp({
     if (!h) {
       if (testHotels.size >= MAX_TEST_HOTELS) {
         const [oldest] = testHotels.keys();
+        testHotels.get(oldest).printing.close();
         testHotels.get(oldest).db.close();
         testHotels.delete(oldest);
       }
-      h = createHotel({ dbFile: ':memory:', seed });
+      h = watchPrinters(createHotel({ dbFile: ':memory:', seed, printing }));
       testHotels.set(ns, h);
     }
     return h;
@@ -110,6 +138,19 @@ export async function buildApp({
     const data = JSON.stringify(msg);
     for (const s of hotel.sockets) if (s.readyState === 1) s.send(data);
   };
+  // Estado de las impresoras a todas las pantallas (agrupando cambios seguidos)
+  function watchPrinters(hotel) {
+    let queued = false;
+    hotel.onPrinters = () => {
+      if (queued) return;
+      queued = true;
+      setImmediate(() => {
+        queued = false;
+        if (hotel.sockets.size) broadcast(hotel, { type: 'printers', ...hotel.printing.status({ recent: 0 }) });
+      });
+    };
+    return hotel;
+  }
 
   // ----- Sesión
   const tokenOf = (req) => {
@@ -274,6 +315,7 @@ export async function buildApp({
       if (c.name === 'remove' && c.args[0] === 'users') credOps.push(() => hotel.auth.removeUser(c.args[1]));
     }
 
+    const prev = hotel.engine.state;
     const { rev, patches } = hotel.engine.apply({
       aid,
       calls,
@@ -285,8 +327,85 @@ export async function buildApp({
       },
     });
     if (grant) hotel.auth.useGrant(session.id, grant);
-    if (patches.length) broadcast(hotel, { type: 'patch', rev, aid, patches });
+    // Siempre se avisa (aunque no cambie nada) para que los dispositivos no vean saltos de versión
+    broadcast(hotel, { type: 'patch', rev, aid, patches });
+    autoPrint(hotel, prev, hotel.engine.state, calls, user.id, req.log);
     return { ok: true, rev };
+  });
+
+  // ----- Impresión
+  const canPrint = {
+    ticket: ['mesero', 'recepcion', 'gerente'],
+    precuenta: ['mesero', 'recepcion', 'gerente'],
+    comanda: ['mesero', 'recepcion', 'gerente'],
+    folio: ['recepcion', 'gerente'],
+    cierre: ['recepcion', 'gerente'],
+    prueba: ['gerente'],
+  };
+  app.get('/api/printers', { preHandler: requireUser }, async (req) =>
+    req.hotel.printing.status({ recent: req.user.role === 'mesero' ? 0 : 40 }),
+  );
+  // Imprimir a pedido: { doc, id } (el servidor arma el ticket con los datos guardados)
+  app.post('/api/print', { preHandler: requireUser }, async (req) => {
+    const { hotel, user } = req;
+    const { doc, id } = req.body || {};
+    if (!canPrint[doc]?.includes(user.role)) throw new Forbidden('Tu usuario no puede imprimir este documento');
+    const state = hotel.engine.state;
+    const cfg = printerConfig(state.config);
+    const find = (coll, what) => {
+      const x = state[coll].find((r) => r.id === id);
+      if (!x) throw new ActionError(`${what} ya no existe`);
+      return x;
+    };
+    let printer = 'caja';
+    let ticket;
+    if (doc === 'ticket') {
+      const sale = find('sales', 'El comprobante');
+      if (user.role === 'mesero' && sale.kind !== 'restaurante')
+        throw new Forbidden('Tu usuario no puede imprimir este documento');
+      ticket = saleTicket(state, sale, { logo: cfg.logo });
+      ticket.title = 'Copia · ' + ticket.title;
+    } else if (doc === 'precuenta') ticket = precuentaTicket(state, find('orders', 'La cuenta'), { logo: cfg.logo });
+    else if (doc === 'folio') ticket = folioTicket(state, find('reservations', 'La reserva'), { logo: cfg.logo });
+    else if (doc === 'cierre') {
+      const shift = id === state.shift?.id ? state.shift : find('shiftHistory', 'El cierre');
+      if (!shift.report) throw new ActionError('El turno sigue abierto: imprime el cierre al cerrar la caja');
+      ticket = cierreTicket(state, shift);
+    } else if (doc === 'comanda') {
+      const order = find('orders', 'La cuenta');
+      const lines = order.lines.filter((l) => l.sent);
+      if (!lines.length) throw new ActionError('Esta cuenta aún no tiene platillos enviados a cocina');
+      printer = 'cocina';
+      ticket = comandaTicket(state, { order, lines, number: 'R', held: [] });
+      ticket.title = 'Reimpresión · ' + ticket.title;
+    } else if (doc === 'prueba') {
+      printer = id === 'cocina' ? 'cocina' : 'caja';
+      ticket = pruebaTicket(state, printer);
+    }
+    const job = hotel.printing.enqueue(printer, ticket, { userId: user.id });
+    if (job === null)
+      throw new ActionError(`La impresora de ${PRINTER_NAMES[printer].toLowerCase()} está apagada en Configuración`);
+    return { ok: true, job, printer, mode: cfg[printer].mode };
+  });
+  const requireStaff = async (req, reply) => {
+    await requireUser(req, reply);
+    if (reply.sent) return;
+    if (req.user.role === 'mesero') return reply.code(403).send({ error: 'Solo recepción o gerencia.' });
+  };
+  app.post('/api/printers/retry', { preHandler: requireUser }, async (req) => {
+    const name = req.body?.printer;
+    if (!PRINTER_NAMES[name]) throw new BadRequest('Impresora no válida');
+    req.hotel.printing.retry(name);
+    return { ok: true };
+  });
+  app.post('/api/printers/discard', { preHandler: requireStaff }, async (req) => {
+    if (!req.hotel.printing.discard(Number(req.body?.id))) throw new ActionError('Ese ticket ya no está en espera');
+    return { ok: true };
+  });
+  app.post('/api/printers/reprint', { preHandler: requireStaff }, async (req) => {
+    const job = req.hotel.printing.reprint(Number(req.body?.id), req.user.id);
+    if (job === null) throw new ActionError('No se pudo reimprimir');
+    return { ok: true, job };
   });
 
   // ----- Respaldo y datos de ejemplo (gerencia)
@@ -338,6 +457,7 @@ export async function buildApp({
     socket.on('close', () => hotel.sockets.delete(socket));
     socket.on('error', () => hotel.sockets.delete(socket));
     socket.send(JSON.stringify({ type: 'hello', rev: hotel.engine.rev }));
+    socket.send(JSON.stringify({ type: 'printers', ...hotel.printing.status({ recent: 0 }) }));
   });
   // Detecta tablets que se desconectaron sin avisar
   const heartbeat = setInterval(() => {
@@ -358,6 +478,7 @@ export async function buildApp({
     clearInterval(heartbeat);
     for (const h of [main, ...testHotels.values()]) {
       for (const s of h.sockets) s.terminate();
+      h.printing.close();
       h.db.close();
     }
   });

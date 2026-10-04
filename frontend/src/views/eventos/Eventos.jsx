@@ -241,7 +241,9 @@ function EventPanel({ ev, onEdit }) {
     update((d) => A.addEventPayment(d, ev.id, sale));
     setPay(null);
     ui.notify(`Pago registrado · ${fmt(sale.grand)}`);
-    ui.preview(final ? 'Comprobante del evento' : 'Recibo', <TicketDoc sale={sale} />);
+    ui.preview(final ? 'Comprobante del evento' : 'Recibo', <TicketDoc sale={sale} />, {
+      print: { doc: 'ticket', id: sale.id },
+    });
   };
 
   const rooms = state.reservations
@@ -264,7 +266,7 @@ function EventPanel({ ev, onEdit }) {
     update((d) => A.cancelEvent(d, ev.id, { reason, refund: sale }));
     setCancelling(false);
     ui.notify('Evento cancelado');
-    if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />);
+    if (sale) ui.preview('Devolución', <TicketDoc sale={sale} />, { print: { doc: 'ticket', id: sale.id } });
   };
 
   const setStatus = (status, msg) => {

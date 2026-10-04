@@ -12,6 +12,7 @@ import { A } from '../../store/actions.js';
 import { useStore, VERSION } from '../../store/store.jsx';
 import MapEditor from '../restaurante/MapEditor.jsx';
 import { MenuItemModal, ModifierGroups } from './MenuModals.jsx';
+import Impresoras from './Impresoras.jsx';
 import Seasons from './Seasons.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
 
@@ -22,6 +23,7 @@ const TABS = [
   ['eventos', 'Eventos'],
   ['usuarios', 'Usuarios'],
   ['negocio', 'Negocio'],
+  ['impresoras', 'Impresoras'],
   ['datos', DEMO ? 'Datos de demo' : 'Respaldo'],
 ];
 
@@ -36,6 +38,7 @@ export default function Admin() {
       {tab === 'eventos' && <EventosTab />}
       {tab === 'usuarios' && <UsuariosTab />}
       {tab === 'negocio' && <NegocioTab />}
+      {tab === 'impresoras' && <Impresoras />}
       {tab === 'datos' && <DatosTab />}
     </div>
   );
@@ -668,9 +671,10 @@ function NegocioTab() {
   const [c, setC] = useState({ lockMinutes: 5, ...state.config });
   const set = (k) => (e) => setC({ ...c, [k]: e.target.value });
   const save = () => {
+    const { printers: _p, catCourse: _cc, ...fields } = c;
     update((d) =>
       A.setConfig(d, {
-        ...c,
+        ...fields,
         tipPct: parseFloat(c.tipPct) || 0,
         lockMinutes: Math.max(0, parseInt(c.lockMinutes) || 0),
       }),

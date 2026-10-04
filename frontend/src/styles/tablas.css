@@ -90,3 +90,7 @@
   grid-template-columns: 2fr 90px 1fr 1fr 1fr 80px;
   align-items: center;
 }
+.tx-row.print-jobs {
+  grid-template-columns: 150px 90px minmax(0, 1fr) 190px 160px;
+  align-items: center;
+}

@@ -7,7 +7,7 @@ const UIContext = createContext(null);
 
 // Servicios de interfaz compartidos: avisos, confirmaciones, PIN de gerente e impresión
 export function UIProvider({ children }) {
-  const { user, notice, authorizePin } = useStore();
+  const { user, notice, authorizePin, print } = useStore();
   const [toast, setToast] = useState('');
   const [auth, setAuth] = useState(null);
   const [ask, setAsk] = useState(null);
@@ -28,8 +28,10 @@ export function UIProvider({ children }) {
     confirm({ title, message, confirmLabel = 'Confirmar', danger = false }, cb) {
       setAsk({ title, message, confirmLabel, danger, cb });
     },
-    preview(title, node, { wide = false } = {}) {
-      setDoc({ title, node, wide });
+    // print: { doc, id } para imprimirlo en la impresora del hotel (el servidor arma el ticket).
+    // note: aviso arriba del documento (ej. "El comprobante salió en caja").
+    preview(title, node, { wide = false, print = null, note = '' } = {}) {
+      setDoc({ title, node, wide, print, note });
     },
   };
 
@@ -100,12 +102,31 @@ export function UIProvider({ children }) {
               <button className="btn" onClick={() => setDoc(null)}>
                 Cerrar
               </button>
-              <button className="btn btn-primary" onClick={() => window.print()}>
-                Imprimir
-              </button>
+              {doc.print ? (
+                <button
+                  className="btn btn-primary"
+                  onClick={async () => {
+                    const r = await print(doc.print.doc, doc.print.id);
+                    ui.notify(
+                      !r.ok
+                        ? r.error
+                        : r.mode === 'simulada'
+                          ? 'Guardado en la lista de tickets (impresora simulada)'
+                          : `Enviado a la impresora de ${r.printer}`,
+                    );
+                  }}
+                >
+                  Imprimir
+                </button>
+              ) : (
+                <button className="btn btn-primary" onClick={() => window.print()}>
+                  Imprimir
+                </button>
+              )}
             </>
           }
         >
+          {doc.note && <div className="note-box">{doc.note}</div>}
           <div className="doc-scroll">
             <div className={'print-doc' + (doc.wide ? ' wide' : '')}>{doc.node}</div>
           </div>

@@ -137,7 +137,12 @@ function Cobros({ embedded = false }) {
             <span className="panel-sub">{userName(s.cashierId)}</span>
             <strong>{fmt(s.grand)}</strong>
             <span className="row-actions">
-              <button className="link" onClick={() => ui.preview(`Comprobante #${s.number}`, <TicketDoc sale={s} />)}>
+              <button
+                className="link"
+                onClick={() =>
+                  ui.preview(`Comprobante #${s.number}`, <TicketDoc sale={s} />, { print: { doc: 'ticket', id: s.id } })
+                }
+              >
                 Ver
               </button>
               {s.status === 'ok' && (s.kind === 'restaurante' || s.kind === 'tienda') && (
@@ -294,7 +299,12 @@ function Facturas() {
             </span>
             <strong>{fmt(s.grand)}</strong>
             <span className="row-actions">
-              <button className="link" onClick={() => ui.preview(`Comprobante #${s.number}`, <TicketDoc sale={s} />)}>
+              <button
+                className="link"
+                onClick={() =>
+                  ui.preview(`Comprobante #${s.number}`, <TicketDoc sale={s} />, { print: { doc: 'ticket', id: s.id } })
+                }
+              >
                 Ver
               </button>
               {s.invoice.number ? (

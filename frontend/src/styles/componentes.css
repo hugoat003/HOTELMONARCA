@@ -732,3 +732,37 @@ button.pill {
 .pinpad.busy .pin-dots {
   opacity: 0.55;
 }
+
+/* Impresoras */
+.printer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+.segmented.row.four {
+  grid-template-columns: repeat(4, 1fr);
+}
+.text-warn {
+  color: #9b2c1f;
+  font-weight: 600;
+}
+.ticket-text {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  background: #fff;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  padding: 14px 10px;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+.shift-banner.printer {
+  background: #fdf6e3;
+  border-bottom-color: #ecdcb0;
+  color: #6b4e0f;
+}
+.dot.off {
+  background: var(--muted);
+}
