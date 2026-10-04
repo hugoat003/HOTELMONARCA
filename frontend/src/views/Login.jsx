@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import PinPad from '../components/ui/PinPad.jsx';
 import { DEMO } from '../config.js';
-import { ROLE_LABELS } from '../data.js';
-import { fmtLongDate } from '../lib/dates.js';
-import { A } from '../store/actions.js';
+import { ROLE_LABELS } from '@shared/data.js';
+import { fmtLongDate } from '@shared/dates.js';
 import { useStore } from '../store/store.jsx';
 
 export default function Login() {
-  const { state, update } = useStore();
+  const { state, login } = useStore();
   const [sel, setSel] = useState(null);
   const users = state.users.filter((u) => u.active);
 
@@ -36,14 +35,7 @@ export default function Login() {
               <div className="panel-title">{sel.name}</div>
               <div className="panel-sub">Ingresa tu PIN</div>
             </div>
-            <PinPad
-              guardKey={'login:' + sel.id}
-              onSubmit={(pin) => {
-                if (pin !== sel.pin) return false;
-                update((d) => A.login(d, sel.id));
-                return true;
-              }}
-            />
+            <PinPad onSubmit={(pin) => login(sel.id, pin)} lockedMs={sel.lockedMs} />
             <button className="btn btn-quiet" onClick={() => setSel(null)}>
               Cambiar de usuario
             </button>

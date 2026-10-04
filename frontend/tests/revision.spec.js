@@ -1,14 +1,6 @@
-import { expect, fresh, login, modalClick, pickMethod, nav, state, test } from './helpers.js';
+import { expect, fresh, login, modalClick, pickMethod, nav, patchState, state, test } from './helpers.js';
 
-// Cambia los datos guardados y recarga (para preparar casos que la demo no trae)
-async function patch(page, fn) {
-  await page.evaluate((src) => {
-    const s = JSON.parse(localStorage.getItem('monarca-pos-v1'));
-    new Function('s', src)(s);
-    localStorage.setItem('monarca-pos-v1', JSON.stringify(s));
-  }, `(${fn})(s)`);
-  await page.reload();
-}
+const patch = patchState;
 const today = () => new Date().toLocaleDateString('sv-SE');
 
 test('salida anticipada: cancelar no cambia la reserva y el saldo a favor se devuelve', async ({ page }) => {

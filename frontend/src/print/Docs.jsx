@@ -1,10 +1,10 @@
 // Documentos imprimibles (ticket, comanda, precuenta, folio y reporte de cierre)
-import { COURSES, EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../data.js';
-import { fmtDate, fmtDateTime, fmtTime } from '../lib/dates.js';
-import { eventTotals } from '../lib/events.js';
-import { folio as calcFolio, groupText } from '../lib/hotel.js';
-import { linesTotal, round2 } from '../lib/money.js';
-import { modsText } from '../lib/orders.js';
+import { COURSES, EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '@shared/data.js';
+import { fmtDate, fmtDateTime, fmtTime } from '@shared/dates.js';
+import { eventTotals } from '@shared/events.js';
+import { folio as calcFolio, groupText } from '@shared/hotel.js';
+import { linesTotal, round2 } from '@shared/money.js';
+import { modsText } from '@shared/orders.js';
 import { useStore } from '../store/store.jsx';
 
 const userName = (users, id) => users.find((u) => u.id === id)?.name || '—';

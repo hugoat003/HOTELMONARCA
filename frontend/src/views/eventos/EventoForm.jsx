@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
-import { EVENT_EXTRAS, EVENT_UNITS } from '../../data.js';
-import { addDays, fmtDate, today, uid } from '../../lib/dates.js';
-import { eventTotals, venueConflict } from '../../lib/events.js';
-import { isAvailable } from '../../lib/hotel.js';
+import { EVENT_EXTRAS, EVENT_UNITS } from '@shared/data.js';
+import { addDays, fmtDate, today, uid } from '@shared/dates.js';
+import { eventTotals, venueConflict } from '@shared/events.js';
+import { isAvailable } from '@shared/hotel.js';
 import { useStore } from '../../store/store.jsx';
 
 // Cantidad sugerida del menú según su unidad

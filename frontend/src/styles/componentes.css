@@ -727,3 +727,8 @@ button.pill {
   background: var(--accent);
   color: #fff;
 }
+
+/* Validando el PIN con el servidor */
+.pinpad.busy .pin-dots {
+  opacity: 0.55;
+}

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import DataTable from '../../components/DataTable.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { HK_LABELS, ROOM_COLORS } from '../../data.js';
-import { fmtDate, today } from '../../lib/dates.js';
-import { roomState } from '../../lib/hotel.js';
+import { HK_LABELS, ROOM_COLORS } from '@shared/data.js';
+import { fmtDate, today } from '@shared/dates.js';
+import { roomState } from '@shared/hotel.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 

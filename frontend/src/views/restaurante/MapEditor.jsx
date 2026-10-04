@@ -3,9 +3,9 @@ import { Field } from '../../components/ui/Modal.jsx';
 import TableMap from '../../components/TableMap.jsx';
 import Tabs from '../../components/Tabs.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { uid } from '../../lib/dates.js';
-import { clampPos, freeSpot, MAP_H, MAP_W, placed, SHAPES, sizeFor } from '../../lib/tablemap.js';
-import { tableOrder } from '../../lib/orders.js';
+import { uid } from '@shared/dates.js';
+import { clampPos, freeSpot, MAP_H, MAP_W, placed, SHAPES, sizeFor } from '@shared/tablemap.js';
+import { tableOrder } from '@shared/orders.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 

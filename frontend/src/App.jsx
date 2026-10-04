@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { UIProvider, useUI } from './components/ui/UIProvider.jsx';
-import { NAV, ROLE_LABELS, ROLES, TITLES } from './data.js';
-import { fmtLongDate, today } from './lib/dates.js';
-import { roomState } from './lib/hotel.js';
+import { NAV, ROLE_LABELS, ROLES, TITLES } from '@shared/data.js';
+import { fmtLongDate, today } from '@shared/dates.js';
+import { roomState } from '@shared/hotel.js';
 import { A } from './store/actions.js';
 import { StoreProvider, useStore } from './store/store.jsx';
 import Admin from './views/admin/Admin.jsx';
@@ -48,8 +48,21 @@ function useIsPhone() {
 }
 
 function Root() {
-  const { user } = useStore();
+  const { state, user, status } = useStore();
   const phone = useIsPhone();
+  if (!state)
+    return (
+      <div className="login">
+        <div className="login-card">
+          <img src="/logo-monarca.png" alt="Monarca Hotel Boutique" className="login-logo" />
+          <div className="panel-sub text-center" role="status">
+            {status === 'offline'
+              ? 'Sin conexión con el servidor del hotel. Reintentando…'
+              : 'Conectando con el servidor del hotel…'}
+          </div>
+        </div>
+      </div>
+    );
   if (!user) return <Login />;
   if (phone) return <PhoneShell />;
   // key: al cambiar de usuario se reinicia la navegación
@@ -57,17 +70,13 @@ function Root() {
 }
 
 function PhoneShell() {
-  const { user, update } = useStore();
-  const [, refresh] = useState(0);
+  const { user, logout } = useStore();
   return (
     <div className="phone">
       <header className="phone-head">
         <img src="/logo-monarca.png" alt="Monarca Hotel Boutique" />
         <div className="chips">
-          <button className="chip small" onClick={() => refresh((n) => n + 1)}>
-            Actualizar
-          </button>
-          <button className="chip small" onClick={() => update((d) => A.logout(d))}>
+          <button className="chip small" onClick={logout}>
             Salir
           </button>
         </div>
@@ -106,7 +115,7 @@ function useIdleLock(minutes, onLock) {
 }
 
 function Shell() {
-  const { state, user, update } = useStore();
+  const { state, user, update, logout, status, pending } = useStore();
   const ui = useUI();
   const allowed = ROLES[user.role];
   const [savedView, setView] = usePersisted('vista', allowed[0]);
@@ -118,7 +127,7 @@ function Shell() {
   const [navOpen, setNavOpen] = useState(false); // menú en cajón (tablet)
 
   useIdleLock(state.config.lockMinutes ?? 5, () => {
-    update((d) => A.logout(d));
+    logout();
     ui.notify('Sesión cerrada por inactividad');
   });
 
@@ -174,7 +183,7 @@ function Shell() {
                   message: `¿Salir de la sesión de ${user.name}?`,
                   confirmLabel: 'Cerrar sesión',
                 },
-                () => update((d) => A.logout(d)),
+                logout,
               )
             }
           >
@@ -206,6 +215,16 @@ function Shell() {
           </div>
         </header>
 
+        {status === 'offline' && (
+          <div className="shift-banner offline" role="status">
+            <span>
+              <strong>Sin conexión con el servidor.</strong>{' '}
+              {pending
+                ? `${pending} ${pending === 1 ? 'cambio pendiente' : 'cambios pendientes'} de guardar: se envían solos al reconectar. No cierres esta pantalla.`
+                : 'Reintentando… Lo que ves puede no estar al día.'}
+            </span>
+          </div>
+        )}
         {!state.shift && view !== 'caja' && (
           <div className="shift-banner" role="status">
             <span>

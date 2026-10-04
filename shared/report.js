@@ -1,4 +1,4 @@
-import { METHOD_LABELS } from '../data.js';
+import { METHOD_LABELS } from './data.js';
 import { addDays, dateOf, nightsBetween, today } from './dates.js';
 import { nightlyRate } from './hotel.js';
 import { dishCost } from './inventory.js';
@@ -30,7 +30,12 @@ export function buildReport(state, shift) {
 
   const byMethod = Object.keys(METHOD_LABELS).map((k) => {
     const pays = ok.flatMap((s) => s.payments).filter((p) => p.method === k);
-    return { key: k, label: METHOD_LABELS[k], count: pays.length, amount: sum(pays, (p) => p.amount) };
+    return {
+      key: k,
+      label: METHOD_LABELS[k],
+      count: pays.length,
+      amount: sum(pays, (p) => p.amount),
+    };
   });
 
   const cats = {};
@@ -102,7 +107,11 @@ export function buildReport(state, shift) {
       departures: state.reservations.filter((r) => r.status === 'salida' && r.checkedOutOn === day).length,
     },
     events: { collected: sum(events, (s) => s.grand), count: events.length },
-    shop: { total: shopTotal, count: shop.length, margin: round2(shopTotal - shopCost) },
+    shop: {
+      total: shopTotal,
+      count: shop.length,
+      margin: round2(shopTotal - shopCost),
+    },
     production: round2(restTotal + lodgingRevenue + sum(events, (s) => s.grand) + shopTotal),
     sales: [...sales].sort((a, b) => b.ts - a.ts),
   };
@@ -119,7 +128,11 @@ function lodgingByDay(state, from, to) {
     const stays = state.reservations.filter(
       (r) => (r.status === 'hospedado' || r.status === 'salida') && r.checkIn <= d && d < r.checkOut,
     );
-    out.push({ day: d, occupied: stays.length, revenue: sum(stays, (r) => nightlyRate(r, state, d)) });
+    out.push({
+      day: d,
+      occupied: stays.length,
+      revenue: sum(stays, (r) => nightlyRate(r, state, d)),
+    });
   }
   return out;
 }
@@ -158,7 +171,12 @@ export function buildRangeReport(state, from, to) {
 
   const byMethod = Object.keys(METHOD_LABELS).map((k) => {
     const pays = ok.flatMap((s) => s.payments).filter((p) => p.method === k);
-    return { key: k, label: METHOD_LABELS[k], count: pays.length, amount: sum(pays, (p) => p.amount) };
+    return {
+      key: k,
+      label: METHOD_LABELS[k],
+      count: pays.length,
+      amount: sum(pays, (p) => p.amount),
+    };
   });
   const cats = {};
   const items = {};
@@ -170,7 +188,12 @@ export function buildRangeReport(state, from, to) {
   // Ventas y propinas por mesero; reparto según la configuración
   const waiters = {};
   for (const s of rest) {
-    const w = (waiters[s.waiterId] ||= { waiterId: s.waiterId, count: 0, total: 0, tips: 0 });
+    const w = (waiters[s.waiterId] ||= {
+      waiterId: s.waiterId,
+      count: 0,
+      total: 0,
+      tips: 0,
+    });
     w.count++;
     w.total = round2(w.total + s.total);
     w.tips = round2(w.tips + s.tip);
@@ -192,7 +215,14 @@ export function buildRangeReport(state, from, to) {
     const m = state.menu.find((x) => x.id === l.mid);
     const unit = dishCost(m, state.inventory);
     if (unit === null) continue;
-    const x = (dishMap[l.mid] ||= { mid: l.mid, name: m.name, cat: m.cat, qty: 0, sales: 0, cost: 0 });
+    const x = (dishMap[l.mid] ||= {
+      mid: l.mid,
+      name: m.name,
+      cat: m.cat,
+      qty: 0,
+      sales: 0,
+      cost: 0,
+    });
     x.qty += l.qty;
     x.sales = round2(x.sales + l.price * l.qty);
     x.cost = round2(x.cost + unit * l.qty);

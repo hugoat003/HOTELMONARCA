@@ -1,5 +1,5 @@
 // Utilidades de cuentas del restaurante (mesas, unión de mesas, modificadores)
-import { COURSE_ORDER } from '../data.js';
+import { COURSE_ORDER } from './data.js';
 import { round2, sum } from './money.js';
 
 const byId = (arr, id) => arr.find((x) => x.id === id);

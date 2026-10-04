@@ -1,4 +1,4 @@
-import { expect, login, modalClick, nav, test } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, test } from './helpers.js';
 
 // Comparación visual de pantallas completas (npm run test:visual).
 // La hora queda fija para que fechas y minutos no cambien entre corridas.
@@ -9,9 +9,7 @@ test.describe.configure({ mode: 'serial' });
 
 async function start(page, user = 'Marta Gerente') {
   await page.clock.setFixedTime(FIXED);
-  await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
+  await fresh(page, { now: FIXED });
   await login(page, user);
 }
 const snap = (page, name) => expect.soft(page).toHaveScreenshot(name + '.png', { fullPage: true, maxDiffPixels: 0 });
@@ -83,9 +81,7 @@ test('mesero en tablet', async ({ browser }) => {
 test('login y teléfono', async ({ browser }) => {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await page.clock.setFixedTime(FIXED);
-  await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
+  await fresh(page, { now: FIXED });
   await snap(page, 'login-telefono');
   await page.getByRole('button', { name: 'Marta Gerente' }).click();
   for (const k of '1111') await page.keyboard.press(k);

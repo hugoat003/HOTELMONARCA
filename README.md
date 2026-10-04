@@ -5,20 +5,22 @@ Sistema de punto de venta y gestión hotelera para **Monarca Hotel Boutique** (A
 ## Estructura
 
 ```
-frontend/   App web (React + Vite). Hoy funciona sola, con datos guardados en el navegador.
-backend/    Servidor y base de datos. Pendiente — ver backend/README.md.
+frontend/   App web (React + Vite) que usan la caja, las tablets y recepción.
+backend/    Servidor del hotel (Node + Fastify + SQLite + WebSocket). Ver backend/README.md.
+shared/     Operaciones y cálculos que usan igual el servidor y las pantallas.
 docs/
-  cotizacion/  Cotización para el hotel (HTML editable + PDF).
   diseno/      Exportación original del diseño de Claude Design.
 ```
 
 ## Uso
 
 ```bash
-npm run install:frontend   # primera vez
-npm run dev                # abre en http://localhost:5173
-npm run dev:red            # visible en la red local (para ver el resumen en el teléfono)
-npm run build              # genera frontend/dist
+npm run install:all   # primera vez
+npm run dev           # servidor (:3000) + frontend con recarga (:5173, visible en la red)
+npm run demo          # compila y arranca como en el hotel, con datos de ejemplo: http://<IP>:3000
+npm start             # igual, sin opciones de demostración
+npm test              # pruebas del servidor y de punta a punta (Playwright)
+npm run lint
 ```
 
 Usuarios de demostración (PIN): Gerente 1111 · Recepción 2222 · Juan 3333 · Ana 4444.

@@ -1,10 +1,10 @@
 // Modales del panel de reserva: cambio de habitación y cierre (no-show / cancelación) con devolución
 import { useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
-import { METHOD_LABELS } from '../../data.js';
-import { today } from '../../lib/dates.js';
-import { isAvailable } from '../../lib/hotel.js';
-import { round2 } from '../../lib/money.js';
+import { METHOD_LABELS } from '@shared/data.js';
+import { today } from '@shared/dates.js';
+import { isAvailable } from '@shared/hotel.js';
+import { round2 } from '@shared/money.js';
 import { useStore } from '../../store/store.jsx';
 
 export function ChangeRoomModal({ res, onClose, onConfirm }) {

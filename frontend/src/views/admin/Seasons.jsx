@@ -3,7 +3,7 @@ import { useState } from 'react';
 import DataTable, { rowClass } from '../../components/DataTable.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { fmtDate, uid } from '../../lib/dates.js';
+import { fmtDate, uid } from '@shared/dates.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 

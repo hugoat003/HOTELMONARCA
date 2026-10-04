@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, state, test } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, patchState, state, test } from './helpers.js';
 
 const res = async (page, id) => (await state(page)).reservations.find((r) => r.id === id);
 
@@ -62,15 +62,12 @@ test('arrastrar reservas: rechaza fechas ocupadas, mueve y extiende', async ({ p
 test('no-show con devolución parcial del anticipo', async ({ page }) => {
   await fresh(page);
   // Carlos Ruiz debía llegar ayer
-  await page.evaluate(() => {
-    const s = JSON.parse(localStorage.getItem('monarca-pos-v1'));
+  await patchState(page, (s) => {
     const r = s.reservations.find((x) => x.id === 'r5');
     const d = new Date(r.checkIn + 'T12:00');
     d.setDate(d.getDate() - 1);
     r.checkIn = d.toISOString().slice(0, 10);
-    localStorage.setItem('monarca-pos-v1', JSON.stringify(s));
   });
-  await page.reload();
   await login(page, 'Luis Recepción');
   await nav(page, 'Habitaciones');
   await page.locator('.tile.room', { hasText: '103' }).click();

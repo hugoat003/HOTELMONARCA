@@ -3,7 +3,11 @@ export const MAP_W = 1000;
 export const MAP_H = 460;
 export const GRID = 10;
 
-export const SHAPES = { cuadrada: 'Cuadrada', redonda: 'Redonda', rectangular: 'Rectangular' };
+export const SHAPES = {
+  cuadrada: 'Cuadrada',
+  redonda: 'Redonda',
+  rectangular: 'Rectangular',
+};
 
 export function sizeFor(shape, seats) {
   if (shape === 'rectangular') return { w: Math.max(140, 40 * Math.ceil(seats / 2) + 40), h: 90 };
@@ -35,7 +39,10 @@ export function chairs(t) {
     const r = t.w / 2 + 12;
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 - Math.PI / 2;
-      out.push({ cx: t.w / 2 + r * Math.cos(a), cy: t.h / 2 + r * Math.sin(a) });
+      out.push({
+        cx: t.w / 2 + r * Math.cos(a),
+        cy: t.h / 2 + r * Math.sin(a),
+      });
     }
     return out;
   }

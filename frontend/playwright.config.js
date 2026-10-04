@@ -18,14 +18,21 @@ export default defineConfig({
     { name: 'funcional', testIgnore: /visual\.spec\.js/ },
     { name: 'visual', testMatch: /visual\.spec\.js/ },
   ],
-  // Se prueba la versión compilada (como la que se instala), no el servidor de desarrollo:
-  // así no hay recargas en caliente a mitad de una prueba.
+  // Se prueba la versión compilada servida por el servidor real (backend/) en modo pruebas:
+  // cada prueba usa su propio hotel en memoria, así corren en paralelo sin mezclar datos.
   webServer: {
-    command:
-      'npx vite build --outDir .test-dist --emptyOutDir && npx vite preview --outDir .test-dist --port 4180 --strictPort',
-    url: 'http://localhost:4180',
+    command: 'npx vite build --outDir .test-dist --emptyOutDir && node ../backend/src/index.js',
+    url: 'http://localhost:4180/api/health',
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { VITE_DEMO: '1' },
+    env: {
+      VITE_DEMO: '1',
+      MONARCA_TEST: '1',
+      PORT: '4180',
+      HOST: '127.0.0.1',
+      STATIC_DIR: '.test-dist',
+      // El servidor y el navegador deben estar en la misma zona horaria (fechas de "hoy")
+      TZ: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
   },
 });

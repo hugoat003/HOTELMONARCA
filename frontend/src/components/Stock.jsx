@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { INV_CATS, INV_MOVES, INV_UNITS } from '../data.js';
-import { fmtDateTime } from '../lib/dates.js';
-import { qtyFmt, stockStatus } from '../lib/inventory.js';
+import { INV_CATS, INV_MOVES, INV_UNITS } from '@shared/data.js';
+import { fmtDateTime } from '@shared/dates.js';
+import { qtyFmt, stockStatus } from '@shared/inventory.js';
 import DataTable, { rowClass } from './DataTable.jsx';
 import Modal, { Field } from './ui/Modal.jsx';
 

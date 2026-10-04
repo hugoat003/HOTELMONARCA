@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { COURSES } from '../../data.js';
-import { fmtTime, uid } from '../../lib/dates.js';
-import { canMake, reservedStock } from '../../lib/inventory.js';
-import { linesTotal } from '../../lib/money.js';
-import { isHeldOnSend, modsText, orderLabel } from '../../lib/orders.js';
+import { COURSES } from '@shared/data.js';
+import { fmtTime, uid } from '@shared/dates.js';
+import { canMake, reservedStock } from '@shared/inventory.js';
+import { linesTotal } from '@shared/money.js';
+import { isHeldOnSend, modsText, orderLabel } from '@shared/orders.js';
 import { ComandaDoc, PrecuentaDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';

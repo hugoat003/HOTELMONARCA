@@ -1,10 +1,10 @@
 import { Fragment, useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { EXTRA_CHARGES, METHOD_LABELS, RES_STATUS } from '../../data.js';
-import { fmtDate, fmtTime, nightsBetween, today, uid } from '../../lib/dates.js';
-import { folio as calcFolio, groupText } from '../../lib/hotel.js';
-import { refundSale } from '../../lib/sales.js';
+import { EXTRA_CHARGES, METHOD_LABELS, RES_STATUS } from '@shared/data.js';
+import { fmtDate, fmtTime, nightsBetween, today, uid } from '@shared/dates.js';
+import { folio as calcFolio, groupText } from '@shared/hotel.js';
+import { refundSale } from '@shared/sales.js';
 import { FolioDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';

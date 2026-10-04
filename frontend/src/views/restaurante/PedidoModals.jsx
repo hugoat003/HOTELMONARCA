@@ -1,8 +1,8 @@
 // Modales de la pantalla de Pedido
 import { useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
-import { COURSES, QUICK_NOTES } from '../../data.js';
-import { modsText, orderLabel, tableOrder, unitPrice } from '../../lib/orders.js';
+import { COURSES, QUICK_NOTES } from '@shared/data.js';
+import { modsText, orderLabel, tableOrder, unitPrice } from '@shared/orders.js';
 
 const VOID_REASONS = ['Error de captura', 'Cliente cambió de opinión', 'Platillo devuelto', 'No se preparó'];
 const COURTESY_REASONS = ['Cliente frecuente', 'Compensación por demora', 'Cumpleaños', 'Invitación de la casa'];

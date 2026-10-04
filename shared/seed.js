@@ -1,10 +1,12 @@
-import { addDays, addMonths, today } from '../lib/dates.js';
-import { linesTotal, round2 } from '../lib/money.js';
-import { buildReport } from '../lib/report.js';
-import { folio } from '../lib/hotel.js';
+import { addDays, addMonths, today } from './dates.js';
+import { linesTotal, round2 } from './money.js';
+import { buildReport } from './report.js';
+import { folio } from './hotel.js';
 import { A } from './actions.js';
 
-export const VERSION = 11;
+import { VERSION } from './version.js';
+
+export { VERSION };
 
 const CATEGORIES = ['Desayunos', 'Entradas', 'Platos fuertes', 'Postres', 'Bebidas', 'Bar', 'Especiales'];
 
@@ -70,7 +72,13 @@ const MODIFIER_GROUPS = [
     ],
   },
 ];
-const MODS = { m1: ['g2'], m2: ['g2'], m9: ['g1', 'g2'], m15: ['g3'], m16: ['g3'] };
+const MODS = {
+  m1: ['g2'],
+  m2: ['g2'],
+  m9: ['g1', 'g2'],
+  m15: ['g3'],
+  m16: ['g3'],
+};
 
 // Recetas: insumos de Inventario que consume cada platillo (por porción)
 const RECIPES = {
@@ -98,8 +106,20 @@ for (const m of MENU) {
 const BYID = Object.fromEntries(MENU.map((m) => [m.id, m]));
 
 const USERS = [
-  { id: 'u1', name: 'Marta Gerente', role: 'gerente', pin: '1111', active: true },
-  { id: 'u2', name: 'Luis Recepción', role: 'recepcion', pin: '2222', active: true },
+  {
+    id: 'u1',
+    name: 'Marta Gerente',
+    role: 'gerente',
+    pin: '1111',
+    active: true,
+  },
+  {
+    id: 'u2',
+    name: 'Luis Recepción',
+    role: 'recepcion',
+    pin: '2222',
+    active: true,
+  },
   { id: 'u3', name: 'Juan', role: 'mesero', pin: '3333', active: true },
   { id: 'u4', name: 'Ana', role: 'mesero', pin: '4444', active: true },
 ];
@@ -107,7 +127,17 @@ const USERS = [
 // Mesas con su ubicación en el mapa (lienzo de 1000 × 460 por zona)
 const T = (id, zone, seats, shape, x, y, reservedAt = null) => {
   const size = shape === 'rectangular' ? { w: 170, h: 90 } : seats <= 2 ? { w: 80, h: 80 } : { w: 100, h: 100 };
-  return { id, name: 'Mesa ' + id, zone, seats, shape, x, y, ...size, reservedAt };
+  return {
+    id,
+    name: 'Mesa ' + id,
+    zone,
+    seats,
+    shape,
+    x,
+    y,
+    ...size,
+    reservedAt,
+  };
 };
 const TABLES = [
   T(1, 'Salón', 4, 'cuadrada', 80, 60),
@@ -126,8 +156,24 @@ const MAP_DECOR = [
   { id: 'd1', zone: 'Salón', label: 'Barra', x: 760, y: 40, w: 190, h: 70 },
   { id: 'd2', zone: 'Salón', label: 'Cocina', x: 760, y: 150, w: 190, h: 130 },
   { id: 'd3', zone: 'Salón', label: 'Entrada', x: 380, y: 420, w: 180, h: 40 },
-  { id: 'd4', zone: 'Terraza', label: 'Jardín', x: 700, y: 250, w: 250, h: 170 },
-  { id: 'd5', zone: 'Terraza', label: 'Acceso desde salón', x: 40, y: 420, w: 200, h: 40 },
+  {
+    id: 'd4',
+    zone: 'Terraza',
+    label: 'Jardín',
+    x: 700,
+    y: 250,
+    w: 250,
+    h: 170,
+  },
+  {
+    id: 'd5',
+    zone: 'Terraza',
+    label: 'Acceso desde salón',
+    x: 40,
+    y: 420,
+    w: 200,
+    h: 40,
+  },
 ];
 
 const ROOM_TYPES = [
@@ -250,7 +296,9 @@ export function seed() {
     R(
       'r6',
       '302',
-      guest('Sofía Lara', '+52 55 1234 5678', 'Pasaporte G08812345', { nationality: 'México' }),
+      guest('Sofía Lara', '+52 55 1234 5678', 'Pasaporte G08812345', {
+        nationality: 'México',
+      }),
       d0,
       addDays(d0, 1),
       'reservada',
@@ -283,7 +331,9 @@ export function seed() {
     R(
       'r9',
       '301',
-      guest('Thomas Becker', '+49 170 555 0199', 'Pasaporte C4F1R22K7', { nationality: 'Alemania' }),
+      guest('Thomas Becker', '+49 170 555 0199', 'Pasaporte C4F1R22K7', {
+        nationality: 'Alemania',
+      }),
       addDays(d0, 2),
       addDays(d0, 4),
       'reservada',
@@ -373,7 +423,12 @@ export function seed() {
   for (const r of reservations) {
     let g = guests.find((x) => x.doc === r.guest.doc);
     if (!g) {
-      g = { id: 'gst' + (guests.length + 1), ...r.guest, notes: '', createdAt: r.createdAt };
+      g = {
+        id: 'gst' + (guests.length + 1),
+        ...r.guest,
+        notes: '',
+        createdAt: r.createdAt,
+      };
       guests.push(g);
     }
     r.guestId = g.id;
@@ -401,19 +456,49 @@ export function seed() {
   // Anticipos
   reservations
     .find((r) => r.id === 'r5')
-    .payments.push({ id: 'p_r5', ts: at(y, '16:20'), method: 'transferencia', amount: 500, desc: 'Anticipo' });
+    .payments.push({
+      id: 'p_r5',
+      ts: at(y, '16:20'),
+      method: 'transferencia',
+      amount: 500,
+      desc: 'Anticipo',
+    });
   reservations
     .find((r) => r.id === 'r8')
     .payments.push(
-      { id: 'p_r8a', ts: at(addDays(d0, -12), '15:00'), method: 'transferencia', amount: 5000, desc: 'Abono mes 1' },
-      { id: 'p_r8b', ts: at(addDays(d0, -4), '10:30'), method: 'tarjeta', amount: 4000, desc: 'Abono mes 1' },
+      {
+        id: 'p_r8a',
+        ts: at(addDays(d0, -12), '15:00'),
+        method: 'transferencia',
+        amount: 5000,
+        desc: 'Abono mes 1',
+      },
+      {
+        id: 'p_r8b',
+        ts: at(addDays(d0, -4), '10:30'),
+        method: 'tarjeta',
+        amount: 4000,
+        desc: 'Abono mes 1',
+      },
     );
   reservations
     .find((r) => r.id === 'r3')
-    .payments.push({ id: 'p_r3', ts: at(y, '15:05'), method: 'tarjeta', amount: 1500, desc: 'Anticipo' });
+    .payments.push({
+      id: 'p_r3',
+      ts: at(y, '15:05'),
+      method: 'tarjeta',
+      amount: 1500,
+      desc: 'Anticipo',
+    });
 
   // Turno de ayer (cerrado) y turno de hoy (abierto)
-  const shiftY = { id: 'sh_y', openedAt: at(y, '07:00'), openedBy: 'u1', float: 1000, movements: [] };
+  const shiftY = {
+    id: 'sh_y',
+    openedAt: at(y, '07:00'),
+    openedBy: 'u1',
+    float: 1000,
+    movements: [],
+  };
   const shift = {
     id: 'sh_' + d0,
     openedAt: at(d0, '07:00'),
@@ -485,7 +570,13 @@ export function seed() {
   const historySales = [];
   for (let k = 30; k >= 2; k--) {
     const day = addDays(d0, -k);
-    const sh = { id: 'sh_h' + k, openedAt: at(day, '07:00'), openedBy: 'u1', float: 1000, movements: [] };
+    const sh = {
+      id: 'sh_h' + k,
+      openedAt: at(day, '07:00'),
+      openedBy: 'u1',
+      float: 1000,
+      movements: [],
+    };
     historyShifts.push(sh);
     const weekend = [5, 6, 0].includes(new Date(day + 'T12:00').getDay());
     const count = 5 + Math.floor(rnd() * 6) + (weekend ? 4 : 0);
@@ -688,7 +779,14 @@ export function seed() {
   const shopSale = (time, items, method, extra = {}) => {
     const lines = items.map(([itemId, qty]) => {
       const it = shopItems.find((x) => x.id === itemId);
-      return { itemId, name: it.name, cat: it.cat, price: it.price, cost: it.cost, qty };
+      return {
+        itemId,
+        name: it.name,
+        cat: it.cat,
+        price: it.price,
+        cost: it.cost,
+        qty,
+      };
     });
     const total = linesTotal(lines);
     doc++;
@@ -874,7 +972,13 @@ export function seed() {
           { id: 'x2', desc: 'Música / DJ', amt: 1500 },
         ],
         payments: [
-          { id: 'ep1', ts: at(addDays(d0, -10), '11:30'), method: 'transferencia', amount: 8000, desc: 'Anticipo' },
+          {
+            id: 'ep1',
+            ts: at(addDays(d0, -10), '11:30'),
+            method: 'transferencia',
+            amount: 8000,
+            desc: 'Anticipo',
+          },
         ],
         roomBlock: { rooms: ['301', '302'], nights: 1, rate: 900 },
       },
@@ -923,7 +1027,15 @@ export function seed() {
     ),
   ];
 
-  const I = (id, name, cat, unit, stock, min, cost) => ({ id, name, cat, unit, stock, min, cost });
+  const I = (id, name, cat, unit, stock, min, cost) => ({
+    id,
+    name,
+    cat,
+    unit,
+    stock,
+    min,
+    cost,
+  });
   const inventory = [
     I('i1', 'Pollo', 'Insumos', 'kg', 18, 10, 32),
     I('i2', 'Lomito de res', 'Insumos', 'kg', 6, 8, 95),
@@ -1002,7 +1114,12 @@ export function seed() {
       weekendPct: 15,
       extraPersonFrom: 2,
       extraPersonRate: 150,
-      catCourse: { Entradas: 'entrada', 'Platos fuertes': 'fuerte', Postres: 'postre', Especiales: 'fuerte' },
+      catCourse: {
+        Entradas: 'entrada',
+        'Platos fuertes': 'fuerte',
+        Postres: 'postre',
+        Especiales: 'fuerte',
+      },
     },
     users: USERS,
     categories: CATEGORIES,

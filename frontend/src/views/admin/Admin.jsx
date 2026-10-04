@@ -4,10 +4,10 @@ import Tabs from '../../components/Tabs.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DEMO } from '../../config.js';
-import { COURSES, EVENT_UNITS, ROLE_LABELS } from '../../data.js';
-import { dishCost, marginPct } from '../../lib/inventory.js';
-import { uid } from '../../lib/dates.js';
-import { isActiveRes } from '../../lib/hotel.js';
+import { COURSES, EVENT_UNITS, ROLE_LABELS } from '@shared/data.js';
+import { dishCost, marginPct } from '@shared/inventory.js';
+import { uid } from '@shared/dates.js';
+import { isActiveRes } from '@shared/hotel.js';
 import { A } from '../../store/actions.js';
 import { useStore, VERSION } from '../../store/store.jsx';
 import MapEditor from '../restaurante/MapEditor.jsx';
@@ -604,7 +604,7 @@ function UsuariosTab() {
               </button>
             </span>
             <span className="row-actions">
-              <button className="link" onClick={() => setEdit({ ...u })}>
+              <button className="link" onClick={() => setEdit({ ...u, pin: '' })}>
                 Editar
               </button>
               {u.id !== user.id && (
@@ -637,17 +637,22 @@ function UsuariosTab() {
           fields={[
             { key: 'name', label: 'Nombre', span: true },
             { key: 'role', label: 'Rol', type: 'select', options: Object.entries(ROLE_LABELS) },
-            { key: 'pin', label: 'PIN', hint: '4 dígitos' },
+            {
+              key: 'pin',
+              label: edit.isNew ? 'PIN' : 'PIN nuevo',
+              hint: edit.isNew ? '4 dígitos' : 'Déjalo vacío para no cambiarlo',
+            },
           ]}
           validate={(v) => {
             if (!v.name.trim()) return 'Falta el nombre';
-            if (!/^\d{4}$/.test(v.pin)) return 'El PIN debe tener 4 dígitos';
-            if (state.users.some((x) => x.pin === v.pin && x.id !== v.id)) return 'Ese PIN ya lo usa otra persona';
+            // El servidor revisa que el PIN no lo use otra persona (los PIN no salen del servidor)
+            if ((edit.isNew || v.pin) && !/^\d{4}$/.test(v.pin || '')) return 'El PIN debe tener 4 dígitos';
             if (v.id === user.id && v.role !== 'gerente') return 'No puedes quitarte el rol de gerente';
             return '';
           }}
           onSave={({ isNew, ...v }) => {
-            update((d) => A.upsert(d, 'users', { ...v, name: v.name.trim() }));
+            const { pin, ...rest } = v;
+            update((d) => A.upsert(d, 'users', { ...rest, name: v.name.trim(), ...(pin ? { pin } : {}) }));
             setEdit(null);
             ui.notify(isNew ? 'Usuario creado' : 'Usuario actualizado');
           }}
@@ -727,12 +732,13 @@ function NegocioTab() {
 }
 
 function DatosTab() {
-  const { state, replace, resetDemo } = useStore();
+  const { state, restore, resetDemo } = useStore();
   const ui = useUI();
   const fileRef = useRef();
 
   const exportJson = () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const { session: _s, ...data } = state;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `monarca-pos-${new Date().toISOString().slice(0, 10)}.json`;
@@ -754,10 +760,11 @@ function DatosTab() {
           confirmLabel: 'Cargar respaldo',
           danger: true,
         },
-        () => {
-          replace({ ...data, session: state.session });
-          ui.notify('Datos importados');
-        },
+        () =>
+          restore(data).then(
+            () => ui.notify('Datos importados'),
+            (e) => ui.notify(e.message || 'No se pudo cargar el respaldo'),
+          ),
       );
     } catch {
       ui.notify('El archivo no es un respaldo válido de POS Monarca');
@@ -772,7 +779,7 @@ function DatosTab() {
         </div>
         <div className="panel-sub text-md">
           {DEMO
-            ? 'Todo se guarda en este navegador. Antes de presentar, restaura los datos de ejemplo para empezar con mesas, reservas y ventas del día.'
+            ? 'Los datos viven en el servidor del hotel y los ven todos los dispositivos. Antes de presentar, restaura los datos de ejemplo para empezar con mesas, reservas y ventas del día.'
             : 'Descarga una copia de toda la información o carga una copia anterior.'}
         </div>
       </div>
@@ -802,11 +809,15 @@ function DatosTab() {
                 {
                   title: 'Restaurar datos de ejemplo',
                   message:
-                    'Se borran todos los cambios hechos en este navegador y se cargan los datos de ejemplo con fechas de hoy. Tendrás que volver a iniciar sesión.',
+                    'Se borran todos los cambios (en todos los dispositivos) y se cargan los datos de ejemplo con fechas de hoy.',
                   confirmLabel: 'Restaurar',
                   danger: true,
                 },
-                resetDemo,
+                () =>
+                  resetDemo().then(
+                    () => ui.notify('Datos de ejemplo restaurados'),
+                    (e) => ui.notify(e.message || 'No se pudo restaurar'),
+                  ),
               )
             }
           >

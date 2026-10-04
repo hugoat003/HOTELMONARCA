@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import DataTable from '../../components/DataTable.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { RES_STATUS } from '../../data.js';
-import { addDays, fmtDate, nightsBetween, today } from '../../lib/dates.js';
-import { isActiveRes, isAvailable } from '../../lib/hotel.js';
+import { RES_STATUS } from '@shared/data.js';
+import { addDays, fmtDate, nightsBetween, today } from '@shared/dates.js';
+import { isActiveRes, isAvailable } from '@shared/hotel.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import ReservaForm from './ReservaForm.jsx';

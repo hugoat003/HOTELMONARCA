@@ -112,7 +112,10 @@ export function folio(res, state) {
     groups = null,
     dueToday = null;
   if (res.rateType === 'mensual') {
-    periods = monthlyPeriods(res.checkIn, res.checkOut).map((p) => ({ ...p, amount: round2(res.rate * p.frac) }));
+    periods = monthlyPeriods(res.checkIn, res.checkOut).map((p) => ({
+      ...p,
+      amount: round2(res.rate * p.frac),
+    }));
     lodging = lodgingFromBase(sum(periods, (p) => p.amount));
     // Lo que ya debería estar pagado: periodos iniciados + cargos
     const accrued = lodgingFromBase(

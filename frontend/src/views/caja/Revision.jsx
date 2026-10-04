@@ -2,12 +2,12 @@
 import { useState } from 'react';
 import Modal from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { fmtDate, today } from '../../lib/dates.js';
-import { eventTotals } from '../../lib/events.js';
-import { folio } from '../../lib/hotel.js';
-import { linesTotal, sum } from '../../lib/money.js';
-import { orderLabel } from '../../lib/orders.js';
-import { refundSale } from '../../lib/sales.js';
+import { fmtDate, today } from '@shared/dates.js';
+import { eventTotals } from '@shared/events.js';
+import { folio } from '@shared/hotel.js';
+import { linesTotal, sum } from '@shared/money.js';
+import { orderLabel } from '@shared/orders.js';
+import { refundSale } from '@shared/sales.js';
 import { TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';

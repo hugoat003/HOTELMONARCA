@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { ROOM_COLORS, ROOM_STATUS_ORDER } from '../../data.js';
-import { fmtDate, today } from '../../lib/dates.js';
-import { roomState } from '../../lib/hotel.js';
+import { ROOM_COLORS, ROOM_STATUS_ORDER } from '@shared/data.js';
+import { fmtDate, today } from '@shared/dates.js';
+import { roomState } from '@shared/hotel.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import ReservaForm from './ReservaForm.jsx';

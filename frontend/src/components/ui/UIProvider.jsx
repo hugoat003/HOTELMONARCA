@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useStore } from '../../store/store.jsx';
 import Modal from './Modal.jsx';
 import PinPad from './PinPad.jsx';
@@ -7,7 +7,7 @@ const UIContext = createContext(null);
 
 // Servicios de interfaz compartidos: avisos, confirmaciones, PIN de gerente e impresión
 export function UIProvider({ children }) {
-  const { state, user } = useStore();
+  const { user, notice, authorizePin } = useStore();
   const [toast, setToast] = useState('');
   const [auth, setAuth] = useState(null);
   const [ask, setAsk] = useState(null);
@@ -33,14 +33,22 @@ export function UIProvider({ children }) {
     },
   };
 
-  const checkManagerPin = (pin) => {
-    const mgr = state.users.find((u) => u.active && u.role === 'gerente' && u.pin === pin);
-    if (!mgr) return false;
-    const cb = auth.cb;
-    setAuth(null);
-    cb(mgr);
-    return true;
+  // El servidor valida el PIN del gerente y deja autorizada la siguiente operación de esta sesión
+  const checkManagerPin = async (pin) => {
+    const r = await authorizePin(pin);
+    if (r.ok) {
+      const cb = auth.cb;
+      setAuth(null);
+      cb(r.user);
+    }
+    return r;
   };
+
+  // Avisos del servidor (operación rechazada, sesión vencida…)
+  useEffect(() => {
+    if (notice) ui.notify(notice.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notice?.id]);
 
   return (
     <UIContext.Provider value={ui}>
@@ -49,7 +57,7 @@ export function UIProvider({ children }) {
       {auth && (
         <Modal title="Autorización" onClose={() => setAuth(null)} width={380}>
           <div className="panel-sub text-md">{auth.label}. Ingresa el PIN de un gerente para continuar.</div>
-          <PinPad onSubmit={checkManagerPin} error="PIN de gerente inválido" guardKey="autorizacion" />
+          <PinPad onSubmit={checkManagerPin} error="PIN de gerente inválido" />
           <button className="btn btn-quiet" onClick={() => setAuth(null)}>
             Cancelar
           </button>

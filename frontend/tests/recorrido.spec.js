@@ -1,15 +1,7 @@
-import { nightRate } from '../src/lib/hotel.js';
-import { expect, fresh, login, modalClick, nav, state, test } from './helpers.js';
+import { nightRate } from '../../shared/hotel.js';
+import { expect, fresh, login, modalClick, nav, patchState, state, test } from './helpers.js';
 
-// Cambia los datos guardados y recarga (para preparar casos que la demo no trae)
-async function patch(page, fn) {
-  await page.evaluate((src) => {
-    const s = JSON.parse(localStorage.getItem('monarca-pos-v1'));
-    new Function('s', src)(s);
-    localStorage.setItem('monarca-pos-v1', JSON.stringify(s));
-  }, `(${fn})(s)`);
-  await page.reload();
-}
+const patch = patchState;
 
 test('una mesa abierta por error (sin productos) se libera al regresar', async ({ page }) => {
   await fresh(page);

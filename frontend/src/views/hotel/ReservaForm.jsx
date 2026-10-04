@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
-import { CHANNELS, RATE_TYPES } from '../../data.js';
-import { addDays, addMonths, fmtDate, nightsBetween, today, uid } from '../../lib/dates.js';
-import { folio, groupText, guestStays, isAvailable, isFrequent } from '../../lib/hotel.js';
+import { CHANNELS, RATE_TYPES } from '@shared/data.js';
+import { addDays, addMonths, fmtDate, nightsBetween, today, uid } from '@shared/dates.js';
+import { folio, groupText, guestStays, isAvailable, isFrequent } from '@shared/hotel.js';
 import { useStore } from '../../store/store.jsx';
 
 // mode: 'new' | 'edit' | 'checkin' (confirmar datos al llegar) | 'walkin' (llega sin reserva)

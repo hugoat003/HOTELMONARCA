@@ -38,7 +38,11 @@ export const TITLES = {
 };
 
 // Tiempos de la comanda: los fuertes y postres esperan hasta que el mesero los marcha
-export const COURSES = { entrada: 'Entradas', fuerte: 'Plato fuerte', postre: 'Postres' };
+export const COURSES = {
+  entrada: 'Entradas',
+  fuerte: 'Plato fuerte',
+  postre: 'Postres',
+};
 export const COURSE_ORDER = { entrada: 1, fuerte: 2, postre: 3 };
 
 // Bitácora de operaciones sensibles
@@ -73,7 +77,11 @@ export const ROLES = {
   ],
   gerente: NAV.map((n) => n.key),
 };
-export const ROLE_LABELS = { mesero: 'Mesero', recepcion: 'Recepción', gerente: 'Gerente' };
+export const ROLE_LABELS = {
+  mesero: 'Mesero',
+  recepcion: 'Recepción',
+  gerente: 'Gerente',
+};
 
 export const RATE_TYPES = { noche: 'Por noche', mensual: 'Mensual' };
 
@@ -99,7 +107,12 @@ export const ROOM_COLORS = {
 };
 export const ROOM_STATUS_ORDER = ['libre', 'ocupada', 'reservada', 'limpieza', 'fuera'];
 
-export const HK_LABELS = { limpia: 'Lista', sucia: 'Sucia', limpiando: 'Limpiando', fuera: 'Fuera de servicio' };
+export const HK_LABELS = {
+  limpia: 'Lista',
+  sucia: 'Sucia',
+  limpiando: 'Limpiando',
+  fuera: 'Fuera de servicio',
+};
 
 export const RES_STATUS = {
   reservada: 'Reservada',
@@ -137,7 +150,11 @@ export const EVENT_STATUS = {
   realizado: 'Realizado',
   cancelado: 'Cancelado',
 };
-export const EVENT_UNITS = { persona: 'por persona', pareja: 'por pareja', evento: 'por evento' };
+export const EVENT_UNITS = {
+  persona: 'por persona',
+  pareja: 'por pareja',
+  evento: 'por evento',
+};
 export const EVENT_EXTRAS = [
   ['Decoración', 1200],
   ['Música / DJ', 1500],
@@ -149,11 +166,28 @@ export const EVENT_EXTRAS = [
 // Inventario
 export const INV_CATS = ['Insumos', 'Bebidas', 'Desechables', 'Utensilios', 'Limpieza'];
 export const INV_UNITS = ['unidad', 'kg', 'lb', 'litro', 'galón', 'botella', 'paquete', 'caja', 'ciento'];
-export const INV_MOVES = { entrada: 'Entrada', salida: 'Salida', merma: 'Merma', ajuste: 'Ajuste de conteo' };
+export const INV_MOVES = {
+  entrada: 'Entrada',
+  salida: 'Salida',
+  merma: 'Merma',
+  ajuste: 'Ajuste de conteo',
+};
 // Etiquetas del historial: incluye los movimientos automáticos de las recetas
-export const INV_MOVE_LABELS = { ...INV_MOVES, consumo: 'Consumo (receta)', devolucion: 'Devolución' };
+export const INV_MOVE_LABELS = {
+  ...INV_MOVES,
+  consumo: 'Consumo (receta)',
+  devolucion: 'Devolución',
+};
 
 // Tienda de recepción
 export const SHOP_CATS = ['Snacks', 'Bebidas', 'Higiene personal', 'Limpieza', 'Souvenirs'];
-export const SHOP_MOVES = { entrada: 'Entrada', merma: 'Merma', ajuste: 'Ajuste de conteo' };
-export const SHOP_MOVE_LABELS = { ...SHOP_MOVES, venta: 'Venta', devolucion: 'Devolución por anulación' };
+export const SHOP_MOVES = {
+  entrada: 'Entrada',
+  merma: 'Merma',
+  ajuste: 'Ajuste de conteo',
+};
+export const SHOP_MOVE_LABELS = {
+  ...SHOP_MOVES,
+  venta: 'Venta',
+  devolucion: 'Devolución por anulación',
+};

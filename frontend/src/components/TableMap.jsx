@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { chairs, clampPos, GRID, MAP_H, MAP_W } from '../lib/tablemap.js';
+import { chairs, clampPos, GRID, MAP_H, MAP_W } from '@shared/tablemap.js';
 
 // Plano de una zona. En modo edición las mesas y elementos se arrastran;
 // en modo vista cada mesa muestra su estado (colores de TABLE_COLORS vía getLook).

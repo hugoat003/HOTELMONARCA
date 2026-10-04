@@ -27,7 +27,12 @@ export const nightsBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5)
 export const fmtDate = (s, opts = { weekday: 'short', day: 'numeric', month: 'short' }) =>
   parse(s).toLocaleDateString('es-GT', opts);
 export const fmtLongDate = (d = new Date()) =>
-  d.toLocaleDateString('es-GT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  d.toLocaleDateString('es-GT', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 export const fmtTime = (ts) => new Date(ts).toTimeString().slice(0, 5);
 export const fmtDateTime = (ts) =>
   new Date(ts).toLocaleString('es-GT', {
@@ -39,4 +44,11 @@ export const fmtDateTime = (ts) =>
   });
 export const dateOf = (ts) => toDateStr(new Date(ts));
 
-export const uid = (p = 'id') => p + '_' + Math.random().toString(36).slice(2, 9);
+const newId = (p) => p + '_' + Math.random().toString(36).slice(2, 9);
+// Los identificadores se pueden interceptar: el dispositivo anota los que generó una acción y el
+// servidor los reutiliza al repetirla, para que la cuenta o el cargo tengan el mismo id en todos lados.
+let uidHook = null;
+export const setUidHook = (fn) => {
+  uidHook = fn;
+};
+export const uid = (p = 'id') => (uidHook ? uidHook(p, newId) : newId(p));

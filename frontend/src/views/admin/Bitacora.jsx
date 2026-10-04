@@ -1,9 +1,9 @@
 import DataTable, { rowClass } from '../../components/DataTable.jsx';
 import KpiCard from '../../components/KpiCard.jsx';
-import { AUDIT_TYPES } from '../../data.js';
-import { dateOf, fmtDateTime, today } from '../../lib/dates.js';
+import { AUDIT_TYPES } from '@shared/data.js';
+import { dateOf, fmtDateTime, today } from '@shared/dates.js';
 import { exportXlsx } from '../../lib/excel.js';
-import { sum } from '../../lib/money.js';
+import { sum } from '@shared/money.js';
 import { useStore } from '../../store/store.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
 import { preset, PRESETS } from '../caja/RangeReport.jsx';

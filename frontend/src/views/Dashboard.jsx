@@ -1,12 +1,12 @@
 import BarChart from '../components/BarChart.jsx';
 import KpiCard from '../components/KpiCard.jsx';
-import { EVENT_STATUS } from '../data.js';
-import { addDays, fmtDate, fmtTime, today } from '../lib/dates.js';
-import { eventTotals, isActiveEvent } from '../lib/events.js';
-import { roomState } from '../lib/hotel.js';
-import { linesTotal, sum } from '../lib/money.js';
-import { buildReminders } from '../lib/reminders.js';
-import { buildReport, dailySeries } from '../lib/report.js';
+import { EVENT_STATUS } from '@shared/data.js';
+import { addDays, fmtDate, fmtTime, today } from '@shared/dates.js';
+import { eventTotals, isActiveEvent } from '@shared/events.js';
+import { roomState } from '@shared/hotel.js';
+import { linesTotal, sum } from '@shared/money.js';
+import { buildReminders } from '@shared/reminders.js';
+import { buildReport, dailySeries } from '@shared/report.js';
 import { useStore } from '../store/store.jsx';
 import { usePersisted } from '../store/usePersisted.js';
 

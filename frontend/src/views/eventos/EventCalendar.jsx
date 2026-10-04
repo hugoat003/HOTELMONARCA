@@ -1,4 +1,4 @@
-import { addDays, addMonths, fmtDate, today } from '../../lib/dates.js';
+import { addDays, addMonths, fmtDate, today } from '@shared/dates.js';
 
 const WEEKDAYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
 

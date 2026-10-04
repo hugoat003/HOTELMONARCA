@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { METHOD_LABELS } from '../../data.js';
-import { round2, sum } from '../../lib/money.js';
+import { METHOD_LABELS } from '@shared/data.js';
+import { round2, sum } from '@shared/money.js';
 import { useStore } from '../../store/store.jsx';
 
 const num = (v) => parseFloat(v) || 0;

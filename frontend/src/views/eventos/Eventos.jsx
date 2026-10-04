@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '../../data.js';
-import { dateOf, fmtDate, fmtTime, nightsBetween, today, uid } from '../../lib/dates.js';
-import { eventTotals, isActiveEvent } from '../../lib/events.js';
-import { refundSale } from '../../lib/sales.js';
+import { EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '@shared/data.js';
+import { dateOf, fmtDate, fmtTime, nightsBetween, today, uid } from '@shared/dates.js';
+import { eventTotals, isActiveEvent } from '@shared/events.js';
+import { refundSale } from '@shared/sales.js';
 import { BeoDoc, EventDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';

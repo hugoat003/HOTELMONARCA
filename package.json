@@ -1,16 +1,19 @@
 {
   "name": "pos-monarca",
   "private": true,
+  "type": "module",
   "description": "POS y gestión hotelera para Monarca Hotel Boutique",
   "scripts": {
-    "dev": "npm --prefix frontend run dev --",
-    "dev:red": "npm --prefix frontend run dev -- --host",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install",
+    "dev": "npm --prefix backend run dev & npm --prefix frontend run dev -- --host",
     "build": "npm --prefix frontend run build",
-    "preview": "npm --prefix frontend run preview --",
-    "install:frontend": "npm --prefix frontend install",
-    "test": "npm --prefix frontend test --",
+    "start": "npm run build && npm --prefix backend start",
+    "demo": "VITE_DEMO=1 npm run build && MONARCA_DEMO=1 npm --prefix backend start",
+    "test": "npm --prefix backend test && npm --prefix frontend test --",
+    "test:server": "npm --prefix backend test",
+    "test:e2e": "npm --prefix frontend test --",
     "test:visual": "npm --prefix frontend run test:visual --",
-    "lint": "npm --prefix frontend run lint",
-    "format": "npm --prefix frontend run format"
+    "lint": "frontend/node_modules/.bin/eslint shared backend eslint.config.js && frontend/node_modules/.bin/prettier --check shared backend/src backend/test && npm --prefix frontend run lint",
+    "format": "npm --prefix frontend run format && frontend/node_modules/.bin/prettier --write shared backend/src backend/test"
   }
 }

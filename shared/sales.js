@@ -11,7 +11,14 @@ export function refundSale(state, user, { kind, ref, amount, method, name, resId
     ref,
     ...(resId && { resId }),
     ...(eventId && { eventId }),
-    lines: [{ name, qty: 1, price: -amount, cat: kind === 'evento' ? 'Eventos' : 'Hospedaje' }],
+    lines: [
+      {
+        name,
+        qty: 1,
+        price: -amount,
+        cat: kind === 'evento' ? 'Eventos' : 'Hospedaje',
+      },
+    ],
     subtotal: -amount,
     total: -amount,
     tip: 0,

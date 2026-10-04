@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import TableMap from '../../components/TableMap.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { TABLE_COLORS } from '../../data.js';
-import { uid } from '../../lib/dates.js';
-import { linesTotal } from '../../lib/money.js';
-import { placed } from '../../lib/tablemap.js';
-import { orderLabel, tableOrder } from '../../lib/orders.js';
+import { TABLE_COLORS } from '@shared/data.js';
+import { uid } from '@shared/dates.js';
+import { linesTotal } from '@shared/money.js';
+import { placed } from '@shared/tablemap.js';
+import { orderLabel, tableOrder } from '@shared/orders.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import MapEditor from './MapEditor.jsx';
