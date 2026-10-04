@@ -550,7 +550,13 @@ function ChargeModal({ fmt, onClose, onSave }) {
           <input className="input" value={desc} onChange={(e) => setDesc(e.target.value)} />
         </Field>
         <Field label="Monto">
-          <input className="input" type="number" value={amt} onChange={(e) => setAmt(e.target.value)} />
+          <input
+            className="input"
+            type="number"
+            inputMode="decimal"
+            value={amt}
+            onChange={(e) => setAmt(e.target.value)}
+          />
         </Field>
       </div>
     </Modal>

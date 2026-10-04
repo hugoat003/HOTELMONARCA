@@ -67,7 +67,13 @@ export function MenuItemModal({ item, onClose, onSave }) {
           </select>
         </Field>
         <Field label="Precio">
-          <input className="input" type="number" value={v.price} onChange={(e) => set({ price: e.target.value })} />
+          <input
+            className="input"
+            type="number"
+            inputMode="decimal"
+            value={v.price}
+            onChange={(e) => set({ price: e.target.value })}
+          />
         </Field>
       </div>
 
@@ -103,6 +109,7 @@ export function MenuItemModal({ item, onClose, onSave }) {
                 <input
                   className="input"
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   value={r.qty}
                   onChange={(e) => setRecipe(i, { qty: e.target.value })}
@@ -274,6 +281,7 @@ function GroupModal({ group, onClose, onSave, onDelete }) {
               <input
                 className="input"
                 type="number"
+                inputMode="decimal"
                 value={o.price}
                 onChange={(e) => setOpt(i, { price: e.target.value })}
                 placeholder="0"

@@ -50,7 +50,13 @@ export default function Caja({ go }) {
           <div className="report-title">Caja cerrada</div>
           <div className="panel-sub text-md">Abre un turno para poder cobrar en restaurante y recepción.</div>
           <Field label="Fondo inicial en efectivo">
-            <input className="input big" type="number" value={float} onChange={(e) => setFloat(e.target.value)} />
+            <input
+              className="input big"
+              type="number"
+              inputMode="decimal"
+              value={float}
+              onChange={(e) => setFloat(e.target.value)}
+            />
           </Field>
           <button
             className="btn btn-primary"
@@ -231,6 +237,7 @@ function MovementModal({ type, onClose, onSave }) {
         <input
           className="input big"
           type="number"
+          inputMode="decimal"
           autoFocus
           value={amount}
           onChange={(e) => setAmount(e.target.value)}

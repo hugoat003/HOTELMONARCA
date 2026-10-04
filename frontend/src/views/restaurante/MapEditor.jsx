@@ -140,7 +140,12 @@ export default function MapEditor({ onDone }) {
           <>
             <div className="card-label">{table.name}</div>
             <Field label="Nombre">
-              <input className="input" value={table.name} onChange={(e) => saveTable({ name: e.target.value })} />
+              <input
+                className="input"
+                value={table.name}
+                onChange={(e) => saveTable({ name: e.target.value })}
+                onBlur={(e) => !e.target.value.trim() && saveTable({ name: 'Mesa ' + table.id })}
+              />
             </Field>
             <Field as="div" label="Forma">
               <div className="segmented row">
@@ -225,6 +230,7 @@ export default function MapEditor({ onDone }) {
                 <input
                   className="input"
                   type="number"
+                  inputMode="decimal"
                   step="10"
                   value={item.w}
                   onChange={(e) => {
@@ -237,6 +243,7 @@ export default function MapEditor({ onDone }) {
                 <input
                   className="input"
                   type="number"
+                  inputMode="decimal"
                   step="10"
                   value={item.h}
                   onChange={(e) => {

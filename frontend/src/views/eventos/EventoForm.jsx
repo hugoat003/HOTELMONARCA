@@ -149,6 +149,7 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
           <input
             className="input"
             type="number"
+            inputMode="decimal"
             min="1"
             value={f.guests}
             onChange={(e) => changeGuests(Math.max(1, parseInt(e.target.value) || 1))}
@@ -158,6 +159,7 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
           <input
             className="input"
             type="number"
+            inputMode="decimal"
             min="0"
             value={f.menuQty}
             disabled={!menu}
@@ -242,6 +244,7 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
               <input
                 className="input"
                 type="number"
+                inputMode="decimal"
                 min="1"
                 max="14"
                 value={rb.nights}
@@ -252,6 +255,7 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
               <input
                 className="input"
                 type="number"
+                inputMode="decimal"
                 value={rb.rate}
                 onChange={(e) => setBlock({ rate: e.target.value })}
               />
@@ -294,6 +298,7 @@ export default function EventoForm({ ev, date, onClose, onSave }) {
             className="input"
             style={{ width: 120 }}
             type="number"
+            inputMode="decimal"
             placeholder="Monto"
             value={extra.amt}
             onChange={(e) => setExtra({ ...extra, amt: e.target.value })}

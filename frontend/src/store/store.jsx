@@ -48,7 +48,8 @@ export function StoreProvider({ children }) {
   );
 
   const value = useMemo(() => {
-    const user = state.session ? state.users.find((u) => u.id === state.session.userId) : null;
+    // Un usuario desactivado o eliminado pierde la sesión de inmediato
+    const user = state.session ? state.users.find((u) => u.id === state.session.userId && u.active) || null : null;
     return { state, user, fmt: makeFmt(state.config.currency), ...api };
   }, [state, api]);
 

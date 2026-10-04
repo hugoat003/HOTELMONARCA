@@ -133,7 +133,13 @@ export function CloseReservationModal({ res, subject, mode, paid, onClose, onCon
           {refundMode === 'devolver' && (
             <div className="form-grid two">
               <Field label="Monto a devolver">
-                <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                <input
+                  className="input"
+                  type="number"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
               </Field>
               <Field label="Forma de devolución">
                 <select className="input" value={method} onChange={(e) => setMethod(e.target.value)}>

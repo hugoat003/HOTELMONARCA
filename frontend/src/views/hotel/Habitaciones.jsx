@@ -203,7 +203,21 @@ export default function Habitaciones() {
                 <button className="btn" onClick={() => setForm({ mode: 'new', roomN: room.n })}>
                   Nueva reserva
                 </button>
-                <button className="btn btn-quiet" onClick={() => update((d) => A.setHk(d, room.n, 'fuera'))}>
+                <button
+                  className="btn btn-quiet"
+                  onClick={() =>
+                    nextRes
+                      ? ui.confirm(
+                          {
+                            title: 'Poner fuera de servicio',
+                            message: `${nextRes.guest.name} tiene reserva desde el ${fmtDate(nextRes.checkIn)}. Si la habitación sigue fuera de servicio ese día, cámbiala de habitación.`,
+                            confirmLabel: 'Poner fuera de servicio',
+                          },
+                          () => update((d) => A.setHk(d, room.n, 'fuera')),
+                        )
+                      : update((d) => A.setHk(d, room.n, 'fuera'))
+                  }
+                >
                   Poner fuera de servicio
                 </button>
               </>

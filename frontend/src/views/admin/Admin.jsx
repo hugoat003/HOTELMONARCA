@@ -699,12 +699,19 @@ function NegocioTab() {
           <input className="input" value={c.currency} onChange={set('currency')} />
         </Field>
         <Field label="Propina sugerida %">
-          <input className="input" type="number" value={c.tipPct} onChange={set('tipPct')} />
+          <input className="input" type="number" inputMode="decimal" value={c.tipPct} onChange={set('tipPct')} />
         </Field>
       </div>
       <div className="form-grid four">
         <Field label="Bloquear tras" hint="minutos sin uso · 0 = nunca">
-          <input className="input" type="number" min="0" value={c.lockMinutes} onChange={set('lockMinutes')} />
+          <input
+            className="input"
+            type="number"
+            inputMode="decimal"
+            min="0"
+            value={c.lockMinutes}
+            onChange={set('lockMinutes')}
+          />
         </Field>
       </div>
       <div className="panel-sub text-sm">
@@ -739,8 +746,19 @@ function DatosTab() {
     try {
       const data = JSON.parse(await file.text());
       if (data.version !== VERSION || !Array.isArray(data.menu)) throw new Error();
-      replace({ ...data, session: state.session });
-      ui.notify('Datos importados');
+      // Reemplaza todo: se confirma antes, con lo que trae el respaldo
+      ui.confirm(
+        {
+          title: 'Cargar respaldo',
+          message: `Se reemplazan todos los datos actuales por los del archivo (${data.sales.length} ventas, ${data.reservations.length} reservas). Lo que no esté en el respaldo se pierde.`,
+          confirmLabel: 'Cargar respaldo',
+          danger: true,
+        },
+        () => {
+          replace({ ...data, session: state.session });
+          ui.notify('Datos importados');
+        },
+      );
     } catch {
       ui.notify('El archivo no es un respaldo válido de POS Monarca');
     }

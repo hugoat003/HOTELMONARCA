@@ -64,7 +64,10 @@ export function nightRate(res, date, state) {
   if (res.pricing === 'auto') {
     const room = state.rooms.find((r) => r.n === roomOn(res, date));
     const type = state.roomTypes.find((t) => t.id === room?.typeId);
-    const season = (state.seasons || []).find((s) => s.from <= date && date <= s.to && s.rates?.[type?.id]);
+    // Si dos temporadas comparten la fecha, gana la más corta (la más específica: Navidad dentro de temporada alta)
+    const season = (state.seasons || [])
+      .filter((s) => s.from <= date && date <= s.to && s.rates?.[type?.id])
+      .sort((a, b) => nightsBetween(a.from, a.to) - nightsBetween(b.from, b.to))[0];
     rate = season ? season.rates[type.id] : type?.rate || res.rate;
     if (season) tags.push(season.name);
     if (cfg.weekendPct && isWeekendNight(date)) {

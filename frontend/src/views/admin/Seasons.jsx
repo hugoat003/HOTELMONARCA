@@ -28,6 +28,7 @@ export default function Seasons() {
             <input
               className="input"
               type="number"
+              inputMode="decimal"
               value={rules.weekendPct}
               onChange={(e) => setRules({ ...rules, weekendPct: e.target.value })}
             />
@@ -36,6 +37,7 @@ export default function Seasons() {
             <input
               className="input"
               type="number"
+              inputMode="decimal"
               value={rules.extraPersonFrom}
               onChange={(e) => setRules({ ...rules, extraPersonFrom: e.target.value })}
             />
@@ -44,6 +46,7 @@ export default function Seasons() {
             <input
               className="input"
               type="number"
+              inputMode="decimal"
               value={rules.extraPersonRate}
               onChange={(e) => setRules({ ...rules, extraPersonRate: e.target.value })}
             />
@@ -106,6 +109,7 @@ export default function Seasons() {
       {edit && (
         <SeasonModal
           season={edit}
+          others={(state.seasons || []).filter((x) => x.id !== edit.id)}
           types={state.roomTypes}
           onClose={() => setEdit(null)}
           onDelete={() => {
@@ -123,11 +127,12 @@ export default function Seasons() {
   );
 }
 
-function SeasonModal({ season, types, onClose, onSave, onDelete }) {
+function SeasonModal({ season, others, types, onClose, onSave, onDelete }) {
   const [s, setS] = useState({
     ...season,
     rates: Object.fromEntries(types.map((t) => [t.id, String(season.rates?.[t.id] ?? '')])),
   });
+  const overlaps = s.from && s.to ? others.filter((o) => o.from <= s.to && s.from <= o.to) : [];
   const problem = !s.name.trim()
     ? 'Falta el nombre'
     : !s.from || !s.to
@@ -190,6 +195,12 @@ function SeasonModal({ season, types, onClose, onSave, onDelete }) {
           <input className="input" type="date" value={s.to} onChange={(e) => setS({ ...s, to: e.target.value })} />
         </Field>
       </div>
+      {overlaps.length > 0 && (
+        <div className="note-box warn">
+          Comparte fechas con {overlaps.map((o) => `${o.name} (${o.from} a ${o.to})`).join(', ')}. En los días que se
+          cruzan se usa la temporada más corta.
+        </div>
+      )}
       <Field as="div" label="Precio por noche" hint="vacío = tarifa normal">
         <div className="form-grid">
           {types.map((t) => (
@@ -197,6 +208,7 @@ function SeasonModal({ season, types, onClose, onSave, onDelete }) {
               <input
                 className="input"
                 type="number"
+                inputMode="decimal"
                 value={s.rates[t.id]}
                 onChange={(e) => setS({ ...s, rates: { ...s.rates, [t.id]: e.target.value } })}
               />

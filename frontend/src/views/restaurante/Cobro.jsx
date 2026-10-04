@@ -191,6 +191,7 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
                 <input
                   className="input small"
                   type="number"
+                  inputMode="decimal"
                   placeholder="0.00"
                   value={tipCustom}
                   onChange={(e) => setTipCustom(e.target.value)}
@@ -232,6 +233,7 @@ export default function Cobro({ title, amount, allowDiscount, allowTip, allowRoo
           <input
             className="input"
             type="number"
+            inputMode="decimal"
             value={discForm.value}
             onChange={(e) => setDiscForm({ ...discForm, value: e.target.value })}
             style={{ width: 90 }}
@@ -420,6 +422,7 @@ export function AmountModal({ title, max, suggest = [], fmt, onClose, onNext }) 
         <input
           className="input big"
           type="number"
+          inputMode="decimal"
           autoFocus
           value={v}
           onChange={(e) => setV(e.target.value)}

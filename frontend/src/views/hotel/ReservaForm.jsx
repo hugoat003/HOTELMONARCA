@@ -57,7 +57,9 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
       rate: f.roomN ? typeRate(f.roomN, rateType) : f.rate,
       checkOut: rateType === 'mensual' ? addMonths(f.checkIn, 1) : addDays(f.checkIn, 1),
     });
-  const lockDates = mode === 'checkin';
+  // Huésped ya hospedado: la entrada ya pasó y la habitación se cambia con "Cambiar de habitación"
+  const inHouse = res?.status === 'hospedado';
+  const lockDates = mode === 'checkin' || inHouse;
   const auto = !monthly && f.pricing === 'auto';
 
   // Fichas de huéspedes que coinciden con lo escrito (nombre o documento)
@@ -93,6 +95,7 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
   if (f.guest.name.trim().length < 2) problem = 'Falta el nombre del huésped';
   else if (stillBlock && mode === 'checkin') problem = 'Escribe el nombre del huésped que llega';
   else if (nights < 1) problem = 'La salida debe ser después de la entrada';
+  else if (inHouse && f.checkOut < today()) problem = 'La salida no puede quedar antes de hoy';
   else if (!f.roomN) problem = 'Elige una habitación';
   else if (!available(f.roomN)) problem = `La ${f.roomN} no está disponible en esas fechas`;
   else if ((mode === 'checkin' || mode === 'walkin') && !f.guest.doc.trim())
@@ -244,6 +247,7 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
           <input
             className="input"
             type="number"
+            inputMode="decimal"
             min="1"
             value={f.adults}
             onChange={(e) => set({ adults: Math.max(1, parseInt(e.target.value) || 1) })}
@@ -253,12 +257,13 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
           <input
             className="input"
             type="number"
+            inputMode="decimal"
             min="0"
             value={f.children}
             onChange={(e) => set({ children: Math.max(0, parseInt(e.target.value) || 0) })}
           />
         </Field>
-        <Field label="Habitación" className="span-2">
+        <Field label="Habitación" className="span-2" hint={inHouse ? 'para cambiarla usa "Cambiar de habitación"' : ''}>
           <select
             className="input"
             value={f.roomN}
@@ -280,7 +285,13 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
         </Field>
         {monthly ? (
           <Field label="Tarifa mensual">
-            <input className="input" type="number" value={f.rate} onChange={(e) => set({ rate: e.target.value })} />
+            <input
+              className="input"
+              type="number"
+              inputMode="decimal"
+              value={f.rate}
+              onChange={(e) => set({ rate: e.target.value })}
+            />
           </Field>
         ) : (
           <Field as="div" label="Precio por noche">
@@ -301,7 +312,13 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
               </button>
             </div>
             {!auto && (
-              <input className="input" type="number" value={f.rate} onChange={(e) => set({ rate: e.target.value })} />
+              <input
+                className="input"
+                type="number"
+                inputMode="decimal"
+                value={f.rate}
+                onChange={(e) => set({ rate: e.target.value })}
+              />
             )}
           </Field>
         )}

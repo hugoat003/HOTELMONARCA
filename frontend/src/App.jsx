@@ -124,6 +124,14 @@ function Shell() {
 
   const go = (v, params = {}) => {
     if (!allowed.includes(v)) return;
+    // Una cuenta abierta por error (sin productos) se libera al salir del pedido
+    if (view === 'pedido' && (v !== 'pedido' || params.orderId !== orderId)) {
+      const left = orderId;
+      update((d) => {
+        const o = d.orders.find((x) => x.id === left);
+        if (o && !o.lines.length) A.closeOrder(d, left);
+      });
+    }
     if (params.orderId !== undefined) setOrderId(params.orderId);
     setView(v);
     setNavOpen(false);

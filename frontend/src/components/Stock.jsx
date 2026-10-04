@@ -87,6 +87,7 @@ export function MoveModal({ item, type: initialType, moves = INV_MOVES, onClose,
         <input
           className="input big"
           type="number"
+          inputMode="decimal"
           min="0"
           autoFocus
           value={qty}
@@ -173,17 +174,24 @@ export function ItemModal({ item, cats = INV_CATS, withPrice = false, onClose, o
           </select>
         </Field>
         <Field label="Existencia" hint={item.isNew ? 'inicial' : 'usa Ajuste para corregir'}>
-          <input className="input" type="number" value={v.stock} disabled={!item.isNew} onChange={set('stock')} />
+          <input
+            className="input"
+            type="number"
+            inputMode="decimal"
+            value={v.stock}
+            disabled={!item.isNew}
+            onChange={set('stock')}
+          />
         </Field>
         <Field label="Mínimo" hint="avisa al bajar de aquí">
-          <input className="input" type="number" value={v.min} onChange={set('min')} />
+          <input className="input" type="number" inputMode="decimal" value={v.min} onChange={set('min')} />
         </Field>
         <Field label="Costo por unidad">
-          <input className="input" type="number" value={v.cost} onChange={set('cost')} />
+          <input className="input" type="number" inputMode="decimal" value={v.cost} onChange={set('cost')} />
         </Field>
         {withPrice && (
           <Field label="Precio de venta" hint={margin !== null ? `margen ${margin}%` : undefined}>
-            <input className="input" type="number" value={v.price} onChange={set('price')} />
+            <input className="input" type="number" inputMode="decimal" value={v.price} onChange={set('price')} />
           </Field>
         )}
       </div>
