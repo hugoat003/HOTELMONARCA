@@ -766,3 +766,8 @@ button.pill {
 .dot.off {
   background: var(--muted);
 }
+.shift-banner.update {
+  background: #eef4ef;
+  border-bottom-color: #c8dccb;
+  color: #2f5e3a;
+}

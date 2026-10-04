@@ -29,6 +29,10 @@ const write = (k, v) => {
     /* sin almacenamiento: la sesión dura mientras la página está abierta */
   }
 };
+// Compilación de esta pantalla ("dev" con el servidor de desarrollo de Vite)
+const BUILD = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev';
+const RELOAD_KEY = 'monarca-recarga';
+
 const newAid = () => Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -53,6 +57,7 @@ export class SyncClient {
     this.status = 'connecting'; // connecting | online | offline
     this.notice = null; // { id, text } aviso para mostrar
     this.printers = null; // { printers: { cocina, caja }, jobs } estado de las impresoras
+    this.updateAvailable = false; // el servidor tiene una versión más nueva de la aplicación
     this.ws = null;
     this.retry = 0;
     this.sending = false;
@@ -76,6 +81,7 @@ export class SyncClient {
       pending: this.pending.length,
       notice: this.notice,
       printers: loggedIn ? this.printers : null,
+      updateAvailable: this.updateAvailable,
     };
   }
   emit() {
@@ -138,6 +144,7 @@ export class SyncClient {
     for (;;) {
       try {
         this.publicData = await this.api('/api/public', { token: null });
+        this.checkBuild(this.publicData.build);
         this.setStatus('online');
         this.emit();
         return;
@@ -214,6 +221,7 @@ export class SyncClient {
   onMessage(msg) {
     if (msg.type === 'hello') {
       this.retry = 0;
+      this.checkBuild(msg.build);
       this.setStatus('online');
       if (msg.rev !== this.rev) this.resync();
       this.flush();
@@ -356,6 +364,35 @@ export class SyncClient {
     this.rev = 0;
     this.emit();
     this.loadPublic();
+  }
+
+  // ----- Versión nueva
+  checkBuild(build) {
+    if (!build || BUILD === 'dev' || build === BUILD || this.updateAvailable) return;
+    // En la pantalla de ingreso no hay nada que perder: se recarga sola (una vez por versión,
+    // para no quedar en un ciclo si el navegador insiste en la versión vieja)
+    let tried = null;
+    try {
+      tried = sessionStorage.getItem(RELOAD_KEY);
+    } catch {
+      /* sin almacenamiento */
+    }
+    if (!this.session && !this.pending.length && tried !== build) {
+      try {
+        sessionStorage.setItem(RELOAD_KEY, build);
+      } catch {
+        /* sin almacenamiento */
+      }
+      location.reload();
+      return;
+    }
+    this.updateAvailable = true;
+    this.emit();
+  }
+  // "Actualizar ahora": primero se guarda lo pendiente
+  async reloadApp() {
+    await Promise.race([this.whenIdle(), sleep(5000)]);
+    location.reload();
   }
 
   // ----- Impresión

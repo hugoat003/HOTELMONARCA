@@ -71,12 +71,17 @@ function Root() {
 }
 
 function PhoneShell() {
-  const { user, logout } = useStore();
+  const { user, logout, updateAvailable, reloadApp } = useStore();
   return (
     <div className="phone">
       <header className="phone-head">
         <img src="/logo-monarca.png" alt="Monarca Hotel Boutique" />
         <div className="chips">
+          {updateAvailable && (
+            <button className="chip small" onClick={reloadApp}>
+              Actualizar
+            </button>
+          )}
           <button className="chip small" onClick={logout}>
             Salir
           </button>
@@ -116,7 +121,8 @@ function useIdleLock(minutes, onLock) {
 }
 
 function Shell() {
-  const { state, user, update, logout, status, pending, printers, printerAction } = useStore();
+  const { state, user, update, logout, status, pending, printers, printerAction, updateAvailable, reloadApp } =
+    useStore();
   const ui = useUI();
   const allowed = ROLES[user.role];
   const [savedView, setView] = usePersisted('vista', allowed[0]);
@@ -216,6 +222,16 @@ function Shell() {
           </div>
         </header>
 
+        {updateAvailable && (
+          <div className="shift-banner update" role="status">
+            <span>
+              <strong>Hay una versión nueva del sistema.</strong> Actualiza cuando termines lo que estás haciendo.
+            </span>
+            <button className="btn small" onClick={reloadApp}>
+              Actualizar ahora
+            </button>
+          </div>
+        )}
         {status === 'offline' && (
           <div className="shift-banner offline" role="status">
             <span>

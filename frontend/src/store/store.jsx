@@ -28,6 +28,8 @@ export function StoreProvider({ children }) {
       pending: snap.pending,
       notice: snap.notice,
       printers: snap.printers,
+      updateAvailable: snap.updateAvailable,
+      reloadApp: () => client.reloadApp(),
       print: (doc, id) => client.print(doc, id),
       loadPrinters: () => client.loadPrinters(),
       printerAction: (action, body) => client.printerAction(action, body),

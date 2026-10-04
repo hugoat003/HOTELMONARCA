@@ -1,6 +1,6 @@
 // API de POS Monarca. Un solo servidor en el NUC: guarda los datos, valida PIN y permisos,
 // y avisa al instante a todos los dispositivos (WebSocket) de cada cambio.
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
@@ -114,6 +114,15 @@ export async function buildApp({
     options: { maxPayload: 1024 * 1024 },
   });
 
+  // Versión de la aplicación web que se está sirviendo (la escribe la compilación en version.json)
+  const version = (() => {
+    try {
+      return JSON.parse(readFileSync(join(staticDir, 'version.json'), 'utf8'));
+    } catch {
+      return { build: null };
+    }
+  })();
+
   const main = watchPrinters(createHotel({ dbFile, seed, printing }));
   const testHotels = new Map();
   const nsOf = (req) => (test ? req.headers['x-monarca-ns'] || req.query?.ns || '' : '');
@@ -188,6 +197,8 @@ export async function buildApp({
   });
 
   app.get('/api/health', async (req) => ({
+    build: version.build,
+    commit: version.commit || null,
     ok: true,
     rev: hotelFor(req).engine.rev,
   }));
@@ -197,6 +208,7 @@ export async function buildApp({
     const hotel = hotelFor(req);
     const { state } = hotel.engine;
     return {
+      build: version.build,
       // lockedMs: el PIN de ese usuario está bloqueado por intentos fallidos
       users: state.users
         .filter((u) => u.active)
@@ -456,7 +468,7 @@ export async function buildApp({
     socket.on('pong', () => (socket.isAlive = true));
     socket.on('close', () => hotel.sockets.delete(socket));
     socket.on('error', () => hotel.sockets.delete(socket));
-    socket.send(JSON.stringify({ type: 'hello', rev: hotel.engine.rev }));
+    socket.send(JSON.stringify({ type: 'hello', rev: hotel.engine.rev, build: version.build }));
     socket.send(JSON.stringify({ type: 'printers', ...hotel.printing.status({ recent: 0 }) }));
   });
   // Detecta tablets que se desconectaron sin avisar

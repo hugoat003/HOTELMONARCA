@@ -1,0 +1,29 @@
+# Servicio de POS Monarca en la mini PC (Ubuntu). Arranca solo al encender y se reinicia si se cae.
+# Instalar:  sudo cp deploy/monarca.service /etc/systemd/system/ && sudo systemctl enable --now monarca
+[Unit]
+Description=POS Monarca (servidor del hotel)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=monarca
+Group=monarca
+WorkingDirectory=/opt/monarca
+EnvironmentFile=/etc/monarca/monarca.env
+ExecStart=/usr/bin/node backend/src/index.js
+Restart=always
+RestartSec=2
+# El servidor guarda cada cobro antes de responder; se le da tiempo de cerrar la base
+TimeoutStopSec=15
+# Protecciones: solo puede escribir en su carpeta de datos
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/monarca
+# Impresora por USB (si se usa): acceso al grupo lp
+SupplementaryGroups=lp
+
+[Install]
+WantedBy=multi-user.target

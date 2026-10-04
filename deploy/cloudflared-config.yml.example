@@ -1,0 +1,13 @@
+# Túnel de Cloudflare en la mini PC. Copiar a /etc/cloudflared/config.yml y cambiar el dominio y el id.
+# El túnel sale de la mini PC hacia Cloudflare: no se abre ningún puerto en el router.
+tunnel: ID-DEL-TUNEL
+credentials-file: /etc/cloudflared/ID-DEL-TUNEL.json
+
+ingress:
+  # El sistema, para la gerencia desde fuera (protegido con Cloudflare Access)
+  - hostname: sistema.DOMINIO
+    service: http://localhost:3000
+  # Terminal de la mini PC para soporte y actualizaciones (Cloudflare Access + llave SSH)
+  - hostname: soporte.DOMINIO
+    service: ssh://localhost:22
+  - service: http_status:404

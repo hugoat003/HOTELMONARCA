@@ -1,0 +1,3 @@
+# El usuario monarca puede reiniciar su propio servicio (lo usa monarca-actualizar) y nada más.
+# Instalar: sudo install -m 440 deploy/sudoers-monarca /etc/sudoers.d/monarca && sudo visudo -c
+monarca ALL=(root) NOPASSWD: /usr/bin/systemctl restart monarca, /usr/bin/systemctl stop monarca, /usr/bin/systemctl start monarca
