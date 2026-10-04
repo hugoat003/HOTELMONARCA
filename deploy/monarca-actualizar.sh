@@ -91,7 +91,8 @@ echo "Respaldo: $BACKUP"
 
 # --- Si algo falla de aquí en adelante, se regresa a la versión anterior ---
 DIST_OLD=frontend/dist-anterior
-RESTARTED=0
+SWAPPED=0   # la aplicación compilada ya se cambió por la nueva
+RESTARTED=0 # el servidor ya se reinició con la versión nueva
 health() {
   # Espera hasta 40 s a que el servidor responda con la compilación esperada
   local want=$1
@@ -107,7 +108,8 @@ rollback() {
   trap - ERR
   printf '\n\033[31m✗ Falló la actualización. Regresando a %s…\033[0m\n' "${PREV:0:7}"
   git checkout --quiet --force --detach "$PREV"
-  if [[ -d "$DIST_OLD" ]]; then
+  rm -rf frontend/dist-nueva
+  if [[ $SWAPPED == 1 && -d "$DIST_OLD" ]]; then
     rm -rf frontend/dist
     mv "$DIST_OLD" frontend/dist
   fi
@@ -148,7 +150,8 @@ say "5/6 · Probando el servidor…"
 
 say "6/6 · Reiniciando (unos segundos sin servicio)…"
 rm -rf "$DIST_OLD"
-[[ -d frontend/dist ]] && mv frontend/dist "$DIST_OLD"
+if [[ -d frontend/dist ]]; then mv frontend/dist "$DIST_OLD"; fi
+SWAPPED=1
 mv frontend/dist-nueva frontend/dist
 RESTARTED=1
 $RESTART_CMD
