@@ -8,7 +8,7 @@ Sistema de punto de venta y gestión hotelera para **Monarca Hotel Boutique** (A
 frontend/   App web (React + Vite) que usan la caja, las tablets y recepción.
 backend/    Servidor del hotel (Node + Fastify + SQLite + WebSocket). Ver backend/README.md.
 shared/     Operaciones y cálculos que usan igual el servidor y las pantallas.
-deploy/     Instalación en la mini PC, actualizaciones (monarca-actualizar) y acceso remoto. Ver deploy/README.md.
+deploy/     Mini PC con Windows 11 Pro: instalación, actualizaciones (monarca-actualizar) y acceso remoto. Ver deploy/README.md.
 docs/
   diseno/      Exportación original del diseño de Claude Design.
 ```

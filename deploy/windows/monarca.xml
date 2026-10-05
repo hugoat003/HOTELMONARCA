@@ -1,0 +1,25 @@
+<!--
+  Servicio de Windows de POS Monarca (WinSW). Arranca solo con la mini PC y se reinicia si se cae.
+  instalar.ps1 lo registra como C:\Monarca\servicio\monarca.exe + monarca.xml.
+  Corre con la cuenta "Servicio local" (sin permisos de administrador).
+-->
+<service>
+  <id>monarca</id>
+  <name>POS Monarca</name>
+  <description>Servidor del sistema del hotel (restaurante, hotel, eventos, tienda y caja).</description>
+  <executable>C:\Program Files\nodejs\node.exe</executable>
+  <arguments>--env-file="C:\ProgramData\Monarca\monarca.env" backend\src\index.js</arguments>
+  <workingdirectory>C:\Monarca\app</workingdirectory>
+  <startmode>Automatic</startmode>
+  <onfailure action="restart" delay="2 sec" />
+  <onfailure action="restart" delay="5 sec" />
+  <onfailure action="restart" delay="10 sec" />
+  <resetfailure>1 hour</resetfailure>
+  <!-- Al detener se manda Ctrl+C: el servidor cierra la base con calma -->
+  <stoptimeout>15 sec</stoptimeout>
+  <logpath>C:\ProgramData\Monarca\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+</service>

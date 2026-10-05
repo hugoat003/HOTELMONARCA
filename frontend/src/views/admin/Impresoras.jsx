@@ -129,7 +129,10 @@ export default function Impresoras() {
                 </div>
               )}
               {p.mode === 'usb' && (
-                <Field label="Dispositivo USB" hint="En el NUC con Ubuntu suele ser /dev/usb/lp0">
+                <Field
+                  label="Dispositivo USB"
+                  hint="Solo si la mini PC usa Linux (ej. /dev/usb/lp0). Con Windows, conéctala por red."
+                >
                   <input className="input" value={p.device} onChange={(e) => setP(name, 'device', e.target.value)} />
                 </Field>
               )}
