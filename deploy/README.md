@@ -7,7 +7,7 @@ Cloudflare, sin abrir puertos en el router.
 ```
 Tu computadora ──► GitHub ──► mini PC (descarga, compila, cambia de versión)
        │                         ▲
-       └── ssh soporte.DOMINIO ──┘   (túnel de Cloudflare + código al correo + tu llave SSH)
+       └── ssh monarca-soporte.hassistemas.com ──┘   (túnel de Cloudflare + código al correo + tu llave SSH)
 ```
 
 ## Cómo queda la mini PC
@@ -99,8 +99,15 @@ hacen desde el navegador, sin la mini PC.
 
 ### a) Dominio
 
-Ve a **Domain Registration → Register Domains** y compra el dominio, por ejemplo `hotelmonarca.com`.
-Si el dominio ya existe en otro proveedor, **Add a domain** y cambia los nameservers donde se compró.
+**hassistemas.com** (de HAS Sistemas, en la cuenta de Cloudflare de Hugo). Cada cliente tiene su
+propio subdominio de un solo nivel: el certificado gratis de Cloudflare cubre `cliente.hassistemas.com`,
+no `algo.cliente.hassistemas.com`.
+
+| Cliente | Sistema                   | Terminal de soporte               |
+| ------- | ------------------------- | --------------------------------- |
+| Monarca | `monarca.hassistemas.com` | `monarca-soporte.hassistemas.com` |
+
+Atajo opcional (Rules → Redirect Rules): `hassistemas.com/monarca` → `https://monarca.hassistemas.com`.
 
 ### b) Zero Trust (control de acceso, gratis hasta 50 usuarios)
 
@@ -114,17 +121,17 @@ En **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**, 
 1. Cloudflare muestra un comando con un token. En la mini PC, en Terminal (Administrador):
    `cloudflared service install <TOKEN>`. `cloudflared` ya lo instaló `instalar.ps1`.
 2. En **Public hostnames** del túnel:
-   - `sistema.DOMINIO` → **HTTP** → `localhost:3000`
-   - `soporte.DOMINIO` → **SSH** → `localhost:22`
+   - `monarca.hassistemas.com` → **HTTP** → `localhost:3000`
+   - `monarca-soporte.hassistemas.com` → **SSH** → `localhost:22`
 
 ### d) Quién puede entrar (Access)
 
 En **Zero Trust → Access → Applications → Add an application → Self-hosted**:
 
-| Aplicación      | Dominio           | Política (Allow · Emails)      | Sesión |
-| --------------- | ----------------- | ------------------------------ | ------ |
-| Sistema Monarca | `sistema.DOMINIO` | tu correo + correo de la dueña | 24 h   |
-| Soporte Monarca | `soporte.DOMINIO` | solo tu correo                 | 12 h   |
+| Aplicación      | Dominio                           | Política (Allow · Emails)      | Sesión |
+| --------------- | --------------------------------- | ------------------------------ | ------ |
+| Sistema Monarca | `monarca.hassistemas.com`         | tu correo + correo de la dueña | 24 h   |
+| Soporte Monarca | `monarca-soporte.hassistemas.com` | solo tu correo                 | 12 h   |
 
 Al entrar, Cloudflare manda un código al correo. Después, el sistema pide el PIN como siempre.
 
@@ -139,11 +146,11 @@ En tu Mac:
 ```bash
 brew install cloudflared
 cat >> ~/.ssh/config <<'EOF'
-Host soporte.DOMINIO
+Host monarca-soporte.hassistemas.com
   User <usuario administrador de Windows>
   ProxyCommand cloudflared access ssh --hostname %h
 EOF
-ssh soporte.DOMINIO           # abre el navegador para el código; entra con tu llave
+ssh monarca-soporte.hassistemas.com           # abre el navegador para el código; entra con tu llave
 monarca-actualizar
 ```
 
