@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PasswordForm from '../components/ui/PasswordForm.jsx';
 import PinPad from '../components/ui/PinPad.jsx';
 import { DEMO } from '../config.js';
 import { ROLE_LABELS } from '@shared/data.js';
@@ -6,7 +7,8 @@ import { fmtLongDate } from '@shared/dates.js';
 import { useStore } from '../store/store.jsx';
 
 export default function Login() {
-  const { state, login } = useStore();
+  const { state, login, loginEmail } = useStore();
+  // sel: el usuario que teclea su PIN, o 'gerencia' para entrar con correo y contraseña
   const [sel, setSel] = useState(null);
   const users = state.users.filter((u) => u.active);
 
@@ -27,7 +29,28 @@ export default function Login() {
                 </button>
               ))}
             </div>
-            {DEMO && <div className="demo-hint">Demo · PIN: Gerente 1111 · Recepción 2222 · Juan 3333 · Ana 4444</div>}
+            <button className="btn login-managers" onClick={() => setSel('gerencia')}>
+              Gerencia · ingresar con correo
+            </button>
+            {DEMO && <div className="demo-hint">Demo · PIN: Recepción 2222 · Juan 3333 · Ana 4444</div>}
+          </>
+        ) : sel === 'gerencia' ? (
+          <>
+            <div className="text-center">
+              <div className="panel-title">Gerencia</div>
+              <div className="panel-sub">Ingresa con tu correo y contraseña</div>
+            </div>
+            <PasswordForm withEmail onSubmit={({ email, password }) => loginEmail(email, password)} />
+            {DEMO && (
+              <div className="demo-hint">
+                Demo · Administración general: direccion@monarca.demo / direccion2026
+                <br />
+                Gerente: gerencia@monarca.demo / gerencia2026
+              </div>
+            )}
+            <button className="btn btn-quiet" onClick={() => setSel(null)}>
+              Volver
+            </button>
           </>
         ) : (
           <>

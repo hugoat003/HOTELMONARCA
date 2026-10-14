@@ -3,7 +3,7 @@ import KpiCard from '../../components/KpiCard.jsx';
 import Tabs from '../../components/Tabs.jsx';
 import DataTable from '../../components/DataTable.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { METHOD_LABELS } from '@shared/data.js';
+import { isOwner, METHOD_LABELS } from '@shared/data.js';
 import { dateOf, fmtDate, fmtDateTime, fmtTime } from '@shared/dates.js';
 import { buildReport } from '@shared/report.js';
 import { ReportDoc } from '../../print/Docs.jsx';
@@ -14,7 +14,16 @@ import RangeReport from './RangeReport.jsx';
 const BAR_COLORS = ['#1B1917', '#6F675E', '#B8B0A6', '#D6CFC4'];
 
 export default function Reporte({ go }) {
+  const { user } = useStore();
   const [tab, setTab] = usePersisted('reporte.pestana', 'turno');
+  // El gerente ve el reporte de cada turno; los rangos de fechas (ventas por mesero, propinas,
+  // exportar) son de la administración general
+  if (!isOwner(user.role))
+    return (
+      <div className="report">
+        <ShiftReport go={go} />
+      </div>
+    );
   return (
     <div className="report">
       <Tabs

@@ -17,7 +17,12 @@ export const test = base.extend({
 });
 export { expect };
 
-export const PINS = { 'Marta Gerente': '1111', 'Luis Recepción': '2222', Juan: '3333', Ana: '4444' };
+export const PINS = { 'Luis Recepción': '2222', Juan: '3333', Ana: '4444' };
+// Gerencia entra con correo y contraseña
+export const MANAGERS = {
+  'Sofía Directora': { email: 'direccion@monarca.demo', password: 'direccion2026' },
+  'Marta Gerente': { email: 'gerencia@monarca.demo', password: 'gerencia2026' },
+};
 
 // Le da a la página un hotel nuevo (datos de ejemplo recién cargados) en el servidor de pruebas
 export async function isolate(page, { now } = {}) {
@@ -63,9 +68,26 @@ export async function login(page, name) {
     await logout.click();
     await page.locator('.modal').getByRole('button', { name: 'Cerrar sesión' }).click();
   }
-  await page.getByRole('button', { name }).first().click();
-  await typePin(page, PINS[name]);
-  await expect(page.locator('.app')).toBeVisible();
+  const mgr = MANAGERS[name];
+  if (mgr) {
+    await page.getByRole('button', { name: 'Gerencia · ingresar con correo' }).click();
+    await page.getByLabel('Correo').fill(mgr.email);
+    await page.getByLabel('Contraseña').fill(mgr.password);
+    await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
+  } else {
+    await page.getByRole('button', { name }).first().click();
+    await typePin(page, PINS[name]);
+  }
+  // En el teléfono, gerencia ve solo el resumen (.phone)
+  await expect(page.locator('.app, .phone')).toBeVisible();
+}
+
+// Gerencia autoriza en el dispositivo de otra persona con su contraseña
+export async function authorize(page, password = MANAGERS['Marta Gerente'].password) {
+  const modal = page.locator('.modal', { hasText: 'Autorización' });
+  await modal.getByLabel('Contraseña').fill(password);
+  await modal.getByRole('button', { name: 'Autorizar' }).click();
+  await expect(modal).toHaveCount(0);
 }
 
 // Abre la pantalla desde el menú lateral (si el menú es un cajón, primero lo abre)

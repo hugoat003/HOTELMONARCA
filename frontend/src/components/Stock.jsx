@@ -117,7 +117,16 @@ export function MoveModal({ item, type: initialType, moves = INV_MOVES, onClose,
 }
 
 // withPrice agrega el precio de venta (tienda)
-export function ItemModal({ item, cats = INV_CATS, withPrice = false, onClose, onSave, onDelete }) {
+// priceLocked: el precio de venta de un producto que ya existe lo cambia la administración general
+export function ItemModal({
+  item,
+  cats = INV_CATS,
+  withPrice = false,
+  priceLocked = false,
+  onClose,
+  onSave,
+  onDelete,
+}) {
   const [v, setV] = useState(item);
   const set = (k) => (e) => setV({ ...v, [k]: e.target.value });
   const problem = !v.name.trim()
@@ -190,8 +199,18 @@ export function ItemModal({ item, cats = INV_CATS, withPrice = false, onClose, o
           <input className="input" type="number" inputMode="decimal" value={v.cost} onChange={set('cost')} />
         </Field>
         {withPrice && (
-          <Field label="Precio de venta" hint={margin !== null ? `margen ${margin}%` : undefined}>
-            <input className="input" type="number" inputMode="decimal" value={v.price} onChange={set('price')} />
+          <Field
+            label="Precio de venta"
+            hint={priceLocked ? 'solo administración general' : margin !== null ? `margen ${margin}%` : undefined}
+          >
+            <input
+              className="input"
+              type="number"
+              inputMode="decimal"
+              value={v.price}
+              disabled={priceLocked}
+              onChange={set('price')}
+            />
           </Field>
         )}
       </div>

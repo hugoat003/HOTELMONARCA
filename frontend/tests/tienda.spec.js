@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, pickMethod, state, test, typePin } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, pickMethod, state, test, authorize } from './helpers.js';
 
 const item = async (page, id) => (await state(page)).shopItems.find((x) => x.id === id);
 
@@ -28,7 +28,7 @@ test('venta con cargo a habitación, existencias y anulación', async ({ page })
   await page.locator('.tx-row.sales', { hasText: 'Hab. 201' }).first().getByRole('button', { name: 'Anular' }).click();
   await page.locator('.modal input').fill('Cobro equivocado');
   await modalClick(page, 'Anular comprobante');
-  await typePin(page, '1111');
+  await authorize(page);
   s = await state(page);
   expect(s.shopItems.find((x) => x.id === 't1').stock).toBe(agua0);
   expect(s.reservations.find((r) => r.id === 'r8').charges.some((c) => c.saleId === sale.id)).toBe(false);

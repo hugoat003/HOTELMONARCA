@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, pickMethod, nav, state, test, typePin } from './helpers.js';
+import { expect, fresh, login, modalClick, pickMethod, nav, state, test, authorize } from './helpers.js';
 
 test('mesero abre mesa, agrega platillos con nota, envía a cocina y cobra con pago mixto', async ({ page }) => {
   await fresh(page);
@@ -14,18 +14,18 @@ test('mesero abre mesa, agrega platillos con nota, envía a cocina y cobra con p
   await expect(page.locator('.print-doc')).toContainText('Sin chile');
   await modalClick(page, 'Cerrar');
 
-  // Anular un platillo ya enviado pide PIN de gerente
+  // Anular un platillo ya enviado pide la autorización de gerencia
   await page.locator('.line .stepper button').first().click();
   await page.getByRole('button', { name: 'Error de captura' }).click();
   await page.getByRole('button', { name: /^Anular Q/ }).click();
-  await expect(page.getByText('Ingresa el PIN de un gerente')).toBeVisible();
-  await typePin(page, '1111');
+  await expect(page.getByText('Gerencia debe ingresar su contraseña', { exact: false })).toBeVisible();
+  await authorize(page);
   await expect(page.getByText(/Anulado:/)).toBeVisible();
 
   // Descuento (con PIN) + tarjeta y efectivo
   await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
   await page.getByRole('button', { name: 'Aplicar descuento' }).click();
-  await typePin(page, '1111');
+  await authorize(page);
   await page.getByPlaceholder(/Motivo/).fill('Cliente frecuente');
   await page.getByRole('button', { name: 'Aplicar', exact: true }).click();
   await pickMethod(page, 0, 'tarjeta');
@@ -84,7 +84,7 @@ test('mapa de mesas: estados, cuentas abiertas y editor', async ({ page }) => {
 
 test('cambiar un precio en configuración se refleja en el pedido', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   await nav(page, 'Configuración');
   await page.locator('.tx-row', { hasText: 'Pepián de pollo' }).getByRole('button', { name: 'Editar' }).click();
   await page.getByLabel(/Precio/).fill('99');
@@ -104,7 +104,7 @@ test('inventario: entrada suma y merma de recepción pide PIN', async ({ page })
   await page.locator('.tx-row', { hasText: 'Copas de vino' }).getByRole('button', { name: 'Merma' }).click();
   await page.locator('.modal input').first().fill('1');
   await modalClick(page, 'Registrar');
-  await typePin(page, '1111');
+  await authorize(page);
   const inv = (await state(page)).inventory;
   expect(inv.find((i) => i.name === 'Servilletas').stock).toBe(10);
   expect(inv.find((i) => i.name === 'Copas de vino').stock).toBe(45);

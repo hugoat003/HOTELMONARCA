@@ -3,7 +3,7 @@ import DataTable, { rowClass } from '../../components/DataTable.jsx';
 import Tabs from '../../components/Tabs.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { METHOD_LABELS } from '@shared/data.js';
+import { isManager, isOwner, METHOD_LABELS } from '@shared/data.js';
 import { fmtDateTime, fmtTime, today } from '@shared/dates.js';
 import { exportXlsx } from '../../lib/excel.js';
 import { sum } from '@shared/money.js';
@@ -17,7 +17,7 @@ export default function Ventas() {
   const [tab, setTab] = usePersisted('ventas.pestana', 'cobros');
   const pending = state.sales.filter((s) => s.status === 'ok' && s.invoice && !s.invoice.number).length;
   // Las facturas pendientes son solo para la gerencia, que factura a mano
-  if (user.role !== 'gerente') return <Cobros />;
+  if (!isManager(user.role)) return <Cobros />;
   return (
     <div className="page gap-20">
       <Tabs
@@ -86,7 +86,8 @@ function Cobros({ embedded = false }) {
           <span className="pill">{ok.length} cobros</span>
           <span className="pill">Total {fmt(sum(ok, (s) => s.grand))}</span>
           {mine && <span className="pill">Tus propinas {fmt(sum(ok, (s) => s.tip))}</span>}
-          {!mine && (
+          {/* Exportar el historial de ventas es de la administración general */}
+          {isOwner(user.role) && (
             <button
               className="btn small"
               onClick={() =>

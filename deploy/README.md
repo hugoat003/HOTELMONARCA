@@ -145,7 +145,7 @@ En **Zero Trust → Access → Applications → Add an application → Self-host
 | Sistema Monarca | `monarca.hassistemas.com`         | tu correo + correo de la dueña | 24 h   |
 | Soporte Monarca | `monarca-soporte.hassistemas.com` | solo tu correo                 | 12 h   |
 
-Al entrar, Cloudflare manda un código al correo. Después, el sistema pide el PIN como siempre.
+Al entrar, Cloudflare manda un código al correo. Después, el sistema pide el correo y la contraseña de gerencia (o el PIN, para el personal).
 
 ### e) Terminal de la mini PC desde tu Mac
 

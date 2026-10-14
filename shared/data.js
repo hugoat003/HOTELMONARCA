@@ -75,13 +75,23 @@ export const ROLES = {
     'eventos',
     'caja',
   ],
-  gerente: NAV.map((n) => n.key),
+  // El gerente opera todo el día a día; la bitácora completa es de la administración general
+  gerente: NAV.map((n) => n.key).filter((k) => k !== 'bitacora'),
+  admin: NAV.map((n) => n.key),
 };
 export const ROLE_LABELS = {
   mesero: 'Mesero',
   recepcion: 'Recepción',
   gerente: 'Gerente',
+  admin: 'Administración general',
 };
+
+// Gerencia (gerente y administración general) entra con correo y contraseña y autoriza
+// operaciones sensibles; el resto del personal entra con PIN de 4 dígitos.
+export const isManager = (role) => role === 'gerente' || role === 'admin';
+// Administración general (la dueña): usuarios de gerencia, precios, reportes históricos y datos
+export const isOwner = (role) => role === 'admin';
+export const PASSWORD_MIN = 8;
 
 export const RATE_TYPES = { noche: 'Por noche', mensual: 'Mensual' };
 

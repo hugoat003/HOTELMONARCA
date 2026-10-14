@@ -105,12 +105,22 @@ for (const m of MENU) {
 }
 const BYID = Object.fromEntries(MENU.map((m) => [m.id, m]));
 
+// Gerencia entra con correo y contraseña; el resto del personal, con PIN
 const USERS = [
+  {
+    id: 'u0',
+    name: 'Sofía Directora',
+    role: 'admin',
+    email: 'direccion@monarca.demo',
+    password: 'direccion2026',
+    active: true,
+  },
   {
     id: 'u1',
     name: 'Marta Gerente',
     role: 'gerente',
-    pin: '1111',
+    email: 'gerencia@monarca.demo',
+    password: 'gerencia2026',
     active: true,
   },
   {

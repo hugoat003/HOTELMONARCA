@@ -64,7 +64,7 @@ Lista para marcar en tres momentos: el **ensayo en la oficina**, la **llegada al
 - [ ] En Cloudflare → Networks → Tunnels, **monarca** aparece como _Healthy_.
 - [ ] Desde el celular **con datos móviles** (sin WiFi), abrir `https://monarca.hassistemas.com`:
   - pide el código por correo;
-  - luego el PIN;
+  - luego el correo y la contraseña del sistema (gerencia);
   - después aparece el sistema.
 
 ### 6. Soporte remoto
@@ -84,7 +84,7 @@ Lista para marcar en tres momentos: el **ensayo en la oficina**, la **llegada al
 - [ ] **Recorrido:**
   1. Abrir caja.
   2. Abrir una mesa, pedir y enviar: la comanda sale en cocina.
-  3. Marchar un tiempo y anular un platillo con PIN: salen en cocina.
+  3. Marchar un tiempo y anular un platillo con la contraseña de gerencia: salen en cocina.
   4. Cobrar: el comprobante sale en caja.
   5. Hacer un cargo a una habitación, una venta de la tienda y un abono de un evento.
   6. Cerrar la caja: sale el resumen del cierre.
@@ -116,8 +116,13 @@ La red cambia, pero el túnel no se afecta. Lo que sí cambia son las IP locales
   - conectarlas al WiFi del hotel;
   - borrar el ícono anterior;
   - crear el nuevo con la dirección nueva (Agregar a pantalla de inicio).
-- [ ] **Desde fuera:** con datos móviles, `https://monarca.hassistemas.com` → código → PIN.
+- [ ] **Desde fuera:** con datos móviles, `https://monarca.hassistemas.com` → código → correo y contraseña.
 - [ ] **Datos reales:** revisar con la gerencia el menú, precios, recetas, habitaciones, tarifas, salones, productos de la tienda, inventario inicial, y los usuarios con su PIN.
+- [ ] **Usuarios de gerencia:**
+  - crear a la dueña como **Administración general**, con su correo y una contraseña que ella elija;
+  - crear tu usuario de soporte, también como Administración general, para que lo tuyo quede aparte en la bitácora;
+  - crear al gerente como **Gerente**, con su correo y contraseña;
+  - borrar o desactivar los usuarios de demostración.
 - [ ] **Borrar los datos de prueba:**
   - en Terminal (Administrador), `monarca-limpiar-pruebas` (pide escribir BORRAR);
   - conserva catálogos, usuarios y configuración, y hace un respaldo antes.
@@ -137,9 +142,10 @@ La red cambia, pero el túnel no se afecta. Lo que sí cambia son las IP locales
 | Caja (USB)            | Imprimir prueba y abrir caja con un cobro en efectivo     | ☐   |
 | Cocina (red)          | Enviar una comanda de prueba                              | ☐   |
 | Tablets               | Cada una entra con su PIN desde el ícono                  | ☐   |
+| Gerente               | Entra con su correo y contraseña; autoriza una anulación  | ☐   |
 | Datos limpios         | Ventas del día en 0; menú y precios reales                | ☐   |
 | Caja abierta          | Fondo inicial contado y registrado                        | ☐   |
-| Dueña                 | Entra desde su celular con código y PIN                   | ☐   |
+| Dueña                 | Entra desde su celular con código, correo y contraseña    | ☐   |
 | Respaldo              | `monarca-estado` muestra el respaldo previo a la limpieza | ☐   |
 
 ---

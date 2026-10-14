@@ -164,7 +164,7 @@ test('caja cerrada: aviso en todas las pantallas y no se cobra', async ({ page }
 
 test('rentabilidad: costo y margen por platillo', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   await nav(page, 'Configuración');
   await expect(page.locator('.tx-row.admin-menu', { hasText: 'Pepián de pollo' })).toContainText('%');
   await nav(page, 'Reporte / RDP');

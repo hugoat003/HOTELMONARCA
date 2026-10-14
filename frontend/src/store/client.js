@@ -317,10 +317,11 @@ export class SyncClient {
   }
 
   // ----- Sesión
-  async login(userId, pin) {
+  // credentials: { userId, pin } (personal) o { email, password } (gerencia)
+  async login(credentials) {
     try {
-      const { token } = await this.api('/api/login', { body: { userId, pin }, token: null });
-      this.session = { token, userId };
+      const { token, user } = await this.api('/api/login', { body: credentials, token: null });
+      this.session = { token, userId: user.id };
       write(SESSION_KEY, this.session);
       await this.loadState();
       return { ok: true };
@@ -329,10 +330,10 @@ export class SyncClient {
       return { ok: false, error: e.message, ...e.data };
     }
   }
-  // Valida el PIN de un gerente para autorizar la siguiente operación sensible de esta sesión
-  async authorize(pin) {
+  // Valida la contraseña de gerencia para autorizar la siguiente operación sensible de esta sesión
+  async authorize(password) {
     try {
-      const { user } = await this.api('/api/authorize', { body: { pin } });
+      const { user } = await this.api('/api/authorize', { body: { password } });
       return { ok: true, user };
     } catch (e) {
       if (e instanceof NetworkError) return { ok: false, error: 'Sin conexión con el servidor' };
@@ -350,7 +351,7 @@ export class SyncClient {
   expire() {
     if (!this.session) return;
     this.endSession();
-    this.say('Tu sesión terminó. Vuelve a ingresar tu PIN.');
+    this.say('Tu sesión terminó. Vuelve a ingresar.');
     this.emit();
   }
   endSession() {

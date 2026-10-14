@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, state, test, typePin } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, state, test, authorize } from './helpers.js';
 
 const openTable = async (page, n) => {
   await page.getByRole('button', { name: new RegExp(`^Mesa ${n} ·`) }).click();
@@ -28,7 +28,7 @@ test('cortesía con PIN de gerente', async ({ page }) => {
   await page.locator('.side-panel .line-body', { hasText: 'Limonada' }).click();
   await page.getByRole('button', { name: 'Cumpleaños' }).click();
   await page.getByRole('button', { name: 'Dar cortesía' }).click();
-  await typePin(page, '1111');
+  await authorize(page);
   await expect(page.locator('.side-panel .line', { hasText: 'Limonada' })).toContainText('Cortesía');
   const o = (await state(page)).orders.find((x) => x.tableId === 2);
   const l = o.lines.find((x) => x.name === 'Limonada con soda');

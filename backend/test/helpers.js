@@ -2,7 +2,12 @@
 import { randomUUID } from 'node:crypto';
 import { buildApp } from '../src/app.js';
 
-export const PINS = { u1: '1111', u2: '2222', u3: '3333', u4: '4444' };
+export const PINS = { u2: '2222', u3: '3333', u4: '4444' };
+// Gerencia entra con correo y contraseña: u0 administración general, u1 gerente
+export const MANAGERS = {
+  u0: { email: 'direccion@monarca.demo', password: 'direccion2026' },
+  u1: { email: 'gerencia@monarca.demo', password: 'gerencia2026' },
+};
 
 export async function start(opts = {}) {
   const app = await buildApp({ seed: 'demo', ...opts });
@@ -20,7 +25,8 @@ export async function call(app, method, url, { token, body } = {}) {
 }
 
 export async function login(app, userId, pin = PINS[userId]) {
-  const r = await call(app, 'POST', '/api/login', { body: { userId, pin } });
+  const body = MANAGERS[userId] && pin === undefined ? MANAGERS[userId] : { userId, pin };
+  const r = await call(app, 'POST', '/api/login', { body });
   if (r.status !== 200) throw new Error(`login ${userId}: ${r.status} ${JSON.stringify(r.body)}`);
   return r.body.token;
 }

@@ -1,6 +1,6 @@
 import BarChart from '../components/BarChart.jsx';
 import KpiCard from '../components/KpiCard.jsx';
-import { EVENT_STATUS } from '@shared/data.js';
+import { EVENT_STATUS, isOwner } from '@shared/data.js';
 import { addDays, fmtDate, fmtTime, today } from '@shared/dates.js';
 import { eventTotals, isActiveEvent } from '@shared/events.js';
 import { roomState } from '@shared/hotel.js';
@@ -85,40 +85,43 @@ export default function Dashboard({ go, mobile = false }) {
         />
       </div>
 
-      <section className="card dash-card">
-        <div className="row items-center">
-          <span className="card-label">Tendencia</span>
-          <div className="segmented row two" style={{ width: 200, padding: 3 }}>
-            {[7, 30].map((n) => (
-              <button
-                key={n}
-                className={'seg-btn' + (trendDays === n ? ' active' : '')}
-                style={{ padding: '6px 4px' }}
-                onClick={() => setTrendDays(n)}
-              >
-                {n} días
-              </button>
-            ))}
+      {/* Las tendencias de varios días son de la administración general; el gerente ve el día */}
+      {isOwner(user.role) && (
+        <section className="card dash-card">
+          <div className="row items-center">
+            <span className="card-label">Tendencia</span>
+            <div className="segmented row two" style={{ width: 200, padding: 3 }}>
+              {[7, 30].map((n) => (
+                <button
+                  key={n}
+                  className={'seg-btn' + (trendDays === n ? ' active' : '')}
+                  style={{ padding: '6px 4px' }}
+                  onClick={() => setTrendDays(n)}
+                >
+                  {n} días
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="dash-grid">
-          <BarChart
-            title="Ventas por día"
-            data={series.map((x) => ({ label: shortDay(x.day), tooltipLabel: fmtDate(x.day), value: x.sales }))}
-            format={fmt}
-            axisFormat={(n) => (n >= 1000 ? `Q${Math.round(n / 100) / 10}k` : `Q${Math.round(n)}`)}
-            highlight={series.length - 1}
-            height={170}
-          />
-          <BarChart
-            title="Ocupación por día"
-            data={series.map((x) => ({ label: shortDay(x.day), tooltipLabel: fmtDate(x.day), value: x.occupancy }))}
-            format={(v) => `${v}%`}
-            highlight={series.length - 1}
-            height={170}
-          />
-        </div>
-      </section>
+          <div className="dash-grid">
+            <BarChart
+              title="Ventas por día"
+              data={series.map((x) => ({ label: shortDay(x.day), tooltipLabel: fmtDate(x.day), value: x.sales }))}
+              format={fmt}
+              axisFormat={(n) => (n >= 1000 ? `Q${Math.round(n / 100) / 10}k` : `Q${Math.round(n)}`)}
+              highlight={series.length - 1}
+              height={170}
+            />
+            <BarChart
+              title="Ocupación por día"
+              data={series.map((x) => ({ label: shortDay(x.day), tooltipLabel: fmtDate(x.day), value: x.occupancy }))}
+              format={(v) => `${v}%`}
+              highlight={series.length - 1}
+              height={170}
+            />
+          </div>
+        </section>
+      )}
 
       <div className="dash-grid">
         <section className="card dash-card">

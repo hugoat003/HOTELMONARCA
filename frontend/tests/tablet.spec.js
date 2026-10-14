@@ -24,7 +24,7 @@ for (const [label, width, height] of [
   test(`tablet ${label}: ninguna pantalla se sale de lado`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: true });
     await fresh(page);
-    await login(page, 'Marta Gerente');
+    await login(page, 'Sofía Directora');
     for (const s of SCREENS) {
       if (await page.locator('.menu-toggle').isVisible()) await page.locator('.menu-toggle').click();
       await page.locator('.nav').getByRole('button', { name: s, exact: true }).click();

@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useStore } from '../../store/store.jsx';
+import { isManager } from '@shared/data.js';
 import Modal from './Modal.jsx';
-import PinPad from './PinPad.jsx';
+import PasswordForm from './PasswordForm.jsx';
 
 const UIContext = createContext(null);
 
-// Servicios de interfaz compartidos: avisos, confirmaciones, PIN de gerente e impresión
+// Servicios de interfaz compartidos: avisos, confirmaciones, autorización de gerencia e impresión
 export function UIProvider({ children }) {
-  const { user, notice, authorizePin, print } = useStore();
+  const { user, notice, authorizeManager, print } = useStore();
   const [toast, setToast] = useState('');
   const [auth, setAuth] = useState(null);
   const [ask, setAsk] = useState(null);
@@ -20,9 +21,9 @@ export function UIProvider({ children }) {
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setToast(''), 2800);
     },
-    // Ejecuta cb(aprobador) si el usuario es gerente o si un gerente ingresa su PIN
+    // Ejecuta cb(aprobador) si el usuario es de gerencia o si alguien de gerencia ingresa su contraseña
     authorize(label, cb) {
-      if (user?.role === 'gerente') cb(user);
+      if (isManager(user?.role)) cb(user);
       else setAuth({ label, cb });
     },
     confirm({ title, message, confirmLabel = 'Confirmar', danger = false }, cb) {
@@ -35,9 +36,9 @@ export function UIProvider({ children }) {
     },
   };
 
-  // El servidor valida el PIN del gerente y deja autorizada la siguiente operación de esta sesión
-  const checkManagerPin = async (pin) => {
-    const r = await authorizePin(pin);
+  // El servidor valida la contraseña de gerencia y deja autorizada la siguiente operación de esta sesión
+  const checkManager = async ({ password }) => {
+    const r = await authorizeManager(password);
     if (r.ok) {
       const cb = auth.cb;
       setAuth(null);
@@ -58,8 +59,8 @@ export function UIProvider({ children }) {
 
       {auth && (
         <Modal title="Autorización" onClose={() => setAuth(null)} width={380}>
-          <div className="panel-sub text-md">{auth.label}. Ingresa el PIN de un gerente para continuar.</div>
-          <PinPad onSubmit={checkManagerPin} error="PIN de gerente inválido" />
+          <div className="panel-sub text-md">{auth.label}. Gerencia debe ingresar su contraseña para continuar.</div>
+          <PasswordForm onSubmit={checkManager} submitLabel="Autorizar" />
           <button className="btn btn-quiet" onClick={() => setAuth(null)}>
             Cancelar
           </button>

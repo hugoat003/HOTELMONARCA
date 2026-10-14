@@ -12,7 +12,7 @@ import { ActionError } from '../../shared/sync.js';
 import { Auth } from './auth.js';
 import { openDb } from './db.js';
 import { Engine } from './engine.js';
-import { checkRole, claimedApprovers, Forbidden, needsManager, stampActors } from './policy.js';
+import { checkRole, claimedApprovers, Forbidden, needsManager, OWNER_MSG, ownerOnly, stampActors } from './policy.js';
 import { autoJobs } from './printing/hooks.js';
 import { PrintQueue } from './printing/queue.js';
 import { initialState } from './seed.js';
@@ -26,8 +26,14 @@ import {
   pruebaTicket,
   saleTicket,
 } from '../../shared/tickets.js';
+import { isManager, isOwner, PASSWORD_MIN, ROLE_LABELS } from '../../shared/data.js';
 
-const ROLES = ['gerente', 'recepcion', 'mesero'];
+const ROLES = Object.keys(ROLE_LABELS);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const normEmail = (e) =>
+  String(e || '')
+    .trim()
+    .toLowerCase();
 const execFileP = promisify(execFile);
 const MAX_TEST_HOTELS = 300;
 
@@ -63,11 +69,11 @@ function autoPrint(hotel, prev, next, calls, userId, log) {
   }
 }
 
-// Carga un estado completo. Los PIN que traiga (datos de ejemplo) pasan a credenciales con hash
-// y se quitan del estado: el estado viaja a los dispositivos y nunca debe llevar PIN.
+// Carga un estado completo. Los PIN y contraseñas que traiga (datos de ejemplo) pasan a credenciales
+// con hash y se quitan del estado: el estado viaja a los dispositivos y nunca debe llevarlos.
 function install(hotel, state, { keepCredentials = false } = {}) {
-  const users = (state.users || []).map(({ pin, ...u }) => {
-    if (pin) hotel.auth.setPin(u.id, pin);
+  const users = (state.users || []).map(({ pin, password, ...u }) => {
+    if (isManager(u.role) ? password : pin) hotel.auth.setSecret(u.id, isManager(u.role) ? password : pin);
     return u;
   });
   if (!keepCredentials) {
@@ -128,6 +134,7 @@ const publicUser = (u) => ({
   role: u.role,
   active: u.active,
 });
+const activeOwner = (users) => users.some((u) => u.active && isOwner(u.role));
 
 export async function buildApp({
   dbFile = ':memory:',
@@ -202,7 +209,7 @@ export async function buildApp({
     const hotel = hotelFor(req);
     const session = hotel.auth.session(tokenOf(req));
     const user = session && activeUser(hotel, session.userId);
-    if (!user) return reply.code(401).send({ error: 'Tu sesión terminó. Vuelve a ingresar tu PIN.' });
+    if (!user) return reply.code(401).send({ error: 'Tu sesión terminó. Vuelve a ingresar.' });
     req.hotel = hotel;
     req.session = session;
     req.user = user;
@@ -210,7 +217,12 @@ export async function buildApp({
   const requireManager = async (req, reply) => {
     await requireUser(req, reply);
     if (reply.sent) return;
-    if (req.user.role !== 'gerente') return reply.code(403).send({ error: 'Solo gerencia puede hacer esto.' });
+    if (!isManager(req.user.role)) return reply.code(403).send({ error: 'Solo gerencia puede hacer esto.' });
+  };
+  const requireOwner = async (req, reply) => {
+    await requireUser(req, reply);
+    if (reply.sent) return;
+    if (!isOwner(req.user.role)) return reply.code(403).send({ error: OWNER_MSG + '.' });
   };
 
   app.setErrorHandler((err, req, reply) => {
@@ -238,9 +250,10 @@ export async function buildApp({
     const { state } = hotel.engine;
     return {
       build: version.build,
+      // Solo el personal con PIN aparece en la pantalla; gerencia entra con su correo.
       // lockedMs: el PIN de ese usuario está bloqueado por intentos fallidos
       users: state.users
-        .filter((u) => u.active)
+        .filter((u) => u.active && !isManager(u.role))
         .map((u) => ({
           ...publicUser(u),
           lockedMs: hotel.auth.lockedFor('login:' + u.id),
@@ -254,18 +267,25 @@ export async function buildApp({
 
   const lockReply = (reply, ms) => reply.code(429).send({ error: 'Demasiados intentos', lockedMs: ms, left: 0 });
 
+  // Personal: { userId, pin }. Gerencia: { email, password }.
   app.post('/api/login', async (req, reply) => {
     const hotel = hotelFor(req);
-    const { userId, pin } = req.body || {};
-    const user = activeUser(hotel, userId);
-    if (!user) return reply.code(400).send({ error: 'Usuario no válido' });
-    const key = 'login:' + user.id;
+    const { userId, pin, email, password } = req.body || {};
+    const byEmail = email !== undefined;
+    const user = byEmail
+      ? hotel.engine.state.users.find((u) => u.active && isManager(u.role) && normEmail(u.email) === normEmail(email))
+      : activeUser(hotel, userId);
+    if (!byEmail && !user) return reply.code(400).send({ error: 'Usuario no válido' });
+    if (!byEmail && isManager(user.role))
+      return reply.code(400).send({ error: 'Gerencia ingresa con su correo y contraseña' });
+    // Con correo, los intentos se cuentan por correo (exista o no: no revela quién tiene cuenta)
+    const key = byEmail ? 'login-email:' + normEmail(email) : 'login:' + user.id;
     const locked = hotel.auth.lockedFor(key);
     if (locked) return lockReply(reply, locked);
-    if (!hotel.auth.checkPin(user.id, pin)) {
+    if (!user || !hotel.auth.checkSecret(user.id, String(byEmail ? password || '' : pin || ''))) {
       const left = hotel.auth.fail(key);
       if (!left) return lockReply(reply, hotel.auth.lockedFor(key));
-      return reply.code(401).send({ error: 'PIN incorrecto', left });
+      return reply.code(401).send({ error: byEmail ? 'Correo o contraseña incorrectos' : 'PIN incorrecto', left });
     }
     hotel.auth.ok(key);
     return { token: hotel.auth.createSession(user.id), user: publicUser(user) };
@@ -282,20 +302,20 @@ export async function buildApp({
     user: publicUser(req.user),
   }));
 
-  // Un gerente teclea su PIN en el dispositivo de otra persona: queda autorizada la siguiente operación
+  // Gerencia teclea su contraseña en el dispositivo de otra persona: queda autorizada la siguiente operación
   app.post('/api/authorize', { preHandler: requireUser }, async (req, reply) => {
     const { hotel, session } = req;
     const key = 'auth:' + session.id;
     const locked = hotel.auth.lockedFor(key);
     if (locked) return lockReply(reply, locked);
-    const pin = String(req.body?.pin || '');
-    const mgr = hotel.engine.state.users.find(
-      (u) => u.active && u.role === 'gerente' && hotel.auth.checkPin(u.id, pin),
-    );
+    const password = String(req.body?.password || '');
+    const mgr =
+      password &&
+      hotel.engine.state.users.find((u) => u.active && isManager(u.role) && hotel.auth.checkSecret(u.id, password));
     if (!mgr) {
       const left = hotel.auth.fail(key);
       if (!left) return lockReply(reply, hotel.auth.lockedFor(key));
-      return reply.code(401).send({ error: 'PIN de gerente inválido', left });
+      return reply.code(401).send({ error: 'Contraseña de gerencia incorrecta', left });
     }
     hotel.auth.ok(key);
     hotel.auth.grant(session.id, mgr.id);
@@ -319,39 +339,58 @@ export async function buildApp({
       if (!c || typeof c.name !== 'string' || !Array.isArray(c.args)) throw new BadRequest('Operación no válida');
       if (c.ids !== undefined && !Array.isArray(c.ids)) throw new BadRequest('Operación no válida');
       checkRole(user, c);
+      const reserved = ownerOnly(state, user, c);
+      if (reserved) throw new Forbidden(reserved);
       stampActors(c, user.id);
     }
 
-    // Autorización de gerente: si la operación la pide (o dice que un gerente la autorizó),
-    // tiene que haber un PIN de gerente validado en este dispositivo hace poco.
-    // Una autorización sirve para una tanda; quien la dice haber dado debe ser quien tecleó el PIN.
+    // Autorización de gerencia: si la operación la pide (o dice que gerencia la autorizó),
+    // tiene que haber una contraseña de gerencia validada en este dispositivo hace poco.
+    // Una autorización sirve para una tanda; quien la dice haber dado debe ser quien tecleó la contraseña.
     const claimed = [
-      ...new Set(calls.flatMap(claimedApprovers).filter((id) => !(id === user.id && user.role === 'gerente'))),
+      ...new Set(calls.flatMap(claimedApprovers).filter((id) => !(id === user.id && isManager(user.role)))),
     ];
     if (claimed.length > 1) throw new Forbidden('La autorización de gerente no es válida.');
     // Solo se gasta una autorización si la operación la necesita o dice tenerla: un cambio cualquiera
-    // que llegue justo después del PIN no debe consumir la de la anulación que viene detrás.
-    const needs = user.role !== 'gerente' && calls.some((c) => needsManager(state, c));
+    // que llegue justo después de la contraseña no debe consumir la de la anulación que viene detrás.
+    const needs = !isManager(user.role) && calls.some((c) => needsManager(state, c));
     let grant = needs || claimed.length ? hotel.auth.peekGrant(session.id, claimed[0]) : null;
     if (grant && !activeUser(hotel, grant.mgrId)) grant = null;
     if (claimed.length && !grant) throw new Forbidden('La autorización de gerente no es válida.');
     if (needs && !grant) throw new Forbidden('Esta operación necesita la autorización de un gerente.');
 
-    // Usuarios: el PIN no entra al estado; se guarda aparte, con hash
+    // Usuarios: el PIN o la contraseña no entran al estado; se guardan aparte, con hash.
+    // Gerencia entra con correo y contraseña; el resto del personal, con PIN.
     const credOps = [];
     for (const c of calls) {
       if (c.name === 'upsert' && c.args[0] === 'users') {
         const item = c.args[1] || {};
-        const { pin } = item;
+        const { pin, password } = item;
         delete item.pin;
+        delete item.password;
         if (!item.id || typeof item.id !== 'string') throw new BadRequest('Usuario no válido');
         if (item.role !== undefined && !ROLES.includes(item.role)) throw new BadRequest('Rol no válido');
-        const exists = state.users.some((u) => u.id === item.id);
-        if (pin !== undefined && pin !== '') {
+        const old = state.users.find((u) => u.id === item.id);
+        const role = item.role ?? old?.role;
+        // Cambiar de PIN a contraseña (o al revés) pide la credencial nueva
+        const sameKind = !!old && isManager(old.role) === isManager(role);
+        if (isManager(role)) {
+          if (item.email !== undefined) item.email = normEmail(item.email);
+          const email = item.email ?? old?.email;
+          if (!EMAIL_RE.test(email || '')) throw new ActionError('Falta un correo válido para gerencia');
+          if (state.users.some((u) => u.id !== item.id && isManager(u.role) && normEmail(u.email) === email))
+            throw new ActionError('Ese correo ya lo usa otra persona');
+          if (password !== undefined && password !== '') {
+            if (String(password).length < PASSWORD_MIN)
+              throw new ActionError(`La contraseña debe tener al menos ${PASSWORD_MIN} caracteres`);
+            credOps.push(() => hotel.auth.setSecret(item.id, String(password)));
+          } else if (!sameKind) throw new ActionError('Falta la contraseña');
+        } else if (pin !== undefined && pin !== '') {
           if (!/^\d{4}$/.test(String(pin))) throw new ActionError('El PIN debe tener 4 dígitos');
-          if (hotel.auth.pinTaken(String(pin), item.id)) throw new ActionError('Ese PIN ya lo usa otra persona');
-          credOps.push(() => hotel.auth.setPin(item.id, String(pin)));
-        } else if (!exists) throw new ActionError('Falta el PIN del usuario nuevo');
+          const staff = new Set(state.users.filter((u) => !isManager(u.role)).map((u) => u.id));
+          if (hotel.auth.pinTaken(String(pin), item.id, staff)) throw new ActionError('Ese PIN ya lo usa otra persona');
+          credOps.push(() => hotel.auth.setSecret(item.id, String(pin)));
+        } else if (!sameKind) throw new ActionError(old ? 'Falta el PIN nuevo' : 'Falta el PIN del usuario nuevo');
       }
       if (c.name === 'remove' && c.args[0] === 'users') credOps.push(() => hotel.auth.removeUser(c.args[1]));
     }
@@ -362,8 +401,8 @@ export async function buildApp({
       calls,
       userId: user.id,
       beforeCommit: (next) => {
-        if (!next.users.some((u) => u.active && u.role === 'gerente'))
-          throw new ActionError('Debe quedar al menos un gerente activo');
+        if (!activeOwner(next.users))
+          throw new ActionError('Debe quedar al menos un usuario de administración general activo');
         credOps.forEach((op) => op());
       },
     });
@@ -376,12 +415,12 @@ export async function buildApp({
 
   // ----- Impresión
   const canPrint = {
-    ticket: ['mesero', 'recepcion', 'gerente'],
-    precuenta: ['mesero', 'recepcion', 'gerente'],
-    comanda: ['mesero', 'recepcion', 'gerente'],
-    folio: ['recepcion', 'gerente'],
-    cierre: ['recepcion', 'gerente'],
-    prueba: ['gerente'],
+    ticket: ['mesero', 'recepcion', 'gerente', 'admin'],
+    precuenta: ['mesero', 'recepcion', 'gerente', 'admin'],
+    comanda: ['mesero', 'recepcion', 'gerente', 'admin'],
+    folio: ['recepcion', 'gerente', 'admin'],
+    cierre: ['recepcion', 'gerente', 'admin'],
+    prueba: ['gerente', 'admin'],
   };
   app.get('/api/printers', { preHandler: requireUser }, async (req) =>
     req.hotel.printing.status({ recent: req.user.role === 'mesero' ? 0 : 40 }),
@@ -454,22 +493,22 @@ export async function buildApp({
     return { ok: true, job };
   });
 
-  // ----- Respaldo y datos de ejemplo (gerencia)
+  // ----- Respaldo y datos de ejemplo (administración general)
   const replaceState = (hotel, next) => {
     const rev = install(hotel, next, { keepCredentials: true });
     broadcast(hotel, { type: 'reload', rev });
     return rev;
   };
-  app.post('/api/admin/restore', { preHandler: requireManager }, async (req) => {
+  app.post('/api/admin/restore', { preHandler: requireOwner }, async (req) => {
     const next = req.body?.state;
     const cur = req.hotel.engine.state;
     if (!next || next.version !== cur.version || !Array.isArray(next.menu) || !Array.isArray(next.users))
       throw new BadRequest('El archivo no es un respaldo válido de POS Monarca');
-    if (!next.users.some((u) => u.active && u.role === 'gerente'))
-      throw new BadRequest('El respaldo no tiene un gerente activo');
+    if (!activeOwner(next.users))
+      throw new BadRequest('El respaldo no tiene un usuario de administración general activo');
     return { ok: true, rev: replaceState(req.hotel, next) };
   });
-  app.post('/api/admin/reset-demo', { preHandler: requireManager }, async (req, reply) => {
+  app.post('/api/admin/reset-demo', { preHandler: requireOwner }, async (req, reply) => {
     if (!demo && !test) return reply.code(404).send({ error: 'No disponible' });
     return { ok: true, rev: replaceState(req.hotel, initialState('demo')) };
   });

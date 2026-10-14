@@ -1,10 +1,11 @@
-// PIN, sesiones y autorizaciones de gerente. El PIN nunca se guarda: solo su hash (scrypt con sal).
+// PIN y contraseñas, sesiones y autorizaciones de gerencia. Ni el PIN ni la contraseña se guardan:
+// solo su hash (scrypt con sal). El personal usa PIN; gerencia, contraseña (misma tabla, una por usuario).
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 export const MAX_FAILS = 5;
 export const LOCK_MS = 2 * 60 * 1000;
 export const SESSION_IDLE_MS = 12 * 60 * 60 * 1000; // sin uso por 12 h, la sesión vence
-export const GRANT_MS = 10 * 60 * 1000; // la autorización de un gerente sirve para una operación en 10 min
+export const GRANT_MS = 10 * 60 * 1000; // la autorización de gerencia sirve para una operación en 10 min
 
 export function hashPin(pin) {
   const salt = randomBytes(16);
@@ -26,8 +27,8 @@ export class Auth {
   constructor(db, { now = () => Date.now() } = {}) {
     this.db = db;
     this.now = now;
-    this.guards = new Map(); // intentos fallidos de PIN: clave → { fails, until }
-    this.grants = new Map(); // sesión → [{ mgrId, until }] (una por cada PIN tecleado)
+    this.guards = new Map(); // intentos fallidos de PIN o contraseña: clave → { fails, until }
+    this.grants = new Map(); // sesión → [{ mgrId, until }] (una por cada contraseña tecleada)
     this.q = {
       getCred: db.prepare('SELECT pin_hash FROM credentials WHERE user_id = ?'),
       allCreds: db.prepare('SELECT user_id, pin_hash FROM credentials'),
@@ -44,21 +45,23 @@ export class Auth {
     };
   }
 
-  // ----- Credenciales
-  setPin(userId, pin) {
-    this.q.setCred.run(userId, hashPin(pin));
+  // ----- Credenciales (secret: el PIN o la contraseña del usuario)
+  setSecret(userId, secret) {
+    this.q.setCred.run(userId, hashPin(secret));
   }
   removeUser(userId) {
     this.q.delCred.run(userId);
     this.q.delUserSessions.run(userId);
   }
-  checkPin(userId, pin) {
+  checkSecret(userId, secret) {
     const row = this.q.getCred.get(userId);
-    return !!row && verifyPin(pin, row.pin_hash);
+    return !!row && verifyPin(secret, row.pin_hash);
   }
-  // ¿Otro usuario ya usa este PIN? (el PIN identifica a la persona al autorizar)
-  pinTaken(pin, exceptUserId) {
-    return this.q.allCreds.all().some((r) => r.user_id !== exceptUserId && verifyPin(pin, r.pin_hash));
+  // ¿Otro de estos usuarios ya usa este PIN? (dos personas con el mismo PIN se confundirían)
+  pinTaken(pin, exceptUserId, userIds) {
+    return this.q.allCreds
+      .all()
+      .some((r) => r.user_id !== exceptUserId && userIds.has(r.user_id) && verifyPin(pin, r.pin_hash));
   }
 
   // ----- Límite de intentos
@@ -107,7 +110,7 @@ export class Auth {
     this.q.purge.run(this.now() - SESSION_IDLE_MS);
   }
 
-  // ----- Autorización de gerente: un gerente teclea su PIN en el dispositivo de otra persona
+  // ----- Autorización de gerencia: un gerente teclea su contraseña en el dispositivo de otra persona
   // Se acumulan: si se autorizan dos cosas seguidas, cada una tiene la suya
   grant(sessionId, mgrId) {
     const list = (this.grants.get(sessionId) || []).filter((g) => g.until > this.now());

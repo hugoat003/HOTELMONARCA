@@ -8,7 +8,7 @@ const dateOf = (ts) => {
 
 test('reporte por fechas: últimos 7 días suma los turnos y reparte propinas', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   await nav(page, 'Reporte / RDP');
   await page.getByRole('button', { name: 'Por fechas', exact: true }).click();
   await page.getByRole('button', { name: 'Últimos 7 días' }).click();
@@ -36,7 +36,7 @@ test('reporte por fechas: últimos 7 días suma los turnos y reparte propinas', 
 
 test('exportar el reporte a Excel', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   await nav(page, 'Reporte / RDP');
   await page.getByRole('button', { name: 'Por fechas', exact: true }).click();
   await page.getByRole('button', { name: 'Últimos 30 días' }).click();
@@ -53,7 +53,7 @@ test('exportar el reporte a Excel', async ({ page }) => {
 
 test('resumen con tendencia de 7 y 30 días', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   const chart = page.locator('.chart').first();
   await expect(chart.locator('path')).toHaveCount(7);
   await page.getByRole('button', { name: '30 días' }).click();
@@ -87,7 +87,7 @@ test('eventos: calendario mensual, nuevo evento desde un día y orden de servici
 
 test('exportar ventas e inventario a Excel', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   for (const [screen, sheet] of [
     ['Ventas', 'Cobros'],
     ['Inventario', 'Inventario'],

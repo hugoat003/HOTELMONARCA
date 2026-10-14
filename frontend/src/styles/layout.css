@@ -219,6 +219,17 @@
 .login-user .avatar {
   grid-row: span 2;
 }
+.login-managers {
+  align-self: center;
+}
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.password-form .pin-msg {
+  text-align: center;
+}
 .demo-hint {
   text-align: center;
   font-size: 13px;

@@ -145,7 +145,7 @@ describe('cobros y concurrencia', () => {
     assert.equal((await act(app, juan, ['registerSale', sale, { orderId: o.id, paidQty: paid }])).status, 403);
     await call(app, 'POST', '/api/authorize', {
       token: juan,
-      body: { pin: '1111' },
+      body: { password: 'gerencia2026' },
     });
     assert.equal((await act(app, juan, ['registerSale', sale, { orderId: o.id, paidQty: paid }])).status, 200);
     const au = state(app).audit.at(-1);

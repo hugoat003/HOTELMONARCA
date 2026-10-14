@@ -24,7 +24,12 @@ npm test              # pruebas del servidor y de punta a punta (Playwright)
 npm run lint
 ```
 
-Usuarios de demostración (PIN): Gerente 1111 · Recepción 2222 · Juan 3333 · Ana 4444.
+Usuarios de demostración:
+
+- Con PIN: Recepción 2222 · Juan 3333 · Ana 4444.
+- Con correo y contraseña (botón "Gerencia · ingresar con correo"):
+  - Administración general: `direccion@monarca.demo` / `direccion2026`
+  - Gerente: `gerencia@monarca.demo` / `gerencia2026`
 
 ## Cotización
 

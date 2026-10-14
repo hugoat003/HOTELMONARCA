@@ -3,12 +3,15 @@ import { useState } from 'react';
 import DataTable, { rowClass } from '../../components/DataTable.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
+import { isOwner } from '@shared/data.js';
 import { uid } from '@shared/dates.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 
 export function MenuItemModal({ item, onClose, onSave }) {
-  const { state, fmt } = useStore();
+  const { state, user, fmt } = useStore();
+  // Cambiar el precio de algo que ya existe es de la administración general
+  const priceLocked = !item.isNew && !isOwner(user.role);
   const [v, setV] = useState({ modGroups: [], recipe: [], ...item, price: String(item.price ?? '') });
   const set = (patch) => setV((x) => ({ ...x, ...patch }));
   const toggleGroup = (id) =>
@@ -66,12 +69,13 @@ export function MenuItemModal({ item, onClose, onSave }) {
             ))}
           </select>
         </Field>
-        <Field label="Precio">
+        <Field label="Precio" hint={priceLocked ? 'solo administración general' : undefined}>
           <input
             className="input"
             type="number"
             inputMode="decimal"
             value={v.price}
+            disabled={priceLocked}
             onChange={(e) => set({ price: e.target.value })}
           />
         </Field>
@@ -210,7 +214,10 @@ export function ModifierGroups() {
 }
 
 function GroupModal({ group, onClose, onSave, onDelete }) {
+  const { user } = useStore();
   const [g, setG] = useState({ ...group, options: group.options.map((o) => ({ ...o, price: String(o.price) })) });
+  // El precio de las opciones que ya existen lo cambia la administración general
+  const [saved] = useState(() => new Set(group.isNew || isOwner(user.role) ? [] : group.options.map((o) => o.id)));
   const setOpt = (i, patch) => setG({ ...g, options: g.options.map((o, j) => (j === i ? { ...o, ...patch } : o)) });
   const problem = !g.name.trim()
     ? 'Falta el nombre'
@@ -283,6 +290,8 @@ function GroupModal({ group, onClose, onSave, onDelete }) {
                 type="number"
                 inputMode="decimal"
                 value={o.price}
+                disabled={saved.has(o.id)}
+                title={saved.has(o.id) ? 'El precio lo cambia la administración general' : undefined}
                 onChange={(e) => setOpt(i, { price: e.target.value })}
                 placeholder="0"
               />

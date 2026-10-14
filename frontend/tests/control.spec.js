@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, state, test, typePin } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, state, test, authorize } from './helpers.js';
 
 test('tiempos: los fuertes y postres esperan y se marchan desde el pedido', async ({ page }) => {
   await fresh(page);
@@ -41,13 +41,13 @@ test('mesas: una zona a la vez con pestañas', async ({ page }) => {
   await expect(page.getByRole('tab', { name: /Terraza/ })).toHaveAttribute('aria-selected', 'true');
 });
 
-test('recepción: editar productos y mermas piden PIN y quedan en la bitácora', async ({ page }) => {
+test('recepción: editar productos y mermas piden autorización y quedan en la bitácora', async ({ page }) => {
   await fresh(page);
   await login(page, 'Luis Recepción');
   await nav(page, 'Inventario');
   await page.locator('.tx-row', { hasText: 'Cerveza Gallo' }).getByRole('button', { name: 'Editar' }).click();
-  await expect(page.getByText('Ingresa el PIN de un gerente')).toBeVisible();
-  await typePin(page, '1111');
+  await expect(page.getByText('Gerencia debe ingresar su contraseña', { exact: false })).toBeVisible();
+  await authorize(page);
   await page.locator('.modal input[type=number]').nth(2).fill('9.5');
   await modalClick(page, 'Guardar');
 
@@ -57,7 +57,7 @@ test('recepción: editar productos y mermas piden PIN y quedan en la bitácora',
   await page.locator('.modal input[type=number]').first().fill('1');
   await page.locator('.modal .chip').first().click();
   await page.locator('.modal .btn-primary').click();
-  await typePin(page, '1111');
+  await authorize(page);
 
   const s = await state(page);
   const last = s.audit.slice(-2);
@@ -65,7 +65,7 @@ test('recepción: editar productos y mermas piden PIN y quedan en la bitácora',
   expect(last.every((a) => a.userId === 'u2' && a.authId === 'u1')).toBe(true);
   expect(last[0].detail).toContain('Cambio de costo');
 
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   await nav(page, 'Bitácora');
   await expect(page.locator('.tx-row.audit', { hasText: 'Tienda · Gatorade' })).toContainText('autorizó Marta');
   await page.getByRole('button', { name: /^Cambio de precio/ }).click();
@@ -80,7 +80,7 @@ test('cierre ciego: la diferencia se ve al confirmar el conteo y se explica', as
   await expect(page.locator('.kpi', { hasText: 'Efectivo esperado' })).toContainText('Lo ve gerencia');
   await page.getByRole('button', { name: 'Cerrar turno' }).click();
   await modalClick(page, 'Continuar al arqueo');
-  await typePin(page, '1111');
+  await authorize(page);
   await page.locator('.denom', { hasText: 'Q 100' }).locator('input').fill('3');
   await modalClick(page, /Confirmar conteo/);
   await expect(page.locator('.arqueo-result')).toContainText('Faltante');

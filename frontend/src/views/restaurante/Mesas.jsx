@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import TableMap from '../../components/TableMap.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { TABLE_COLORS } from '@shared/data.js';
+import { isManager, TABLE_COLORS } from '@shared/data.js';
 import { uid } from '@shared/dates.js';
 import { linesTotal } from '@shared/money.js';
 import { placed } from '@shared/tablemap.js';
@@ -91,7 +91,7 @@ export default function Mesas({ go }) {
     };
   };
 
-  if (editing && user.role === 'gerente') {
+  if (editing && isManager(user.role)) {
     return (
       <div className="page gap-16">
         <MapEditor onDone={() => setEditing(false)} />
@@ -129,7 +129,7 @@ export default function Mesas({ go }) {
               );
             })}
           </div>
-          {user.role === 'gerente' && (
+          {isManager(user.role) && (
             <button className="btn small" onClick={() => setEditing(true)}>
               Editar mapa
             </button>

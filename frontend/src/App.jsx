@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { UIProvider, useUI } from './components/ui/UIProvider.jsx';
-import { NAV, ROLE_LABELS, ROLES, TITLES } from '@shared/data.js';
+import { isManager, NAV, ROLE_LABELS, ROLES, TITLES } from '@shared/data.js';
 import { PRINTER_NAMES } from '@shared/tickets.js';
 import { fmtLongDate, today } from '@shared/dates.js';
 import { roomState } from '@shared/hotel.js';
@@ -87,7 +87,7 @@ function PhoneShell() {
           </button>
         </div>
       </header>
-      {user.role === 'gerente' ? (
+      {isManager(user.role) ? (
         <Dashboard mobile />
       ) : (
         <div className="empty-state" style={{ padding: '60px 16px', textAlign: 'center' }}>

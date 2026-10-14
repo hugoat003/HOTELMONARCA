@@ -7,14 +7,14 @@ const FIXED = new Date('2026-09-30T15:00:00');
 
 test.describe.configure({ mode: 'serial' });
 
-async function start(page, user = 'Marta Gerente') {
+async function start(page, user = 'Sofía Directora') {
   await page.clock.setFixedTime(FIXED);
   await fresh(page, { now: FIXED });
   await login(page, user);
 }
 const snap = (page, name) => expect.soft(page).toHaveScreenshot(name + '.png', { fullPage: true, maxDiffPixels: 0 });
 
-test('pantallas de gerencia', async ({ page }) => {
+test('pantallas de administración general', async ({ page }) => {
   await start(page);
   await snap(page, 'resumen');
   await nav(page, 'Mesas');
@@ -83,9 +83,11 @@ test('login y teléfono', async ({ browser }) => {
   await page.clock.setFixedTime(FIXED);
   await fresh(page, { now: FIXED });
   await snap(page, 'login-telefono');
-  await page.getByRole('button', { name: 'Marta Gerente' }).click();
-  for (const k of '1111') await page.keyboard.press(k);
-  await expect(page.getByText('Hola, Marta')).toBeVisible();
+  await page.getByRole('button', { name: 'Gerencia · ingresar con correo' }).click();
+  await snap(page, 'login-gerencia');
+  await page.getByRole('button', { name: 'Volver' }).click();
+  await login(page, 'Sofía Directora');
+  await expect(page.getByText('Hola, Sofía')).toBeVisible();
   await snap(page, 'resumen-telefono');
   await page.close();
 });

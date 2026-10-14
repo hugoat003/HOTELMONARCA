@@ -12,7 +12,7 @@ test('limpiar-pruebas conserva catálogos, usuarios y PIN, y borra ventas, reser
   const dbFile = join(dir, 'monarca.db');
   try {
     let app = await start({ dbFile });
-    const mgr = await login(app, 'u1');
+    const mgr = await login(app, 'u0'); // precios y datos del negocio: administración general
     // Un cambio de catálogo hecho durante las pruebas debe quedarse
     const m1 = state(app).menu.find((m) => m.id === 'm1');
     await act(app, mgr, ['upsert', 'menu', { ...m1, price: 99 }], ['setConfig', { footer: 'Gracias por venir' }]);
@@ -55,6 +55,7 @@ test('limpiar-pruebas conserva catálogos, usuarios y PIN, y borra ventas, reser
     assert.equal(s.users.length, before.users.length);
     assert.equal(s.tables.length, before.tables.length);
     assert.ok(await login(app, 'u3', '3333'));
+    assert.ok(await login(app, 'u1')); // y las contraseñas de gerencia
     await app.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });

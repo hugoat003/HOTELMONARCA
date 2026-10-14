@@ -4,7 +4,7 @@ import KpiCard from '../../components/KpiCard.jsx';
 import { ItemModal, MoveModal, StockMoves, StockTag } from '../../components/Stock.jsx';
 import Tabs from '../../components/Tabs.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
-import { SHOP_CATS, SHOP_MOVE_LABELS, SHOP_MOVES } from '@shared/data.js';
+import { isOwner, SHOP_CATS, SHOP_MOVE_LABELS, SHOP_MOVES } from '@shared/data.js';
 import { today, uid } from '@shared/dates.js';
 import { exportXlsx } from '../../lib/excel.js';
 import { qtyFmt, stockStatus } from '@shared/inventory.js';
@@ -387,6 +387,7 @@ function Existencias() {
           item={edit}
           cats={SHOP_CATS}
           withPrice
+          priceLocked={!edit.isNew && !isOwner(user.role)}
           onClose={() => setEdit(null)}
           onDelete={() =>
             ui.confirm(

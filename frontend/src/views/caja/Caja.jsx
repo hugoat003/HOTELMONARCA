@@ -4,7 +4,7 @@ import DataTable from '../../components/DataTable.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DEMO } from '../../config.js';
-import { DENOMINATIONS } from '@shared/data.js';
+import { DENOMINATIONS, isManager } from '@shared/data.js';
 import { fmtDateTime, fmtTime } from '@shared/dates.js';
 import { round2 } from '@shared/money.js';
 import { buildReport } from '@shared/report.js';
@@ -21,7 +21,7 @@ export default function Caja({ go }) {
   const [arqueo, setArqueo] = useState(false);
   const [review, setReview] = useState(false); // revisión antes del cierre
   const shift = state.shift;
-  const manager = user.role === 'gerente';
+  const manager = isManager(user.role);
   const userName = (id) => state.users.find((u) => u.id === id)?.name || '—';
 
   const report = shift && buildReport(state, shift);

@@ -153,7 +153,7 @@ export function LineModal({ line, fmt, onClose, onNote, onCourse, onCourtesy, on
             </button>
           </div>
           <div className="panel-sub text-xs">
-            El platillo se cobra en Q0 y queda en el reporte. Requiere PIN de gerente.
+            El platillo se cobra en Q0 y queda en el reporte. Requiere autorización de gerencia.
           </div>
         </>
       )}

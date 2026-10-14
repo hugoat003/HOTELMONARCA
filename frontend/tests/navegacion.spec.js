@@ -14,7 +14,23 @@ const MENUS = {
     'Eventos',
     'Caja',
   ],
+  // El gerente opera todo menos la bitácora completa
   'Marta Gerente': [
+    'Resumen',
+    'Mesas',
+    'Ventas',
+    'Inventario',
+    'Habitaciones',
+    'Reservas',
+    'Huéspedes',
+    'Limpieza',
+    'Tienda',
+    'Eventos',
+    'Caja',
+    'Reporte / RDP',
+    'Configuración',
+  ],
+  'Sofía Directora': [
     'Resumen',
     'Mesas',
     'Ventas',
@@ -51,12 +67,11 @@ test('los datos se conservan al recargar', async ({ page }) => {
   await expect(page.getByText('Hola, Marta')).toBeVisible();
 });
 
-test('en el teléfono la gerente ve solo el resumen', async ({ browser }) => {
+test('en el teléfono la dueña ve solo el resumen', async ({ browser }) => {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await fresh(page);
-  await page.getByRole('button', { name: 'Marta Gerente' }).click();
-  for (const k of '1111') await page.keyboard.press(k);
-  await expect(page.getByText('Hola, Marta')).toBeVisible();
+  await login(page, 'Sofía Directora');
+  await expect(page.getByText('Hola, Sofía')).toBeVisible();
   await expect(page.locator('.sidebar')).toHaveCount(0);
   await expect(page.getByText(/mensualidad pendiente/)).toBeVisible();
   await page.close();

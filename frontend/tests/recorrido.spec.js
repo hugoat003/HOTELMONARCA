@@ -29,7 +29,7 @@ test('un usuario desactivado pierde la sesión', async ({ page }) => {
 
 test('temporadas que se cruzan: aviso y gana la más corta', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   const s0 = await state(page);
   const t1 = s0.seasons[0];
   await nav(page, 'Configuración');
@@ -52,7 +52,7 @@ test('temporadas que se cruzan: aviso y gana la más corta', async ({ page }) =>
 
 test('cargar un respaldo pide confirmación', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   await nav(page, 'Configuración');
   await page.getByRole('button', { name: /Datos de demo|Respaldo/ }).click();
   const data = await state(page);
@@ -87,7 +87,7 @@ const OPEN = {
 test('recorrido de gerencia por todas las pantallas y ventanas', async ({ page }) => {
   test.setTimeout(120000);
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  await login(page, 'Sofía Directora');
   let clicked = 0;
   for (const [screen, buttons] of Object.entries(OPEN)) {
     await nav(page, screen);

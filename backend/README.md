@@ -22,15 +22,28 @@ recepción y teléfono de gerencia) se conectan a él por la red local y ven los
 
 ## Seguridad
 
-- **PIN:**
-  - Nunca se guarda ni viaja a las pantallas. Solo existe su hash (scrypt con sal) en la tabla `credentials`.
-  - Tras 5 intentos fallidos se bloquea 2 minutos, en el servidor.
+- **Ingreso:**
+  - Meseros y recepción entran con un **PIN** de 4 dígitos.
+  - Gerencia (gerente y administración general) entra con **correo y contraseña** de 8 caracteres o más,
+    y no aparece en la lista de usuarios de la pantalla de ingreso.
+  - Ni el PIN ni la contraseña se guardan o viajan a las pantallas. Solo existe su hash (scrypt con sal) en la tabla `credentials`.
+  - Tras 5 intentos fallidos se bloquea 2 minutos, en el servidor (por usuario con PIN, por correo con contraseña).
 - **Sesión:** un token por dispositivo, que vence tras 12 h sin uso. Un usuario desactivado pierde la sesión al instante.
-- **Permisos por rol** (`src/policy.js`): mesero, recepción y gerencia. Se validan en el servidor,
-  así que llamar a la API directamente no salta las reglas.
-- **Autorización de gerente:**
-  - Para anular platillos enviados, cortesías, descuentos, mermas, ajustes, cambios de precio, quitar cargos y cerrar caja.
-  - El gerente teclea su PIN, el servidor lo valida y deja una autorización de un solo uso, que vence en 10 min.
+- **Permisos por rol** (`src/policy.js`), validados en el servidor, así que llamar a la API directamente no salta las reglas:
+
+  | Rol                    | Qué hace                                                                                                      |
+  | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+  | Mesero                 | Restaurante                                                                                                   |
+  | Recepción              | Restaurante, hotel, eventos, tienda, inventario y caja                                                        |
+  | Gerente                | Todo lo operativo; autoriza; administra meseros y recepción; impresoras                                       |
+  | Administración general | Además: precios y tarifas, usuarios de gerencia, reportes históricos, bitácora, datos del negocio y respaldos |
+  - Precios de venta: crear un producto con su precio lo puede hacer el gerente; cambiar el precio de algo que ya existe, solo la administración general.
+  - Debe quedar siempre al menos una persona de administración general activa.
+  - Los reportes históricos y la bitácora se ocultan en la pantalla del gerente, pero el estado completo llega a todos los dispositivos.
+
+- **Autorización de gerencia:**
+  - Para anular platillos enviados, cortesías, descuentos, mermas, ajustes, quitar cargos y cerrar caja.
+  - Gerencia teclea su contraseña en la tablet de otra persona; el servidor la valida y deja una autorización de un solo uso, que vence en 10 min.
   - Quién hizo cada operación lo pone la sesión, no la tablet.
 
 ## Uso

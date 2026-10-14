@@ -35,9 +35,10 @@ export function StoreProvider({ children }) {
       printerAction: (action, body) => client.printerAction(action, body),
       localPrinters: () => client.localPrinters(),
       update: client.update,
-      login: (userId, pin) => client.login(userId, pin),
+      login: (userId, pin) => client.login({ userId, pin }),
+      loginEmail: (email, password) => client.login({ email, password }),
       logout: client.logout,
-      authorizePin: (pin) => client.authorize(pin),
+      authorizeManager: (password) => client.authorize(password),
       restore: (data) => client.restore(data),
       resetDemo: () => client.resetDemo(),
     };

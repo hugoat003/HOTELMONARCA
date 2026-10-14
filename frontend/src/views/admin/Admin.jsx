@@ -4,7 +4,7 @@ import Tabs from '../../components/Tabs.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DEMO } from '../../config.js';
-import { COURSES, EVENT_UNITS, ROLE_LABELS } from '@shared/data.js';
+import { COURSES, EVENT_UNITS, isManager, isOwner, PASSWORD_MIN, ROLE_LABELS } from '@shared/data.js';
 import { dishCost, marginPct } from '@shared/inventory.js';
 import { uid } from '@shared/dates.js';
 import { isActiveRes } from '@shared/hotel.js';
@@ -26,12 +26,18 @@ const TABS = [
   ['impresoras', 'Impresoras'],
   ['datos', DEMO ? 'Datos de demo' : 'Respaldo'],
 ];
+// Datos del negocio y respaldos: solo la administración general
+const OWNER_TABS = new Set(['negocio', 'datos']);
+const LOCKED_HINT = 'solo administración general';
 
 export default function Admin() {
-  const [tab, setTab] = usePersisted('config.pestana', 'menu');
+  const { user } = useStore();
+  const tabs = TABS.filter(([k]) => isOwner(user.role) || !OWNER_TABS.has(k));
+  const [saved, setTab] = usePersisted('config.pestana', 'menu');
+  const tab = tabs.some(([k]) => k === saved) ? saved : 'menu';
   return (
     <div className="page" style={{ gap: 20, maxWidth: 1100 }}>
-      <Tabs tabs={TABS} value={tab} onChange={setTab} />
+      <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === 'menu' && <MenuTab />}
       {tab === 'mesas' && <MesasTab />}
       {tab === 'habitaciones' && <HabitacionesTab />}
@@ -44,10 +50,12 @@ export default function Admin() {
   );
 }
 
-// Formulario genérico: fields = [{ key, label, type, options, hint, span }]
+// Formulario genérico: fields = [{ key, label, type, options, hint, span, disabled }],
+// o una función (valores actuales) → campos, si cambian según lo que se elige
 function FormModal({ title, initial, fields, validate, onClose, onSave }) {
   const [v, setV] = useState(initial);
   const problem = validate?.(v) || '';
+  const list = typeof fields === 'function' ? fields(v) : fields;
   return (
     <Modal
       title={title}
@@ -65,10 +73,15 @@ function FormModal({ title, initial, fields, validate, onClose, onSave }) {
       }
     >
       <div className="form-grid two">
-        {fields.map((f, i) => (
+        {list.map((f, i) => (
           <Field key={f.key} label={f.label} hint={f.hint} style={f.span ? { gridColumn: 'span 2' } : undefined}>
             {f.type === 'select' ? (
-              <select className="input" value={v[f.key]} onChange={(e) => setV({ ...v, [f.key]: e.target.value })}>
+              <select
+                className="input"
+                value={v[f.key]}
+                disabled={f.disabled}
+                onChange={(e) => setV({ ...v, [f.key]: e.target.value })}
+              >
                 {f.options.map(([val, l]) => (
                   <option key={val} value={val}>
                     {l}
@@ -80,6 +93,8 @@ function FormModal({ title, initial, fields, validate, onClose, onSave }) {
                 className="input"
                 autoFocus={i === 0}
                 type={f.type || 'text'}
+                autoComplete={f.type === 'password' ? 'new-password' : undefined}
+                disabled={f.disabled}
                 value={v[f.key] ?? ''}
                 onChange={(e) => setV({ ...v, [f.key]: e.target.value })}
               />
@@ -276,13 +291,15 @@ function MesasTab() {
 }
 
 function HabitacionesTab() {
-  const { state, fmt, update } = useStore();
+  const { state, user, fmt, update } = useStore();
   const ui = useUI();
   const [editType, setEditType] = useState(null);
   const [editRoom, setEditRoom] = useState(null);
+  const owner = isOwner(user.role);
   return (
     <>
-      <Seasons />
+      {/* Temporadas y recargos son tarifas: las define la administración general */}
+      {owner && <Seasons />}
 
       <div className="row">
         <span className="card-label">Tipos y tarifas</span>
@@ -367,8 +384,10 @@ function HabitacionesTab() {
           onClose={() => setEditType(null)}
           fields={[
             { key: 'name', label: 'Nombre', span: true },
-            { key: 'rate', label: 'Tarifa por noche', type: 'number' },
-            { key: 'monthlyRate', label: 'Tarifa mensual', type: 'number' },
+            ...[
+              { key: 'rate', label: 'Tarifa por noche', type: 'number' },
+              { key: 'monthlyRate', label: 'Tarifa mensual', type: 'number' },
+            ].map((f) => (owner || editType.isNew ? f : { ...f, disabled: true, hint: LOCKED_HINT })),
           ]}
           validate={(v) =>
             !v.name.trim()
@@ -421,7 +440,8 @@ function HabitacionesTab() {
 }
 
 function EventosTab() {
-  const { state, fmt, update } = useStore();
+  const { state, user, fmt, update } = useStore();
+  const lockPrice = (isNew) => (isOwner(user.role) || isNew ? {} : { disabled: true, hint: LOCKED_HINT });
   const ui = useUI();
   const [venue, setVenue] = useState(null);
   const [menu, setMenu] = useState(null);
@@ -524,7 +544,13 @@ function EventosTab() {
           onClose={() => setVenue(null)}
           fields={[
             { key: 'name', label: 'Nombre', span: true },
-            { key: 'price', label: 'Renta del salón', type: 'number', hint: 'se cobra solo si no hay menú para todos' },
+            {
+              key: 'price',
+              label: 'Renta del salón',
+              type: 'number',
+              hint: 'se cobra solo si no hay menú para todos',
+              ...lockPrice(venue.isNew),
+            },
             { key: 'capacity', label: 'Capacidad', type: 'number' },
           ]}
           validate={(v) =>
@@ -557,7 +583,7 @@ function EventosTab() {
           onClose={() => setMenu(null)}
           fields={[
             { key: 'name', label: 'Nombre', span: true },
-            { key: 'price', label: 'Precio', type: 'number' },
+            { key: 'price', label: 'Precio', type: 'number', ...lockPrice(menu.isNew) },
             { key: 'unit', label: 'Se cobra', type: 'select', options: Object.entries(EVENT_UNITS) },
             { key: 'description', label: 'Qué incluye', span: true },
           ]}
@@ -577,18 +603,36 @@ function UsuariosTab() {
   const { state, user, update } = useStore();
   const ui = useUI();
   const [edit, setEdit] = useState(null);
+  const owner = isOwner(user.role);
+  // El gerente administra al personal (meseros y recepción) y su propia cuenta; gerencia, la dueña
+  const canEdit = (u) => owner || u.id === user.id || !isManager(u.role);
+  const roleOptions = Object.entries(ROLE_LABELS).filter(([r]) => owner || !isManager(r));
   return (
     <>
       <div className="row">
-        <span className="panel-sub">Cada usuario entra con su PIN de 4 dígitos. El rol define qué pantallas ve.</span>
+        <span className="panel-sub">
+          El personal entra con un PIN de 4 dígitos; gerencia, con su correo y contraseña. El rol define qué pantallas
+          ve.
+        </span>
         <button
           className="btn btn-primary small"
-          onClick={() => setEdit({ id: uid('u'), name: '', role: 'mesero', pin: '', active: true, isNew: true })}
+          onClick={() =>
+            setEdit({
+              id: uid('u'),
+              name: '',
+              role: 'mesero',
+              pin: '',
+              email: '',
+              password: '',
+              active: true,
+              isNew: true,
+            })
+          }
         >
           + Usuario
         </button>
       </div>
-      <DataTable variant="admin-users" columns={['Nombre', 'Rol', 'PIN', 'Activo', '']}>
+      <DataTable variant="admin-users" columns={['Nombre', 'Rol', 'Ingreso', 'Activo', '']}>
         {state.users.map((u) => (
           <div key={u.id} className="tx-row admin-users">
             <strong>
@@ -596,21 +640,23 @@ function UsuariosTab() {
               {u.id === user.id && <span className="tag">Tú</span>}
             </strong>
             <span>{ROLE_LABELS[u.role]}</span>
-            <span className="panel-sub">••••</span>
+            <span className="panel-sub">{isManager(u.role) ? u.email : 'PIN'}</span>
             <span>
               <button
                 className={'toggle' + (u.active ? ' on' : '')}
-                disabled={u.id === user.id}
+                disabled={u.id === user.id || !canEdit(u)}
                 onClick={() => update((d) => A.upsert(d, 'users', { ...u, active: !u.active }))}
               >
                 {u.active ? 'Sí' : 'No'}
               </button>
             </span>
             <span className="row-actions">
-              <button className="link" onClick={() => setEdit({ ...u, pin: '' })}>
-                Editar
-              </button>
-              {u.id !== user.id && (
+              {canEdit(u) && (
+                <button className="link" onClick={() => setEdit({ ...u, email: u.email || '', pin: '', password: '' })}>
+                  Editar
+                </button>
+              )}
+              {u.id !== user.id && canEdit(u) && (
                 <button
                   className="link danger"
                   onClick={() =>
@@ -637,25 +683,56 @@ function UsuariosTab() {
           title={edit.isNew ? 'Nuevo usuario' : 'Editar usuario'}
           initial={edit}
           onClose={() => setEdit(null)}
-          fields={[
-            { key: 'name', label: 'Nombre', span: true },
-            { key: 'role', label: 'Rol', type: 'select', options: Object.entries(ROLE_LABELS) },
-            {
-              key: 'pin',
-              label: edit.isNew ? 'PIN' : 'PIN nuevo',
-              hint: edit.isNew ? '4 dígitos' : 'Déjalo vacío para no cambiarlo',
-            },
-          ]}
+          fields={(v) => {
+            // Pasar de PIN a contraseña (o al revés) pide la credencial nueva
+            const fresh = edit.isNew || isManager(v.role) !== isManager(edit.role);
+            return [
+              { key: 'name', label: 'Nombre', span: true },
+              {
+                key: 'role',
+                label: 'Rol',
+                type: 'select',
+                options: v.id === user.id ? [[user.role, ROLE_LABELS[user.role]]] : roleOptions,
+                disabled: v.id === user.id,
+              },
+              ...(isManager(v.role)
+                ? [
+                    { key: 'email', label: 'Correo', type: 'email' },
+                    {
+                      key: 'password',
+                      label: fresh ? 'Contraseña' : 'Contraseña nueva',
+                      type: 'password',
+                      hint: fresh ? `${PASSWORD_MIN} caracteres o más` : 'Déjala vacía para no cambiarla',
+                    },
+                  ]
+                : [
+                    {
+                      key: 'pin',
+                      label: fresh ? 'PIN' : 'PIN nuevo',
+                      hint: fresh ? '4 dígitos' : 'Déjalo vacío para no cambiarlo',
+                    },
+                  ]),
+            ];
+          }}
           validate={(v) => {
             if (!v.name.trim()) return 'Falta el nombre';
+            const fresh = edit.isNew || isManager(v.role) !== isManager(edit.role);
+            if (isManager(v.role)) {
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim())) return 'Falta un correo válido';
+              // El servidor revisa que el correo no lo use otra persona
+              if ((fresh || v.password) && (v.password || '').length < PASSWORD_MIN)
+                return `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres`;
+            } else if ((fresh || v.pin) && !/^\d{4}$/.test(v.pin || '')) return 'El PIN debe tener 4 dígitos';
             // El servidor revisa que el PIN no lo use otra persona (los PIN no salen del servidor)
-            if ((edit.isNew || v.pin) && !/^\d{4}$/.test(v.pin || '')) return 'El PIN debe tener 4 dígitos';
-            if (v.id === user.id && v.role !== 'gerente') return 'No puedes quitarte el rol de gerente';
             return '';
           }}
-          onSave={({ isNew, ...v }) => {
-            const { pin, ...rest } = v;
-            update((d) => A.upsert(d, 'users', { ...rest, name: v.name.trim(), ...(pin ? { pin } : {}) }));
+          onSave={({ isNew, pin, password, email, ...v }) => {
+            const secret = isManager(v.role)
+              ? { email: email.trim().toLowerCase(), ...(password ? { password } : {}) }
+              : pin
+                ? { pin }
+                : {};
+            update((d) => A.upsert(d, 'users', { ...v, name: v.name.trim(), ...secret }));
             setEdit(null);
             ui.notify(isNew ? 'Usuario creado' : 'Usuario actualizado');
           }}
