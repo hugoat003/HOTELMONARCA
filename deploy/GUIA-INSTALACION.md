@@ -78,7 +78,20 @@ Lista para marcar en tres momentos: el **ensayo en la oficina**, la **llegada al
   - las tablets muestran "Hay una versión nueva".
 - [ ] Probar el regreso: `monarca-actualizar <versión anterior>`.
 
-### 7. Tablets y recorrido completo
+### 7. Respaldos
+
+- [ ] Guardar en tu gestor de contraseñas la **clave de respaldo** que mostró el instalador.
+- [ ] Configurar Cloudflare R2 ([README.md → Respaldos](README.md#3b--respaldos)) y correr `monarca-respaldo`:
+      debe decir "Copia fuera del hotel".
+- [ ] `monarca-estado` → "Respaldos en orden".
+- [ ] **Probar la restauración:**
+  - registra una venta de prueba;
+  - `monarca-restaurar` y restaura el respaldo de antes de esa venta;
+  - la venta ya no aparece;
+  - restaura el `antes-de-restaurar-…` para volver.
+- [ ] Al día siguiente, `monarca-estado` muestra el respaldo de las 3:00.
+
+### 8. Tablets y recorrido completo
 
 - [ ] En cada tablet, conectarla al WiFi, abrir la dirección que dio `monarca-estado` y luego **Chrome → ⋮ → Agregar a pantalla de inicio**.
 - [ ] **Recorrido:**
@@ -90,7 +103,7 @@ Lista para marcar en tres momentos: el **ensayo en la oficina**, la **llegada al
   6. Cerrar la caja: sale el resumen del cierre.
 - [ ] Dos tablets a la vez: lo que hace una aparece en la otra sin recargar.
 
-### 8. Fallas a propósito
+### 9. Fallas a propósito
 
 - [ ] **Sin internet:** desconecta el internet del router, pero no el WiFi. Las tablets siguen trabajando normal. Al reconectar, el túnel vuelve solo.
 - [ ] **Sin WiFi en una tablet:** sigue tomando el pedido con el aviso "cambios pendientes", y al volver el WiFi se guarda solo.
@@ -134,30 +147,32 @@ La red cambia, pero el túnel no se afecta. Lo que sí cambia son las IP locales
 
 ## Fase 3 · Revisión del día de apertura
 
-| Revisar               | Cómo                                                      | ✓   |
-| --------------------- | --------------------------------------------------------- | --- |
-| Servidor              | `monarca-estado`: monarca _Running_ y responde            | ☐   |
-| Red privada e IP fija | `monarca-estado` sin avisos en rojo                       | ☐   |
-| Túnel                 | `cloudflared` _Running_; Cloudflare dice _Healthy_        | ☐   |
-| Caja (USB)            | Imprimir prueba y abrir caja con un cobro en efectivo     | ☐   |
-| Cocina (red)          | Enviar una comanda de prueba                              | ☐   |
-| Tablets               | Cada una entra con su PIN desde el ícono                  | ☐   |
-| Gerente               | Entra con su correo y contraseña; autoriza una anulación  | ☐   |
-| Datos limpios         | Ventas del día en 0; menú y precios reales                | ☐   |
-| Caja abierta          | Fondo inicial contado y registrado                        | ☐   |
-| Dueña                 | Entra desde su celular con código, correo y contraseña    | ☐   |
-| Respaldo              | `monarca-estado` muestra el respaldo previo a la limpieza | ☐   |
+| Revisar               | Cómo                                                               | ✓   |
+| --------------------- | ------------------------------------------------------------------ | --- |
+| Servidor              | `monarca-estado`: monarca _Running_ y responde                     | ☐   |
+| Red privada e IP fija | `monarca-estado` sin avisos en rojo                                | ☐   |
+| Túnel                 | `cloudflared` _Running_; Cloudflare dice _Healthy_                 | ☐   |
+| Caja (USB)            | Imprimir prueba y abrir caja con un cobro en efectivo              | ☐   |
+| Cocina (red)          | Enviar una comanda de prueba                                       | ☐   |
+| Tablets               | Cada una entra con su PIN desde el ícono                           | ☐   |
+| Gerente               | Entra con su correo y contraseña; autoriza una anulación           | ☐   |
+| Datos limpios         | Ventas del día en 0; menú y precios reales                         | ☐   |
+| Caja abierta          | Fondo inicial contado y registrado                                 | ☐   |
+| Dueña                 | Entra desde su celular con código, correo y contraseña             | ☐   |
+| Respaldo              | `monarca-estado`: "Respaldos en orden" (mini PC y fuera del hotel) | ☐   |
 
 ---
 
 ## Si algo falla
 
-| Síntoma                                        | Causa probable                                                    | Qué hacer                                                                        |
-| ---------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Las tablets no abren el sistema                | La red de Windows quedó **Pública**, o cambió la IP de la mini PC | `monarca-estado`: corregir la red; reservar la IP en el router; rehacer el ícono |
-| "La impresora de cocina no responde"           | Sin papel, apagada, cable suelto o cambió su IP                   | Revisarla; corregir la IP en Configuración → Impresoras; tocar **Reintentar**    |
-| "La impresora USB está desconectada o apagada" | Cable USB, impresora apagada o sin papel                          | Revisarla; el ticket sale solo al volver                                         |
-| La gaveta no abre                              | Cable RJ11 o la opción apagada                                    | Revisar el cable y **Configuración → Impresoras → Abrir la gaveta**              |
-| Desde fuera, "Error 1033"                      | El túnel no está conectado (sin internet o servicio detenido)     | `monarca-estado`; `Restart-Service cloudflared`                                  |
-| Desde fuera no llega el código                 | El correo no está autorizado                                      | Agregarlo en Access controls → Policies                                          |
-| Algo falló después de actualizar               | Versión nueva con problema                                        | `monarca-actualizar <versión anterior>` (regresa en ~3 s)                        |
+| Síntoma                                         | Causa probable                                                    | Qué hacer                                                                                                     |
+| ----------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Las tablets no abren el sistema                 | La red de Windows quedó **Pública**, o cambió la IP de la mini PC | `monarca-estado`: corregir la red; reservar la IP en el router; rehacer el ícono                              |
+| "La impresora de cocina no responde"            | Sin papel, apagada, cable suelto o cambió su IP                   | Revisarla; corregir la IP en Configuración → Impresoras; tocar **Reintentar**                                 |
+| "La impresora USB está desconectada o apagada"  | Cable USB, impresora apagada o sin papel                          | Revisarla; el ticket sale solo al volver                                                                      |
+| La gaveta no abre                               | Cable RJ11 o la opción apagada                                    | Revisar el cable y **Configuración → Impresoras → Abrir la gaveta**                                           |
+| Desde fuera, "Error 1033"                       | El túnel no está conectado (sin internet o servicio detenido)     | `monarca-estado`; `Restart-Service cloudflared`                                                               |
+| Desde fuera no llega el código                  | El correo no está autorizado                                      | Agregarlo en Access controls → Policies                                                                       |
+| Algo falló después de actualizar                | Versión nueva con problema                                        | `monarca-actualizar <versión anterior>` (regresa en ~3 s)                                                     |
+| "La copia fuera del hotel…" en `monarca-estado` | Sin internet, o credenciales de R2 vencidas                       | Si es internet, se sube sola al volver; si no, revisa las variables `MONARCA_S3_…` y corre `monarca-respaldo` |
+| La dueña olvidó su contraseña                   | —                                                                 | `monarca-acceso --correo … --contrasena …`                                                                    |

@@ -9,7 +9,9 @@
     "dev": "node --watch src/index.js",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
     "respaldo": "node scripts/respaldo.js",
-    "limpiar-pruebas": "node scripts/limpiar-pruebas.js"
+    "limpiar-pruebas": "node scripts/limpiar-pruebas.js",
+    "restaurar": "node scripts/restaurar.js",
+    "acceso": "node scripts/acceso.js"
   },
   "engines": {
     "node": ">=22"

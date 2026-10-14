@@ -7,6 +7,7 @@ import { after, describe, test } from 'node:test';
 import { applyPatches, enablePatches } from 'immer';
 import WebSocket from 'ws';
 import { act, call, login, restaurantSale, start, state } from './helpers.js';
+import { viewState } from '../src/visibility.js';
 
 enablePatches();
 
@@ -154,7 +155,11 @@ describe('tiempo real', () => {
 
     assert.equal(messages[0].type, 'hello');
     assert.equal(messages.filter((m) => m.type === 'patch').length, 3);
-    assert.deepEqual(mirror, state(app));
+    // Recepción recibe su vista (sin la bitácora ni correos de gerencia), siempre al día
+    assert.deepEqual(
+      JSON.parse(JSON.stringify(mirror)),
+      JSON.parse(JSON.stringify(viewState(state(app), 'recepcion'))),
+    );
     assert.ok(mirror.orders.find((o) => o.id === 'o_ws00001').lines[0].sent);
 
     // Sin sesión válida no se conecta

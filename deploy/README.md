@@ -94,7 +94,64 @@ monarca-estado                         # servicios, versión, base, respaldos, d
 Restart-Service monarca                # reiniciar el servidor
 Get-Content C:\ProgramData\Monarca\logs\monarca.out.log -Tail 50 -Wait   # registro en vivo
 monarca-limpiar-pruebas                # borra los datos de prueba antes de abrir (pide confirmar)
+monarca-respaldo                       # respaldo inmediato (también fuera del hotel, si está configurado)
+monarca-restaurar                      # lista los respaldos; con un nombre, lo restaura (pide confirmar)
+monarca-acceso                         # gerencia: nueva contraseña o alta de administración general
 ```
+
+**Acceso de gerencia** (olvidó la contraseña, o hay que crear a alguien de administración general):
+
+```powershell
+monarca-acceso --correo dueña@hotel.com --contrasena "clave nueva"
+monarca-acceso --nombre "Soporte HAS" --correo soporte@hassistemas.com --contrasena "clave"
+```
+
+El personal con PIN no lo necesita: el gerente lo cambia en Configuración → Usuarios.
+
+## 3b · Respaldos
+
+- **Cada noche a las 3:00** (`MONARCA_RESPALDO_HORA`) el servidor copia la base a
+  `C:\ProgramData\Monarca\respaldos\diario-….db`, sin detener nada. Se conservan los últimos 30.
+- **Fuera del hotel:** sube la misma copia **comprimida y cifrada** (AES-256) a Cloudflare R2. Allá se
+  conservan los últimos 30 días y uno por mes del último año. Si no hay internet, la sube en cuanto
+  vuelve (lo reintenta cada hora).
+- **Dónde se ve:** `monarca-estado` y, para la dueña, Configuración → Respaldo, con avisos si algo falla.
+- **Además** quedan copias automáticas antes de cada actualización, de cada migración de datos,
+  de limpiar los datos de prueba y de cada restauración.
+
+### Configurar Cloudflare R2 (una vez, desde tu Mac)
+
+1. dash.cloudflare.com → **R2 Object Storage** → activar el plan gratuito (pide una tarjeta, pero
+   no cobra mientras se use menos de 10 GB y 1 millón de operaciones al mes).
+2. **Create bucket** → nombre `monarca-respaldos`, ubicación automática.
+3. R2 → **Manage API tokens** → **Create API token**:
+   - permiso **Object Read & Write**;
+   - solo el bucket `monarca-respaldos`;
+   - copia el **Access Key ID**, el **Secret Access Key** y el **endpoint** (`https://<id>.r2.cloudflarestorage.com`).
+4. En la mini PC, agrega a `C:\ProgramData\Monarca\monarca.env`:
+
+   ```
+   MONARCA_S3_ENDPOINT=https://<id>.r2.cloudflarestorage.com
+   MONARCA_S3_BUCKET=monarca-respaldos
+   MONARCA_S3_KEY_ID=…
+   MONARCA_S3_SECRET=…
+   ```
+
+5. `Restart-Service monarca` y `monarca-respaldo`: debe decir "Copia fuera del hotel: … (cifrada)".
+
+**La clave de cifrado** (`MONARCA_RESPALDO_CLAVE`) la genera `instalar.ps1` y la muestra una vez.
+Guárdala en tu gestor de contraseñas: **sin ella, la copia de R2 no se puede abrir**. Si la cambias,
+los respaldos anteriores siguen necesitando la clave vieja.
+
+### Si la mini PC se daña o se pierde
+
+1. En una mini PC nueva: `instalar.ps1` como la primera vez.
+2. Pon en `monarca.env` la **misma** clave de respaldo y los datos de R2.
+3. `monarca-restaurar` (muestra la lista) y `monarca-restaurar diario-AAAAMMDD-030000.db`.
+4. Túnel de Cloudflare: el mismo comando del conector. Las tablets solo cambian de dirección si cambió la IP.
+
+Se pierde lo registrado desde el último respaldo (como máximo, lo del día). Para no perder ni eso,
+también se puede correr `monarca-respaldo` al cerrar caja.
 
 ## 4 · Acceso remoto con Cloudflare (B3)
 

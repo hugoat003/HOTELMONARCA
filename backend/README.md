@@ -39,7 +39,13 @@ recepción y teléfono de gerencia) se conectan a él por la red local y ven los
   | Administración general | Además: precios y tarifas, usuarios de gerencia, reportes históricos, bitácora, datos del negocio y respaldos |
   - Precios de venta: crear un producto con su precio lo puede hacer el gerente; cambiar el precio de algo que ya existe, solo la administración general.
   - Debe quedar siempre al menos una persona de administración general activa.
-  - Los reportes históricos y la bitácora se ocultan en la pantalla del gerente, pero el estado completo llega a todos los dispositivos.
+
+- **Qué datos recibe cada dispositivo** (`src/visibility.js`): cada tablet recibe solo lo que su rol usa,
+  al cargar y en cada cambio en tiempo real.
+  - Mesero: sin huéspedes, eventos, bitácora, cierres de caja ni movimientos de inventario; de las
+    reservas, solo el nombre del huésped; de las ventas, sin los datos de facturación del cliente.
+  - Recepción y gerente: sin la bitácora (y recepción, sin los correos de gerencia).
+  - Administración general: todo.
 
 - **Autorización de gerencia:**
   - Para anular platillos enviados, cortesías, descuentos, mermas, ajustes, quitar cargos y cerrar caja.
@@ -134,10 +140,20 @@ Dos impresoras térmicas **3nstar RPT004** (80 mm, 48 columnas, ESC/POS, corte a
 5. Opcional: carga el logo del hotel en la memoria de la impresora de caja con la utilidad de 3nstar
    (posición 1) y activa "Usar el logo guardado".
 
+## Respaldos y formato de los datos
+
+- **Respaldos** (`src/backup.js`, `src/backups.js`): copia nocturna local y, cifrada (gzip + AES-256-GCM),
+  en un almacenamiento compatible con S3 (Cloudflare R2; `src/s3.js`, sin dependencias).
+  Configuración y procedimiento en [deploy/README.md](../deploy/README.md#3b--respaldos).
+- **Migraciones** (`shared/migrations.js`): cuando cambia la forma de los datos se sube `VERSION`
+  (`shared/version.js`) y se agrega un paso `N → N+1`. Al arrancar, el servidor respalda la base y la
+  migra; también migra los respaldos viejos al cargarlos. Si los datos son más nuevos que el
+  programa (se regresó a una versión anterior), no arranca, para no dañarlos.
+- **Comandos** (con el servidor detenido, salvo el respaldo): `npm run respaldo`, `npm run restaurar`,
+  `npm run acceso`, `npm run limpiar-pruebas`.
+
 ## Pendiente (siguientes fases)
 
-- **B3:** Cloudflare Tunnel y Access para entrar desde fuera.
-- **B4:** respaldos automáticos (local y externo cifrado) y restauración probada.
 - **B5:**
   - Instalación en el NUC con Ubuntu, `systemd` y la caja en modo kiosco.
   - Carga de los datos reales.

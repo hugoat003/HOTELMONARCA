@@ -440,6 +440,21 @@ export class SyncClient {
     await this.api('/api/admin/restore', { body: { state }, timeout: 120_000 });
     await this.resync();
   }
+  // Respaldos automáticos (administración general): estado, o { error } si no están activos
+  async backups() {
+    try {
+      return await this.api('/api/admin/backups');
+    } catch (e) {
+      return { error: e instanceof NetworkError ? 'Sin conexión con el servidor' : e.message };
+    }
+  }
+  async runBackup() {
+    try {
+      return { ok: true, ...(await this.api('/api/admin/backups', { body: {}, timeout: 120_000 })) };
+    } catch (e) {
+      return { ok: false, error: e instanceof NetworkError ? 'Sin conexión con el servidor' : e.message };
+    }
+  }
   async resetDemo() {
     await this.whenIdle();
     await this.api('/api/admin/reset-demo', { body: {} });

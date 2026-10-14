@@ -40,6 +40,8 @@ export function StoreProvider({ children }) {
       logout: client.logout,
       authorizeManager: (password) => client.authorize(password),
       restore: (data) => client.restore(data),
+      backups: () => client.backups(),
+      runBackup: () => client.runBackup(),
       resetDemo: () => client.resetDemo(),
     };
   }, [snap]);

@@ -88,6 +88,7 @@ test('login y teléfono', async ({ browser }) => {
   await page.getByRole('button', { name: 'Volver' }).click();
   await login(page, 'Sofía Directora');
   await expect(page.getByText('Hola, Sofía')).toBeVisible();
+  await page.mouse.move(0, 0); // sin el globo del gráfico donde quedó el puntero
   await snap(page, 'resumen-telefono');
   await page.close();
 });

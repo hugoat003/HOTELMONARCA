@@ -60,7 +60,9 @@ foreach ($d in @($Root, "$Root\versiones", "$Root\servicio", "$Root\bin", $Data,
 }
 # El servicio puede leer el programa y escribir solo en sus datos
 icacls $Root /grant "${LocalService}:(OI)(CI)RX" /T /Q | Out-Null
-icacls $Data /grant "${LocalService}:(OI)(CI)M" /T /Q | Out-Null
+# Los datos (base, respaldos y monarca.env con sus claves) solo los leen el servicio y los
+# administradores: ni la cuenta de Windows de la caja puede abrirlos
+icacls $Data /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' "${LocalService}:(OI)(CI)M" /T /Q | Out-Null
 # La llave de GitHub solo la leen los administradores
 # (por identificador: el nombre "Administradores" cambia según el idioma de Windows)
 icacls $SshDir /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' /Q | Out-Null
@@ -95,6 +97,18 @@ git config --system --replace-all safe.directory '*' | Out-Null
 Step 'Configuración del servidor'
 $envFile = Join-Path $Data 'monarca.env'
 if (-not (Test-Path $envFile)) { Copy-Item "$Root\repo\deploy\windows\monarca.env.example" $envFile }
+# Clave para cifrar los respaldos que salen del hotel. Sin ella no se pueden abrir: hay que guardarla aparte.
+if (-not (Select-String -Path $envFile -Pattern '^\s*MONARCA_RESPALDO_CLAVE\s*=\s*\S' -Quiet)) {
+  $bytes = [byte[]]::new(32)
+  [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+  $clave = [Convert]::ToBase64String($bytes)
+  Add-Content -Encoding utf8 $envFile "MONARCA_RESPALDO_CLAVE=$clave"
+  Write-Host ''
+  Write-Host 'Clave de los respaldos (guárdala en tu gestor de contraseñas, NO en esta computadora):' -ForegroundColor Yellow
+  Write-Host "  $clave" -ForegroundColor Yellow
+  Write-Host 'Sin esta clave no se puede abrir la copia guardada fuera del hotel si la mini PC se pierde.'
+  Read-Host 'Cuando la tengas guardada, presiona Enter'
+}
 Write-Host "Configuración: $envFile"
 
 Step 'Servicio de Windows (WinSW)'
@@ -112,13 +126,11 @@ if (-not (Get-Service monarca -ErrorAction SilentlyContinue)) {
 }
 Exec { sc.exe config monarca obj= 'NT AUTHORITY\LocalService' password= '' } 'asignar la cuenta del servicio'
 
-Step 'Comandos: monarca-actualizar, monarca-estado y monarca-limpiar-pruebas'
-'@"C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File "C:\Monarca\app\deploy\windows\monarca-actualizar.ps1" %*' |
-  Out-File -Encoding ascii "$Root\bin\monarca-actualizar.cmd"
-'@"C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File "C:\Monarca\app\deploy\windows\monarca-estado.ps1" %*' |
-  Out-File -Encoding ascii "$Root\bin\monarca-estado.cmd"
-'@"C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File "C:\Monarca\app\deploy\windows\monarca-limpiar-pruebas.ps1" %*' |
-  Out-File -Encoding ascii "$Root\bin\monarca-limpiar-pruebas.cmd"
+Step 'Comandos de soporte (monarca-actualizar, monarca-estado, monarca-respaldo…)'
+foreach ($cmd in 'actualizar', 'estado', 'limpiar-pruebas', 'respaldo', 'restaurar', 'acceso') {
+  "@`"C:\Program Files\PowerShell\7\pwsh.exe`" -NoProfile -ExecutionPolicy Bypass -File `"C:\Monarca\app\deploy\windows\monarca-$cmd.ps1`" %*" |
+    Out-File -Encoding ascii "$Root\bin\monarca-$cmd.cmd"
+}
 $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
 if ($machinePath -notlike "*$Root\bin*") {
   [Environment]::SetEnvironmentVariable('Path', "$machinePath;$Root\bin", 'Machine')
@@ -185,4 +197,4 @@ if ($Caja) {
 
 $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback|vEthernet' -and $_.IPAddress -notlike '169.*' } | Select-Object -First 1).IPAddress
 Write-Host "`n✓ POS Monarca instalado. En las tablets: http://${ip}:3000" -ForegroundColor Green
-Write-Host 'Siguiente: túnel de Cloudflare (deploy/README.md → Acceso remoto).'
+Write-Host 'Siguiente: túnel de Cloudflare y copia de respaldo fuera del hotel (deploy/README.md).'

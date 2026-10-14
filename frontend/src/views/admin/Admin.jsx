@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DataTable from '../../components/DataTable.jsx';
 import Tabs from '../../components/Tabs.jsx';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
@@ -6,7 +6,7 @@ import { useUI } from '../../components/ui/UIProvider.jsx';
 import { DEMO } from '../../config.js';
 import { COURSES, EVENT_UNITS, isManager, isOwner, PASSWORD_MIN, ROLE_LABELS } from '@shared/data.js';
 import { dishCost, marginPct } from '@shared/inventory.js';
-import { uid } from '@shared/dates.js';
+import { fmtDateTime, uid } from '@shared/dates.js';
 import { isActiveRes } from '@shared/hotel.js';
 import { A } from '../../store/actions.js';
 import { useStore, VERSION } from '../../store/store.jsx';
@@ -832,7 +832,8 @@ function DatosTab() {
     if (!file) return;
     try {
       const data = JSON.parse(await file.text());
-      if (data.version !== VERSION || !Array.isArray(data.menu)) throw new Error();
+      // Un respaldo de una versión anterior lo actualiza el servidor al cargarlo
+      if (!(data.version <= VERSION) || !Array.isArray(data.menu)) throw new Error();
       // Reemplaza todo: se confirma antes, con lo que trae el respaldo
       ui.confirm(
         {
@@ -853,59 +854,132 @@ function DatosTab() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: 760, gap: 18 }}>
-      <div>
+    <div className="stack gap-20" style={{ maxWidth: 760 }}>
+      <BackupStatus />
+      <div className="card" style={{ gap: 18 }}>
+        <div>
+          <div className="report-title" style={{ fontSize: 20 }}>
+            {DEMO ? 'Datos de la demostración' : 'Copia manual'}
+          </div>
+          <div className="panel-sub text-md">
+            {DEMO
+              ? 'Los datos viven en el servidor del hotel y los ven todos los dispositivos. Antes de presentar, restaura los datos de ejemplo para empezar con mesas, reservas y ventas del día.'
+              : 'Descarga una copia de toda la información o carga una copia anterior.'}
+          </div>
+        </div>
+        <div className="kv">
+          <span>Órdenes abiertas</span>
+          <strong>{state.orders.length}</strong>
+          <span>Ventas registradas</span>
+          <strong>{state.sales.length}</strong>
+          <span>Reservas</span>
+          <strong>{state.reservations.length}</strong>
+          <span>Cierres de caja</span>
+          <strong>{state.shiftHistory.length}</strong>
+        </div>
+        <div className="chips">
+          <button className="btn" onClick={exportJson}>
+            Exportar respaldo (JSON)
+          </button>
+          <button className="btn" onClick={() => fileRef.current.click()}>
+            Importar respaldo
+          </button>
+          <input ref={fileRef} type="file" accept="application/json" hidden onChange={importJson} />
+          {DEMO && (
+            <button
+              className="btn btn-primary btn-danger"
+              onClick={() =>
+                ui.confirm(
+                  {
+                    title: 'Restaurar datos de ejemplo',
+                    message:
+                      'Se borran todos los cambios (en todos los dispositivos) y se cargan los datos de ejemplo con fechas de hoy.',
+                    confirmLabel: 'Restaurar',
+                    danger: true,
+                  },
+                  () =>
+                    resetDemo().then(
+                      () => ui.notify('Datos de ejemplo restaurados'),
+                      (e) => ui.notify(e.message || 'No se pudo restaurar'),
+                    ),
+                )
+              }
+            >
+              Restaurar datos de ejemplo
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const kbs = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+// Respaldo automático: cada noche en la mini PC y, cifrado, fuera del hotel
+function BackupStatus() {
+  const { backups, runBackup } = useStore();
+  const ui = useUI();
+  const [info, setInfo] = useState(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    backups().then(setInfo);
+  }, [backups]);
+
+  const now = async () => {
+    setBusy(true);
+    const r = await runBackup();
+    setBusy(false);
+    if (!r.ok) return ui.notify(r.error);
+    setInfo((i) => ({ ...i, ...r.status }));
+    ui.notify(r.uploaded ? 'Respaldo listo, también fuera del hotel' : 'Respaldo listo en la mini PC');
+  };
+
+  return (
+    <div className="card gap-12">
+      <div className="row items-center">
         <div className="report-title" style={{ fontSize: 20 }}>
-          {DEMO ? 'Datos de la demostración' : 'Respaldo de datos'}
+          Respaldo automático
         </div>
-        <div className="panel-sub text-md">
-          {DEMO
-            ? 'Los datos viven en el servidor del hotel y los ven todos los dispositivos. Antes de presentar, restaura los datos de ejemplo para empezar con mesas, reservas y ventas del día.'
-            : 'Descarga una copia de toda la información o carga una copia anterior.'}
-        </div>
-      </div>
-      <div className="kv">
-        <span>Órdenes abiertas</span>
-        <strong>{state.orders.length}</strong>
-        <span>Ventas registradas</span>
-        <strong>{state.sales.length}</strong>
-        <span>Reservas</span>
-        <strong>{state.reservations.length}</strong>
-        <span>Cierres de caja</span>
-        <strong>{state.shiftHistory.length}</strong>
-      </div>
-      <div className="chips">
-        <button className="btn" onClick={exportJson}>
-          Exportar respaldo (JSON)
-        </button>
-        <button className="btn" onClick={() => fileRef.current.click()}>
-          Importar respaldo
-        </button>
-        <input ref={fileRef} type="file" accept="application/json" hidden onChange={importJson} />
-        {DEMO && (
-          <button
-            className="btn btn-primary btn-danger"
-            onClick={() =>
-              ui.confirm(
-                {
-                  title: 'Restaurar datos de ejemplo',
-                  message:
-                    'Se borran todos los cambios (en todos los dispositivos) y se cargan los datos de ejemplo con fechas de hoy.',
-                  confirmLabel: 'Restaurar',
-                  danger: true,
-                },
-                () =>
-                  resetDemo().then(
-                    () => ui.notify('Datos de ejemplo restaurados'),
-                    (e) => ui.notify(e.message || 'No se pudo restaurar'),
-                  ),
-              )
-            }
-          >
-            Restaurar datos de ejemplo
+        {info && !info.error && (
+          <button className="btn small" disabled={busy} onClick={now}>
+            {busy ? 'Respaldando…' : 'Respaldar ahora'}
           </button>
         )}
       </div>
+      {!info ? (
+        <div className="panel-sub">Consultando…</div>
+      ) : info.error ? (
+        <div className="panel-sub">{info.error}.</div>
+      ) : (
+        <>
+          {info.ok ? (
+            <div className="note-box">Todo en orden: hay copia reciente en la mini PC y fuera del hotel.</div>
+          ) : (
+            <div className="note-box warn" role="alert">
+              {info.problems.map((p) => (
+                <div key={p}>{p}</div>
+              ))}
+            </div>
+          )}
+          <div className="kv">
+            <span>Cada noche a las</span>
+            <strong>{info.hour}:00</strong>
+            <span>Último en la mini PC</span>
+            <strong>{info.lastOk ? `${fmtDateTime(info.lastOk.at)} · ${kbs(info.lastOk.size)}` : 'Ninguno'}</strong>
+            <span>Último fuera del hotel</span>
+            <strong>
+              {!info.remote
+                ? 'No configurado'
+                : info.remoteOk
+                  ? `${fmtDateTime(info.remoteOk.at)} · ${kbs(info.remoteOk.size)} cifrado`
+                  : 'Ninguno'}
+            </strong>
+            <span>Copias en la mini PC</span>
+            <strong>{info.local?.length ?? 0}</strong>
+          </div>
+        </>
+      )}
     </div>
   );
 }

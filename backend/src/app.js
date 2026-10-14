@@ -10,10 +10,13 @@ import fastifyWebsocket from '@fastify/websocket';
 import Fastify from 'fastify';
 import { ActionError } from '../../shared/sync.js';
 import { Auth } from './auth.js';
+import { snapshot, stamp } from './backup.js';
+import { BackupService } from './backups.js';
 import { openDb } from './db.js';
 import { Engine } from './engine.js';
 import { checkRole, claimedApprovers, Forbidden, needsManager, OWNER_MSG, ownerOnly, stampActors } from './policy.js';
 import { autoJobs } from './printing/hooks.js';
+import { viewPatches, viewState } from './visibility.js';
 import { PrintQueue } from './printing/queue.js';
 import { initialState } from './seed.js';
 import {
@@ -27,6 +30,8 @@ import {
   saleTicket,
 } from '../../shared/tickets.js';
 import { isManager, isOwner, PASSWORD_MIN, ROLE_LABELS } from '../../shared/data.js';
+import { migrate, MigrationError, versionOf } from '../../shared/migrations.js';
+import { VERSION } from '../../shared/version.js';
 
 const ROLES = Object.keys(ROLE_LABELS);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,18 +51,51 @@ class BadRequest extends Error {
 
 // Un "hotel" es una base de datos con su estado, sus sesiones y los dispositivos conectados.
 // En producción hay uno solo; en modo prueba cada prueba tiene el suyo (aislado por namespace).
-function createHotel({ dbFile, seed, printing = {} }) {
+// backupDir: dónde dejar la copia previa a una migración (en producción, la carpeta de respaldos)
+async function createHotel({ dbFile = ':memory:', seed, printing = {}, backupDir = null, log }) {
   const db = openDb(dbFile);
   const engine = new Engine(db);
   const auth = new Auth(db);
   const hotel = { db, engine, auth, sockets: new Set(), onPrinters: () => {} };
   if (!engine.initialized) install(hotel, initialState(seed));
-  hotel.printing = new PrintQueue(db, {
+  else await migrateOnStart(hotel, { backupDir, log });
+  return withPrinting(hotel, printing);
+}
+
+// Hotel de prueba en memoria: nace con los datos de ejemplo (no hay nada que migrar)
+function createTestHotel({ seed, printing }) {
+  const db = openDb(':memory:');
+  const hotel = { db, engine: new Engine(db), auth: new Auth(db), sockets: new Set(), onPrinters: () => {} };
+  install(hotel, initialState(seed));
+  return withPrinting(hotel, printing);
+}
+
+function withPrinting(hotel, printing = {}) {
+  hotel.printing = new PrintQueue(hotel.db, {
     ...printing,
     getConfig: () => hotel.engine.state.config,
     onChange: () => hotel.onPrinters(),
   });
   return hotel;
+}
+
+// Datos guardados con un formato anterior: se respaldan tal cual y se llevan al formato actual.
+// Si son de un formato más nuevo (se regresó a una versión anterior del programa), no arranca:
+// trabajar con ellos podría dañarlos.
+async function migrateOnStart(hotel, { backupDir, log }) {
+  const from = versionOf(hotel.engine.state);
+  if (from === VERSION) return;
+  if (from > VERSION)
+    throw new MigrationError(
+      `Los datos son de una versión más nueva del sistema (formato ${from}) que este programa (formato ${VERSION}). ` +
+        'Para usar esta versión, restaura el respaldo "antes-de-actualizar" de esa fecha (monarca-restaurar).',
+    );
+  if (backupDir) {
+    const file = join(backupDir, `antes-de-migrar-v${from}-a-v${VERSION}-${stamp()}.db`);
+    await snapshot(hotel.db, file);
+    log?.warn(`Datos del formato ${from}: respaldados en ${file} antes de actualizarlos al ${VERSION}`);
+  }
+  hotel.engine.replaceAll(migrate(hotel.engine.state));
 }
 
 // Encola lo que una operación imprime sola. Un error al imprimir nunca deshace la operación.
@@ -144,6 +182,8 @@ export async function buildApp({
   test = false,
   logger = false,
   printing = {}, // pruebas: { retryMs, send }
+  // Respaldos: { dir, hour, secret, remote (S3), start } — sin dir, no hay respaldos automáticos
+  backups = null,
 } = {}) {
   const app = Fastify({ logger, bodyLimit: 50 * 1024 * 1024 });
   await app.register(fastifyWebsocket, {
@@ -159,7 +199,9 @@ export async function buildApp({
     }
   })();
 
-  const main = watchPrinters(createHotel({ dbFile, seed, printing }));
+  const main = watchPrinters(await createHotel({ dbFile, seed, printing, backupDir: backups?.dir, log: app.log }));
+  main.backups = backups?.dir ? new BackupService({ db: main.db, log: app.log, ...backups }) : null;
+  if (main.backups && backups.start !== false) main.backups.start();
   const testHotels = new Map();
   const nsOf = (req) => (test ? req.headers['x-monarca-ns'] || req.query?.ns || '' : '');
   const hotelFor = (req) => {
@@ -173,7 +215,7 @@ export async function buildApp({
         testHotels.get(oldest).db.close();
         testHotels.delete(oldest);
       }
-      h = watchPrinters(createHotel({ dbFile: ':memory:', seed, printing }));
+      h = watchPrinters(createTestHotel({ seed, printing }));
       testHotels.set(ns, h);
     }
     return h;
@@ -182,6 +224,30 @@ export async function buildApp({
   const broadcast = (hotel, msg) => {
     const data = JSON.stringify(msg);
     for (const s of hotel.sockets) if (s.readyState === 1) s.send(data);
+  };
+  // Cambios de una operación: cada dispositivo recibe solo lo que su rol puede ver (visibility.js)
+  const broadcastPatch = (hotel, { rev, aid, patches, prev }) => {
+    const byRole = new Map();
+    for (const s of hotel.sockets) {
+      if (s.readyState !== 1) continue;
+      const user = activeUser(hotel, s.userId);
+      if (!user) {
+        s.close(4401, 'sesion');
+        continue;
+      }
+      // Le cambiaron el rol: recarga los datos con lo que ahora le toca ver
+      if (user.role !== s.role) {
+        s.role = user.role;
+        s.send(JSON.stringify({ type: 'reload', rev }));
+        continue;
+      }
+      if (!byRole.has(user.role))
+        byRole.set(
+          user.role,
+          JSON.stringify({ type: 'patch', rev, aid, patches: viewPatches(patches, user.role, prev) }),
+        );
+      s.send(byRole.get(user.role));
+    }
   };
   // Estado de las impresoras a todas las pantallas (agrupando cambios seguidos)
   function watchPrinters(hotel) {
@@ -298,7 +364,7 @@ export async function buildApp({
 
   app.get('/api/state', { preHandler: requireUser }, async (req) => ({
     rev: req.hotel.engine.rev,
-    state: req.hotel.engine.state,
+    state: viewState(req.hotel.engine.state, req.user.role),
     user: publicUser(req.user),
   }));
 
@@ -408,7 +474,7 @@ export async function buildApp({
     });
     if (grant) hotel.auth.useGrant(session.id, grant);
     // Siempre se avisa (aunque no cambie nada) para que los dispositivos no vean saltos de versión
-    broadcast(hotel, { type: 'patch', rev, aid, patches });
+    broadcastPatch(hotel, { rev, aid, patches, prev });
     autoPrint(hotel, prev, hotel.engine.state, calls, user.id, req.log);
     return { ok: true, rev };
   });
@@ -500,14 +566,34 @@ export async function buildApp({
     return rev;
   };
   app.post('/api/admin/restore', { preHandler: requireOwner }, async (req) => {
-    const next = req.body?.state;
-    const cur = req.hotel.engine.state;
-    if (!next || next.version !== cur.version || !Array.isArray(next.menu) || !Array.isArray(next.users))
+    let next = req.body?.state;
+    if (!next || !versionOf(next) || !Array.isArray(next.menu) || !Array.isArray(next.users))
       throw new BadRequest('El archivo no es un respaldo válido de POS Monarca');
+    // Un respaldo de una versión anterior se lleva al formato actual
+    try {
+      next = migrate(next);
+    } catch (e) {
+      if (e instanceof MigrationError) throw new BadRequest(e.message);
+      throw e;
+    }
     if (!activeOwner(next.users))
       throw new BadRequest('El respaldo no tiene un usuario de administración general activo');
     return { ok: true, rev: replaceState(req.hotel, next) };
   });
+  // Estado de los respaldos y respaldo inmediato (administración general)
+  const backupsOf = (req) => {
+    if (req.hotel !== main || !main.backups) throw new ActionError('Los respaldos automáticos no están activos');
+    return main.backups;
+  };
+  app.get('/api/admin/backups', { preHandler: requireOwner }, async (req) => {
+    const b = backupsOf(req);
+    return { ...b.status(), local: b.local().slice(0, 15) };
+  });
+  app.post('/api/admin/backups', { preHandler: requireOwner }, async (req) => {
+    const r = await backupsOf(req).run('manual');
+    return { ok: true, ...r, status: main.backups.status() };
+  });
+
   app.post('/api/admin/reset-demo', { preHandler: requireOwner }, async (req, reply) => {
     if (!demo && !test) return reply.code(404).send({ error: 'No disponible' });
     return { ok: true, rev: replaceState(req.hotel, initialState('demo')) };
@@ -535,7 +621,10 @@ export async function buildApp({
   app.get('/ws', { websocket: true }, (socket, req) => {
     const hotel = hotelFor(req);
     const session = hotel.auth.session(tokenOf(req));
-    if (!session || !activeUser(hotel, session.userId)) return socket.close(4401, 'sesion');
+    const user = session && activeUser(hotel, session.userId);
+    if (!user) return socket.close(4401, 'sesion');
+    socket.userId = user.id;
+    socket.role = user.role;
     hotel.sockets.add(socket);
     socket.isAlive = true;
     socket.on('pong', () => (socket.isAlive = true));
@@ -561,6 +650,8 @@ export async function buildApp({
   heartbeat.unref();
   app.addHook('onClose', async () => {
     clearInterval(heartbeat);
+    main.backups?.stop();
+    await main.backups?.running?.catch(() => {});
     for (const h of [main, ...testHotels.values()]) {
       for (const s of h.sockets) s.terminate();
       h.printing.close();

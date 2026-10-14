@@ -58,8 +58,20 @@ else { '(ninguna: la de caja por USB se instala con su driver; la de cocina va p
 
 Title 'Base de datos y respaldos'
 if (Test-Path $Db) { '{0:N1} MB · modificada {1}' -f ((Get-Item $Db).Length / 1MB), (Get-Item $Db).LastWriteTime }
+# Lo escribe el servidor después de cada respaldo (automático o manual)
+$estado = Join-Path $DataDir 'respaldos\estado.json'
+if (Test-Path $estado) {
+  $r = Get-Content $estado -Raw | ConvertFrom-Json
+  $fmt = { param($x) if ($x) { '{0:dd/MM/yyyy HH:mm} · {1:N0} KB' -f ([datetime]$x.at).ToLocalTime(), ($x.size / 1KB) } else { 'ninguno' } }
+  "Cada noche a las $($r.hour):00"
+  "Último en la mini PC:    $(& $fmt $r.lastOk)"
+  "Último fuera del hotel:  $(if ($r.remote) { & $fmt $r.remoteOk } else { 'no configurado' })"
+  if ($r.ok) { Write-Host 'Respaldos en orden' -ForegroundColor Green }
+  else { $r.problems | ForEach-Object { Write-Host "  $_" -ForegroundColor Red } }
+} else { Write-Host 'Aún no hay respaldos automáticos (el primero sale esta noche, o corre monarca-respaldo)' -ForegroundColor Yellow }
 Get-ChildItem (Join-Path $DataDir 'respaldos') -Filter *.db -ErrorAction SilentlyContinue |
   Sort-Object LastWriteTime -Descending | Select-Object -First 3 | ForEach-Object { "  $($_.Name)" }
+Write-Host 'Restaurar uno: monarca-restaurar (sin nombre, muestra la lista)'
 
 Title 'Disco'
 $drive = Get-PSDrive ($DataDir.Substring(0, 1))

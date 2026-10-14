@@ -131,10 +131,15 @@ test('evento con habitaciones apartadas: se liberan al cancelar', async ({ page 
 
 test('resumen: pendientes del día ordenados por urgencia', async ({ page }) => {
   await fresh(page);
-  await login(page, 'Marta Gerente');
+  // La administración general ve todos los pendientes, incluido el de la bitácora
+  await login(page, 'Sofía Directora');
   const items = page.locator('.dash-alert');
   await expect(items.first()).toHaveClass(/high/);
   await expect(page.getByText(/Último cierre con faltante de Q 20.00/)).toBeVisible();
   await expect(page.getByText(/Capacitación Banco Industrial .* sigue en cotización/)).toBeVisible();
   await expect(page.getByText(/registros? en la bitácora hoy/)).toBeVisible();
+  // El gerente no recibe la bitácora: no ve ese pendiente
+  await login(page, 'Marta Gerente');
+  await expect(page.getByText(/Capacitación Banco Industrial .* sigue en cotización/)).toBeVisible();
+  await expect(page.getByText(/registros? en la bitácora hoy/)).toHaveCount(0);
 });
