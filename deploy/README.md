@@ -109,6 +109,14 @@ no `algo.cliente.hassistemas.com`.
 
 Atajo opcional (Rules → Redirect Rules): `hassistemas.com/monarca` → `https://monarca.hassistemas.com`.
 
+> **Estado (14 oct 2026):** dominio, Zero Trust (plan Free, equipo `hassistemas`), túnel `monarca`
+> con sus dos direcciones y DNS, y las aplicaciones de Access ("Sistema Monarca" y "Soporte Monarca
+> (terminal)", código por correo) ya están configurados y probados: sin autorización, ambas
+> direcciones llevan a la pantalla de ingreso. **Falta** solo lo que va en la mini PC: correr el
+> comando del conector (guardado en la Mac de Hugo, `~/.config/hassistemas/monarca-conector.txt`)
+> y el paso e). Para agregar a la dueña: Access controls → Policies → "Monarca · sistema" → agregar
+> su correo.
+
 ### b) Zero Trust (control de acceso, gratis hasta 50 usuarios)
 
 En **Zero Trust**, elige un nombre de equipo y el plan **Free**. Cloudflare puede pedir una tarjeta
