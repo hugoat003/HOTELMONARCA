@@ -15,12 +15,12 @@ const JOB_STATUS = { pendiente: 'En espera', impreso: 'Impreso', simulado: 'Simu
 export function printerProblem(p) {
   if (p.mode === 'red' && !IP_RE.test(p.host || '')) return 'Falta una IP válida (ej. 192.168.1.50)';
   if (p.mode === 'red' && !(Number(p.port) > 0)) return 'Falta el puerto (normalmente 9100)';
-  if (p.mode === 'usb' && !p.device) return 'Falta el dispositivo USB';
+  if (p.mode === 'usb' && !p.device) return 'Falta elegir la impresora USB';
   return '';
 }
 
 export default function Impresoras() {
-  const { state, update, printers, print, loadPrinters, printerAction } = useStore();
+  const { state, update, printers, print, loadPrinters, printerAction, localPrinters } = useStore();
   const ui = useUI();
   const [cfg, setCfg] = useState(() => printerConfig(state.config));
   const [view, setView] = useState(null);
@@ -34,6 +34,14 @@ export default function Impresoras() {
     loadPrinters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, pendingSig]);
+
+  // Impresoras instaladas en la mini PC: se piden al elegir USB
+  const [local, setLocal] = useState({ platform: null, printers: [] });
+  const wantsUsb = cfg.cocina.mode === 'usb' || cfg.caja.mode === 'usb';
+  useEffect(() => {
+    if (wantsUsb) localPrinters().then(setLocal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsUsb]);
 
   const setP = (name, k, v) => setCfg({ ...cfg, [name]: { ...cfg[name], [k]: v } });
   const save = () => {
@@ -130,10 +138,25 @@ export default function Impresoras() {
               )}
               {p.mode === 'usb' && (
                 <Field
-                  label="Dispositivo USB"
-                  hint="Solo si la mini PC usa Linux (ej. /dev/usb/lp0). Con Windows, conéctala por red."
+                  label={local.platform === 'linux' ? 'Dispositivo USB' : 'Impresora USB en Windows'}
+                  hint={
+                    local.platform === 'linux'
+                      ? 'Ej. /dev/usb/lp0'
+                      : 'Instálala en Windows con su driver (o "Generic / Text Only") y elígela aquí'
+                  }
                 >
-                  <input className="input" value={p.device} onChange={(e) => setP(name, 'device', e.target.value)} />
+                  <input
+                    className="input"
+                    list={`impresoras-${name}`}
+                    placeholder={local.platform === 'linux' ? '/dev/usb/lp0' : 'Caja'}
+                    value={p.device}
+                    onChange={(e) => setP(name, 'device', e.target.value)}
+                  />
+                  <datalist id={`impresoras-${name}`}>
+                    {local.printers.map((n) => (
+                      <option key={n} value={n} />
+                    ))}
+                  </datalist>
                 </Field>
               )}
               {p.mode === 'simulada' && (

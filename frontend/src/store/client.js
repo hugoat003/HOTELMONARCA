@@ -415,6 +415,14 @@ export class SyncClient {
       /* sin conexión: se actualiza con el siguiente aviso */
     }
   }
+  // Impresoras instaladas en la mini PC (para elegir la USB)
+  async localPrinters() {
+    try {
+      return await this.api('/api/printers/local');
+    } catch {
+      return { platform: null, printers: [] };
+    }
+  }
   async printerAction(action, body) {
     try {
       await this.api('/api/printers/' + action, { body });

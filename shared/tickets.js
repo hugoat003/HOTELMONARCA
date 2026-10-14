@@ -12,8 +12,9 @@ import { modsText, orderLabel } from './orders.js';
 export const PRINTER_NAMES = { cocina: 'Cocina', caja: 'Caja' };
 export const PRINTER_MODES = { red: 'Red (IP)', usb: 'USB', simulada: 'Simulada', apagada: 'Apagada' };
 const DEFAULTS = {
-  cocina: { mode: 'simulada', host: '', port: 9100, device: '/dev/usb/lp0', columns: 48 },
-  caja: { mode: 'simulada', host: '', port: 9100, device: '/dev/usb/lp0', columns: 48 },
+  // device (USB): en Windows, el nombre de la impresora instalada (ej. "Caja"); en Linux, /dev/usb/lp0
+  cocina: { mode: 'simulada', host: '', port: 9100, device: '', columns: 48 },
+  caja: { mode: 'simulada', host: '', port: 9100, device: '', columns: 48 },
   autoReceipt: true, // comprobante al cobrar
   openDrawer: true, // abrir la gaveta al cobrar en efectivo
   kitchenCopies: 1,

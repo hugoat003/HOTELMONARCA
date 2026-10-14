@@ -84,12 +84,16 @@ Probado en una copia simulada con seis casos: primera instalación, versión nor
 arranca (regresa sola y conserva los datos), pruebas rotas (no toca nada), "ya está al día" y regreso
 a una versión instalada (3 s).
 
+**Lista paso a paso para instalar y revisar (oficina, llegada al hotel y apertura):
+[GUIA-INSTALACION.md](GUIA-INSTALACION.md).**
+
 ## 3 · Soporte
 
 ```powershell
 monarca-estado                         # servicios, versión, base, respaldos, disco, Windows, errores
 Restart-Service monarca                # reiniciar el servidor
 Get-Content C:\ProgramData\Monarca\logs\monarca.out.log -Tail 50 -Wait   # registro en vivo
+monarca-limpiar-pruebas                # borra los datos de prueba antes de abrir (pide confirmar)
 ```
 
 ## 4 · Acceso remoto con Cloudflare (B3)
@@ -177,5 +181,4 @@ operando en su red local.
 
 Si algún día la mini PC usa Ubuntu en lugar de Windows, están los equivalentes en `deploy/`:
 `instalar.sh`, `monarca-actualizar.sh` (probado en copia simulada con cinco casos),
-`monarca-estado.sh`, `monarca.service` (systemd) y `sudoers-monarca`. Con Linux también se puede
-conectar una impresora por USB (`/dev/usb/lp0`).
+`monarca-estado.sh`, `monarca.service` (systemd) y `sudoers-monarca`.

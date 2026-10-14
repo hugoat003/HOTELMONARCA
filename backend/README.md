@@ -77,8 +77,15 @@ Variables de entorno:
 
 ## Impresión (B2)
 
-Dos impresoras térmicas **3nstar RPT004** (80 mm, 48 columnas, ESC/POS, corte automático). Las dos
-se conectan por red:
+Dos impresoras térmicas **3nstar RPT004** (80 mm, 48 columnas, ESC/POS, corte automático):
+**cocina por cable de red** y **caja por USB** en la mini PC, con la gaveta conectada a la de caja.
+
+- **Red:** el servidor envía los bytes al puerto 9100 de la impresora.
+- **USB en Windows:** la impresora se instala con su driver (o "Generic / Text Only") con un nombre,
+  por ejemplo "Caja". El servidor le manda el ticket "crudo" (RAW) por el administrador de impresión
+  (`src/printing/rawprint.ps1`). Antes revisa si Windows la reporta desconectada, sin papel, con la
+  tapa abierta o atorada, para avisar en pantalla y reintentar.
+- **USB en Linux:** el servidor escribe directo al dispositivo (`/dev/usb/lp0`).
 
 | Impresora | Qué imprime                                                                       | Cuándo                      |
 | --------- | --------------------------------------------------------------------------------- | --------------------------- |

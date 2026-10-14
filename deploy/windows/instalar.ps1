@@ -112,11 +112,13 @@ if (-not (Get-Service monarca -ErrorAction SilentlyContinue)) {
 }
 Exec { sc.exe config monarca obj= 'NT AUTHORITY\LocalService' password= '' } 'asignar la cuenta del servicio'
 
-Step 'Comandos: monarca-actualizar y monarca-estado'
+Step 'Comandos: monarca-actualizar, monarca-estado y monarca-limpiar-pruebas'
 '@"C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File "C:\Monarca\app\deploy\windows\monarca-actualizar.ps1" %*' |
   Out-File -Encoding ascii "$Root\bin\monarca-actualizar.cmd"
 '@"C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File "C:\Monarca\app\deploy\windows\monarca-estado.ps1" %*' |
   Out-File -Encoding ascii "$Root\bin\monarca-estado.cmd"
+'@"C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File "C:\Monarca\app\deploy\windows\monarca-limpiar-pruebas.ps1" %*' |
+  Out-File -Encoding ascii "$Root\bin\monarca-limpiar-pruebas.cmd"
 $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
 if ($machinePath -notlike "*$Root\bin*") {
   [Environment]::SetEnvironmentVariable('Path', "$machinePath;$Root\bin", 'Machine')

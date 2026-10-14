@@ -33,6 +33,7 @@ export function StoreProvider({ children }) {
       print: (doc, id) => client.print(doc, id),
       loadPrinters: () => client.loadPrinters(),
       printerAction: (action, body) => client.printerAction(action, body),
+      localPrinters: () => client.localPrinters(),
       update: client.update,
       login: (userId, pin) => client.login(userId, pin),
       logout: client.logout,

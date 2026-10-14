@@ -1,6 +1,9 @@
 // API de POS Monarca. Un solo servidor en el NUC: guarda los datos, valida PIN y permisos,
 // y avisa al instante a todos los dispositivos (WebSocket) de cada cambio.
+import { execFile } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
+import { promisify } from 'node:util';
 import { join } from 'node:path';
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
@@ -25,6 +28,7 @@ import {
 } from '../../shared/tickets.js';
 
 const ROLES = ['gerente', 'recepcion', 'mesero'];
+const execFileP = promisify(execFile);
 const MAX_TEST_HOTELS = 300;
 
 class BadRequest extends Error {
@@ -90,6 +94,31 @@ function withClock(now, fn) {
     return fn();
   } finally {
     globalThis.Date = Real;
+  }
+}
+
+// Windows: nombres de las impresoras instaladas. Linux: dispositivos /dev/usb/lp*.
+async function localPrinters() {
+  try {
+    if (process.platform === 'win32') {
+      const { stdout } = await execFileP(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          '[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Printer | Select-Object -ExpandProperty Name',
+        ],
+        { timeout: 15_000, windowsHide: true },
+      );
+      return stdout
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+    }
+    return (await readdir('/dev/usb')).filter((f) => f.startsWith('lp')).map((f) => '/dev/usb/' + f);
+  } catch {
+    return [];
   }
 }
 
@@ -414,6 +443,11 @@ export async function buildApp({
     if (!req.hotel.printing.discard(Number(req.body?.id))) throw new ActionError('Ese ticket ya no está en espera');
     return { ok: true };
   });
+  // Impresoras instaladas en la mini PC (para elegir la USB en Configuración)
+  app.get('/api/printers/local', { preHandler: requireManager }, async () => ({
+    platform: process.platform,
+    printers: await localPrinters(),
+  }));
   app.post('/api/printers/reprint', { preHandler: requireStaff }, async (req) => {
     const job = req.hotel.printing.reprint(Number(req.body?.id), req.user.id);
     if (job === null) throw new ActionError('No se pudo reimprimir');

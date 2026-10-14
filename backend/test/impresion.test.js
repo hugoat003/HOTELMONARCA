@@ -1,12 +1,13 @@
 // Impresión: tickets ESC/POS, impresión automática, cola con reintento y permisos.
 // Se usa una "impresora" falsa por red (puerto TCP) que guarda lo que recibe, como la RPT004.
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import net from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { CMD, encode850, render } from '../src/printing/escpos.js';
+import { sendUsb } from '../src/printing/transport.js';
 import { comandaTicket, pruebaTicket, ticketText } from '../../shared/tickets.js';
 import { seed } from '../../shared/seed.js';
 import { act, call, login, restaurantSale, start, state } from './helpers.js';
@@ -304,6 +305,74 @@ describe('cola con reintento', () => {
     const r = await call(app, 'POST', '/api/print', { token: mgr, body: { doc: 'precuenta', id: 'o2' } });
     assert.equal(r.status, 409);
     assert.match(r.body.error, /apagada/);
+    await app.close();
+  });
+});
+
+describe('impresora USB en Windows (caja)', () => {
+  test('manda el ticket crudo por el administrador de impresión, con el nombre de la impresora', async () => {
+    const calls = [];
+    let seen = null;
+    const run = async (file, args) => {
+      calls.push({ file, args });
+      seen = readFileSync(args[args.indexOf('-File', args.indexOf('-Printer')) + 1]);
+    };
+    const data = render(pruebaTicket(seed(), 'caja'), { drawer: true });
+    await sendUsb('Caja', data, { platform: 'win32', run });
+    assert.equal(calls[0].file, 'powershell.exe');
+    const a = calls[0].args;
+    assert.ok(a[a.indexOf('-File') + 1].endsWith('rawprint.ps1'));
+    assert.equal(a[a.indexOf('-Printer') + 1], 'Caja');
+    assert.ok(seen.equals(data), 'los bytes llegan tal cual (incluido el pulso a la gaveta)');
+    // El archivo temporal se borra
+    assert.equal(existsSync(a[a.indexOf('-File', a.indexOf('-Printer')) + 1]), false);
+  });
+
+  test('explica el problema que reporta Windows (sin papel, desconectada, no responde)', async () => {
+    const fail =
+      (stderr, extra = {}) =>
+      async () => {
+        throw Object.assign(new Error('falló'), { stderr, ...extra });
+      };
+    await assert.rejects(
+      sendUsb('Caja', Buffer.from('x'), { platform: 'win32', run: fail('La impresora no tiene papel.\r\n') }),
+      /no tiene papel/,
+    );
+    await assert.rejects(
+      sendUsb('Caja', Buffer.from('x'), { platform: 'win32', run: fail('', { killed: true }) }),
+      /no responde/,
+    );
+    await assert.rejects(sendUsb('', Buffer.from('x'), { platform: 'win32', run: fail('') }), /Falta el nombre/);
+  });
+
+  test('la cola reintenta un ticket USB que falló y avisa el motivo', async () => {
+    let attempts = 0;
+    const app = await start({
+      printing: {
+        retryMs: [30],
+        send: async (p) => {
+          if (p.mode !== 'usb') return;
+          attempts++;
+          if (attempts < 3) throw new Error('La impresora USB está desconectada o apagada.');
+        },
+      },
+    });
+    const mgr = await login(app, 'u1');
+    await act(app, mgr, ['setConfig', printers({ mode: 'simulada' }, { mode: 'usb', device: 'Caja', columns: 48 })]);
+    await call(app, 'POST', '/api/print', { token: mgr, body: { doc: 'prueba', id: 'caja' } });
+    await until(() => attempts >= 1 && app.hotel.printing.status().printers.caja.error);
+    assert.match(app.hotel.printing.status().printers.caja.error, /desconectada/);
+    await until(() => app.hotel.printing.status().printers.caja.pending === 0);
+    assert.equal(attempts, 3);
+    await app.close();
+  });
+
+  test('solo gerencia puede listar las impresoras de la mini PC', async () => {
+    const app = await start();
+    const r = await call(app, 'GET', '/api/printers/local', { token: await login(app, 'u1') });
+    assert.equal(r.status, 200);
+    assert.ok(Array.isArray(r.body.printers));
+    assert.equal((await call(app, 'GET', '/api/printers/local', { token: await login(app, 'u2') })).status, 403);
     await app.close();
   });
 });

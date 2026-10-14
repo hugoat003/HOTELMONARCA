@@ -31,6 +31,31 @@ try {
   "El servidor responde · compilación $($h.build) · datos v$($h.rev)"
 } catch { Write-Host "El servidor NO responde en el puerto $Port" -ForegroundColor Red }
 
+Title 'Red del hotel'
+# Las tablets entran por la red local: la red debe ser "Privada" (la regla del puerto solo abre ahí)
+$profiles = Get-NetConnectionProfile -ErrorAction SilentlyContinue
+foreach ($n in $profiles) {
+  $line = '{0} ({1}): {2}' -f $n.Name, $n.InterfaceAlias, $n.NetworkCategory
+  if ($n.NetworkCategory -eq 'Public') {
+    Write-Host "$line  ← ¡PÚBLICA! Las tablets no podrán entrar." -ForegroundColor Red
+    Write-Host "   Corrígelo:  Set-NetConnectionProfile -InterfaceAlias '$($n.InterfaceAlias)' -NetworkCategory Private"
+  } else { $line }
+}
+$ips = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+  Where-Object { $_.InterfaceAlias -notmatch 'Loopback|vEthernet|Tailscale' -and $_.IPAddress -notlike '169.*' }
+foreach ($ip in $ips) { "Tablets: http://$($ip.IPAddress):$Port   ($($ip.InterfaceAlias), $($ip.PrefixOrigin))" }
+if ($ips | Where-Object PrefixOrigin -eq 'Dhcp') {
+  Write-Host 'Recomendado: reserva esta IP en el router del hotel para que no cambie.' -ForegroundColor Yellow
+}
+$rule = Get-NetFirewallRule -DisplayName 'POS Monarca' -ErrorAction SilentlyContinue
+if ($rule -and $rule.Enabled -eq 'True') { 'Firewall: puerto abierto para la red privada' }
+else { Write-Host 'Firewall: falta la regla "POS Monarca" (corre instalar.ps1 de nuevo)' -ForegroundColor Red }
+
+Title 'Impresoras instaladas en Windows'
+$ps = Get-Printer -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch 'PDF|XPS|OneNote|Fax' }
+if ($ps) { $ps | ForEach-Object { '{0,-28} {1}' -f $_.Name, $_.PrinterStatus } }
+else { '(ninguna: la de caja por USB se instala con su driver; la de cocina va por red)' }
+
 Title 'Base de datos y respaldos'
 if (Test-Path $Db) { '{0:N1} MB · modificada {1}' -f ((Get-Item $Db).Length / 1MB), (Get-Item $Db).LastWriteTime }
 Get-ChildItem (Join-Path $DataDir 'respaldos') -Filter *.db -ErrorAction SilentlyContinue |
