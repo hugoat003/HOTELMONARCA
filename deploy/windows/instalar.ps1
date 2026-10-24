@@ -47,7 +47,9 @@ foreach ($id in $apps) {
   winget list --id $id -e --accept-source-agreements *> $null
   if ($LASTEXITCODE -ne 0) {
     Write-Host "Instalando $id…"
-    winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements --scope machine
+    # PowerShell: el MSI (C:\Program Files\PowerShell\7), no el paquete de la tienda que winget elige a veces
+    $type = if ($id -eq 'Microsoft.PowerShell') { @('--installer-type', 'wix') } else { @() }
+    winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements --scope machine @type
     if ($LASTEXITCODE -ne 0) { throw "No se pudo instalar $id" }
   }
 }
@@ -62,10 +64,14 @@ foreach ($d in @($Root, "$Root\versiones", "$Root\servicio", "$Root\bin", $Data,
 icacls $Root /grant "${LocalService}:(OI)(CI)RX" /T /Q | Out-Null
 # Los datos (base, respaldos y monarca.env con sus claves) solo los leen el servicio y los
 # administradores: ni la cuenta de Windows de la caja puede abrirlos
-icacls $Data /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' "${LocalService}:(OI)(CI)M" /T /Q | Out-Null
+# Solo la carpeta: (OI)(CI) no aplica a archivos y con /T los dejaba sin ningún permiso al reinstalar.
+# Lo que ya hay dentro hereda de la carpeta.
+icacls $Data /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' "${LocalService}:(OI)(CI)M" /Q | Out-Null
+icacls "$Data\*" /reset /T /Q | Out-Null
 # La llave de GitHub solo la leen los administradores
 # (por identificador: el nombre "Administradores" cambia según el idioma de Windows)
 icacls $SshDir /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' /Q | Out-Null
+icacls "$SshDir\*" /reset /T /Q | Out-Null
 
 Step 'Acceso de solo lectura a GitHub (llave de despliegue)'
 $key = Join-Path $SshDir 'deploy_key'
@@ -76,7 +82,10 @@ if (-not (Test-Path $key)) {
   Exec { ssh-keygen -q -t ed25519 -N $empty -C 'monarca-mini-pc' -f $key } 'crear la llave'
 }
 if (-not (Test-Path $known) -or -not (Select-String -Quiet -Path $known -Pattern 'github.com')) {
+  # ssh-keyscan escribe un comentario en stderr: con 'Stop', PowerShell 5.1 lo toma como error
+  $ErrorActionPreference = 'Continue'
   ssh-keyscan -t ed25519 github.com 2>$null | Out-File -Append -Encoding ascii $known
+  $ErrorActionPreference = 'Stop'
 }
 $sshCmd = "ssh -i $($key -replace '\\','/') -o UserKnownHostsFile=$($known -replace '\\','/') -o IdentitiesOnly=yes"
 if (-not (Test-Path "$Root\repo\.git")) {
