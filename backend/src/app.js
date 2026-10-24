@@ -57,8 +57,14 @@ async function createHotel({ dbFile = ':memory:', seed, printing = {}, backupDir
   const engine = new Engine(db);
   const auth = new Auth(db);
   const hotel = { db, engine, auth, sockets: new Set(), onPrinters: () => {} };
-  if (!engine.initialized) install(hotel, initialState(seed));
-  else await migrateOnStart(hotel, { backupDir, log });
+  try {
+    if (!engine.initialized) install(hotel, initialState(seed));
+    else await migrateOnStart(hotel, { backupDir, log });
+  } catch (e) {
+    // Sin arrancar, la base no debe quedar abierta (en Windows bloquea el archivo)
+    db.close();
+    throw e;
+  }
   return withPrinting(hotel, printing);
 }
 
