@@ -69,6 +69,8 @@ input {
 }
 button {
   cursor: pointer;
+  /* Sin zoom por doble toque: en el celular, dos toques rápidos al mismo botón cuentan como dos */
+  touch-action: manipulation;
 }
 button:disabled {
   cursor: default;

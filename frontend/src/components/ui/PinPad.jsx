@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const fmtWait = (ms) => {
   const s = Math.ceil(ms / 1000);
@@ -8,7 +8,13 @@ const fmtWait = (ms) => {
 // Teclado de 4 dígitos. onSubmit(pin) devuelve (o promete) { ok } o { ok: false, error, left, lockedMs }.
 // El servidor lleva la cuenta de intentos fallidos: tras 5, bloquea unos minutos.
 export default function PinPad({ onSubmit, error: externalError, lockedMs = 0 }) {
-  const [pin, setPin] = useState('');
+  const [pin, setPinState] = useState('');
+  // Copia en ref: dos toques seguidos antes de que React vuelva a pintar no deben pisarse
+  const pinRef = useRef('');
+  const setPin = (v) => {
+    pinRef.current = v;
+    setPinState(v);
+  };
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [until, setUntil] = useState(() => (lockedMs ? Date.now() + lockedMs : 0)); // bloqueado hasta
@@ -42,9 +48,10 @@ export default function PinPad({ onSubmit, error: externalError, lockedMs = 0 })
     if (wait || busy) return;
     setError('');
     if (k === 'C') return setPin('');
-    if (k === '⌫') return setPin(pin.slice(0, -1));
-    if (pin.length >= 4) return;
-    const next = pin + k;
+    const cur = pinRef.current;
+    if (k === '⌫') return setPin(cur.slice(0, -1));
+    if (cur.length >= 4) return;
+    const next = cur + k;
     setPin(next);
     if (next.length === 4) setTimeout(() => submit(next), 120);
   };
