@@ -2,14 +2,15 @@
 // aunque en ese momento se esté cobrando). El respaldo nocturno lo hace el servidor solo.
 //   node scripts/respaldo.js [archivo-destino] [--subir]
 // Sin destino: respaldos/manual-AAAAMMDD-HHMMSS.db. --subir: además, la copia cifrada fuera del hotel.
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pack, snapshot, stamp } from '../src/backup.js';
 import { REMOTE_PREFIX } from '../src/remote.js';
 import { backupDir, dbFile, fail, kb, remote, secret } from './comun.js';
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Ruta real: en la mini PC se llama por C:\Monarca\app, un enlace a la carpeta de la versión
+if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const dest = resolve(args.find((a) => !a.startsWith('--')) || join(backupDir, `manual-${stamp()}.db`));
   try {
