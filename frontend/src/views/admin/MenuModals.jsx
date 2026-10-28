@@ -25,7 +25,9 @@ export function MenuItemModal({ item, onClose, onSave }) {
 
   const problem = !v.name.trim()
     ? 'Falta el nombre'
-    : !(price > 0)
+    : !v.cat
+      ? 'Primero crea una categoría'
+      : !(price > 0)
       ? 'Precio inválido'
       : v.recipe.some((r) => !r.itemId || !(parseFloat(r.qty) > 0))
         ? 'Completa la receta'

@@ -426,7 +426,9 @@ function HabitacionesTab() {
               ? 'Usa 3 dígitos, ej. 105'
               : v.isNew && state.rooms.some((r) => r.n === v.n)
                 ? 'Ya existe'
-                : ''
+                : !v.typeId
+                  ? 'Primero crea un tipo de habitación'
+                  : ''
           }
           onSave={({ isNew, ...v }) => {
             update((d) => A.saveRoom(d, v));
