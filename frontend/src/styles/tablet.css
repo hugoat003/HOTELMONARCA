@@ -366,3 +366,72 @@
     min-height: 44px;
   }
 }
+
+/* Pantalla táctil de recepción (1024×768, horizontal): el menú lateral queda fijo y angosto en vez de
+   cajón, y los paneles laterales se angostan para que el contenido quepa sin desplazarse de lado */
+@media (min-width: 1000px) and (max-width: 1100px) and (orientation: landscape) {
+  .app:not(.compact) {
+    grid-template-columns: 196px minmax(0, 1fr);
+  }
+  .app:not(.compact) .sidebar {
+    position: static;
+    width: auto;
+    transform: none;
+    transition: none;
+    box-shadow: none;
+  }
+  .app:not(.compact) .menu-toggle,
+  .app:not(.compact) .nav-backdrop {
+    display: none;
+  }
+  .split {
+    grid-template-columns: minmax(0, 1fr) min(var(--side, 400px), 340px);
+  }
+  .header-date {
+    display: none;
+  }
+}
+
+/* Pantallas bajas (768 px o menos de alto): el menú lateral entero cabe sin desplazarse,
+   así Configuración y Cerrar sesión siempre están a la vista */
+@media (max-height: 820px) {
+  .sidebar {
+    padding: 10px 10px 12px;
+    gap: 8px;
+  }
+  .sidebar-logo {
+    width: 84px;
+    margin: 0;
+  }
+  .sidebar .nav-group {
+    padding: 4px 12px 0;
+    font-size: 10px;
+  }
+  .sidebar .nav-btn {
+    min-height: 34px;
+    padding: 4px 12px;
+    font-size: 14px;
+  }
+  .session {
+    gap: 6px;
+  }
+  .session .eyebrow {
+    display: none;
+  }
+  .session .avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+  }
+  .session .btn {
+    min-height: 36px;
+    padding: 6px 10px;
+  }
+}
+
+/* Sin zoom con los dedos fuera del teléfono: un pellizco agrandaba o achicaba todo el sistema */
+@media (min-width: 761px) {
+  html {
+    touch-action: pan-x pan-y;
+  }
+}

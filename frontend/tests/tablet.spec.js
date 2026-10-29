@@ -62,3 +62,21 @@ test('tablet vertical: menú en cajón y cuenta como hoja inferior', async ({ br
   await expect(page.locator('.ticket-totals').getByRole('button', { name: 'Cobrar', exact: true })).toBeVisible();
   await page.close();
 });
+
+test('pantalla de recepción 1024×768: menú fijo que cabe entero, sin desplazarse de lado', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await fresh(page);
+  await login(page, 'Sofía Directora');
+  await expect(page.getByRole('button', { name: 'Abrir menú' })).toBeHidden();
+  const sidebar = page.locator('.sidebar');
+  await expect(sidebar.getByRole('button', { name: 'Configuración' })).toBeInViewport();
+  await expect(sidebar.getByRole('button', { name: 'Cerrar sesión' })).toBeInViewport();
+  for (const view of ['Huéspedes', 'Reservas', 'Configuración']) {
+    await sidebar.getByRole('button', { name: view }).click();
+    const m = await page.evaluate(() => ({
+      overflowX: document.documentElement.scrollWidth - innerWidth,
+      sidebar: document.querySelector('.sidebar').scrollHeight - document.querySelector('.sidebar').clientHeight,
+    }));
+    expect(m).toEqual({ overflowX: 0, sidebar: 0 });
+  }
+});
