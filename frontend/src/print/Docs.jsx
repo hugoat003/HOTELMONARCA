@@ -1,9 +1,10 @@
-// Documentos imprimibles (ticket, comanda, precuenta, folio y reporte de cierre)
+// Documentos imprimibles (ticket, comanda, precuenta, folio, reportes y hoja de conteo)
 import { COURSES, EVENT_STATUS, EVENT_UNITS, METHOD_LABELS } from '@shared/data.js';
 import { fmtDate, fmtDateTime, fmtTime } from '@shared/dates.js';
 import { eventTotals } from '@shared/events.js';
 import { folio as calcFolio, groupText } from '@shared/hotel.js';
 import { linesTotal, round2 } from '@shared/money.js';
+import { qtyFmt } from '@shared/inventory.js';
 import { modsText } from '@shared/orders.js';
 import { useStore } from '../store/store.jsx';
 
@@ -384,6 +385,65 @@ export function BeoDoc({ ev }) {
       <div className="doc-signatures">
         <span>Cocina</span>
         <span>Montaje</span>
+      </div>
+    </div>
+  );
+}
+
+// Hoja para el conteo físico de inventario: se imprime, se llena a mano y se compara con el sistema.
+// withStock: muestra la existencia del sistema (sin ella, el conteo es "a ciegas").
+export function CountSheetDoc({ title, items, withStock }) {
+  const { user } = useStore();
+  const cats = [...new Set(items.map((it) => it.cat))];
+  let n = 0;
+  return (
+    <div className="doc count-doc">
+      <Header />
+      <div className="doc-title">Hoja de conteo físico · {title}</div>
+      <div className="count-meta">
+        <span>
+          Impresa {fmtDateTime(Date.now())} por {user.name}
+        </span>
+        <span>Fecha del conteo: ____________</span>
+        <span>Contó: ______________________</span>
+      </div>
+      <table className="count-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Producto</th>
+            <th>Unidad</th>
+            {withStock && <th>Sistema</th>}
+            <th>Conteo</th>
+            <th>Diferencia</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        {cats.map((c) => (
+          <tbody key={c}>
+            <tr className="count-cat">
+              <td colSpan={withStock ? 7 : 6}>{c}</td>
+            </tr>
+            {items
+              .filter((it) => it.cat === c)
+              .map((it) => (
+                <tr key={it.id}>
+                  <td>{++n}</td>
+                  <td>{it.name}</td>
+                  <td>{it.unit}</td>
+                  {withStock && <td className="num">{qtyFmt(it.stock)}</td>}
+                  <td className="blank" />
+                  <td className="blank" />
+                  <td className="blank wide" />
+                </tr>
+              ))}
+          </tbody>
+        ))}
+      </table>
+      <div className="doc-small">{items.length} productos · Cuenta en la unidad indicada (kg, botella, unidad…).</div>
+      <div className="doc-signatures">
+        <span>Contó</span>
+        <span>Revisó (gerencia)</span>
       </div>
     </div>
   );

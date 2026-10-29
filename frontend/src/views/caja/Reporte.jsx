@@ -9,32 +9,26 @@ import { buildReport } from '@shared/report.js';
 import { ReportDoc } from '../../print/Docs.jsx';
 import { useStore } from '../../store/store.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
+import Conteo from './Conteo.jsx';
 import RangeReport from './RangeReport.jsx';
 
 const BAR_COLORS = ['#1B1917', '#6F675E', '#B8B0A6', '#D6CFC4'];
 
 export default function Reporte({ go }) {
   const { user } = useStore();
-  const [tab, setTab] = usePersisted('reporte.pestana', 'turno');
-  // El gerente ve el reporte de cada turno; los rangos de fechas (ventas por mesero, propinas,
-  // exportar) son de la administración general
-  if (!isOwner(user.role))
-    return (
-      <div className="report">
-        <ShiftReport go={go} />
-      </div>
-    );
+  const [saved, setTab] = usePersisted('reporte.pestana', 'turno');
+  // El gerente ve el reporte de cada turno y la hoja de conteo; los rangos de fechas (ventas por
+  // mesero, propinas, exportar) son de la administración general
+  const tabs = [
+    ['turno', 'Por turno'],
+    ...(isOwner(user.role) ? [['rango', 'Por fechas']] : []),
+    ['conteo', 'Conteo físico'],
+  ];
+  const tab = tabs.some(([k]) => k === saved) ? saved : 'turno';
   return (
     <div className="report">
-      <Tabs
-        tabs={[
-          ['turno', 'Por turno'],
-          ['rango', 'Por fechas'],
-        ]}
-        value={tab}
-        onChange={setTab}
-      />
-      {tab === 'rango' ? <RangeReport /> : <ShiftReport go={go} />}
+      <Tabs tabs={tabs} value={tab} onChange={setTab} />
+      {tab === 'rango' ? <RangeReport /> : tab === 'conteo' ? <Conteo /> : <ShiftReport go={go} />}
     </div>
   );
 }

@@ -101,3 +101,23 @@ test('exportar ventas e inventario a Excel', async ({ page }) => {
     expect(wb.SheetNames).toEqual([sheet]);
   }
 });
+
+test('hoja de conteo físico de insumos para imprimir o guardar en PDF', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Marta Gerente');
+  await nav(page, 'Reporte / RDP');
+  await page.locator('.tabs').getByRole('button', { name: 'Conteo físico' }).click();
+  await expect(page.locator('.tx-row.count', { hasText: 'Pollo' })).toBeVisible();
+  await page.getByRole('button', { name: 'Imprimir hoja / PDF' }).click();
+  const doc = page.locator('.print-doc .count-doc');
+  await expect(doc).toContainText('Hoja de conteo físico · Inventario de cocina');
+  await expect(doc.locator('tr', { hasText: 'Pollo' })).toContainText('kg');
+  await expect(doc.locator('th', { hasText: 'Sistema' })).toHaveCount(0); // a ciegas por omisión
+  await page.locator('.modal').getByRole('button', { name: 'Cerrar' }).click();
+
+  await page.getByLabel('Mostrar la existencia del sistema en la hoja').check();
+  await page.getByRole('main').getByRole('button', { name: 'Tienda', exact: true }).click();
+  await page.getByRole('button', { name: 'Imprimir hoja / PDF' }).click();
+  await expect(doc).toContainText('Hoja de conteo físico · Tienda');
+  await expect(doc.locator('th', { hasText: 'Sistema' })).toHaveCount(1);
+});
