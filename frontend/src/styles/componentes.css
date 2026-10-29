@@ -636,6 +636,7 @@ button.pill {
 }
 .tabs {
   display: flex;
+  flex-wrap: wrap; /* en tablet, las pestañas que no caben pasan a otra fila */
   gap: 4px;
   border-bottom: 1px solid var(--line);
 }
@@ -648,6 +649,7 @@ button.pill {
   font-weight: 600;
   color: var(--muted);
   margin-bottom: -1px;
+  white-space: nowrap;
 }
 .tab.active {
   color: var(--ink);
@@ -691,6 +693,13 @@ button.pill {
   width: 20px;
   height: 20px;
   accent-color: var(--ink);
+}
+.unit-note {
+  align-self: end;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--line-soft);
+  font-size: 14px;
 }
 .recipe-row {
   display: grid;

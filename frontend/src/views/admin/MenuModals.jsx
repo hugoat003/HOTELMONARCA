@@ -5,6 +5,7 @@ import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { isOwner } from '@shared/data.js';
 import { uid } from '@shared/dates.js';
+import { spendCost, spendUnit } from '@shared/inventory.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 
@@ -18,7 +19,7 @@ export function MenuItemModal({ item, onClose, onSave }) {
     set({ modGroups: v.modGroups.includes(id) ? v.modGroups.filter((g) => g !== id) : [...v.modGroups, id] });
   const setRecipe = (i, patch) => set({ recipe: v.recipe.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
   const cost = v.recipe.reduce(
-    (a, r) => a + (state.inventory.find((it) => it.id === r.itemId)?.cost || 0) * (parseFloat(r.qty) || 0),
+    (a, r) => a + spendCost(state.inventory.find((it) => it.id === r.itemId)) * (parseFloat(r.qty) || 0),
     0,
   );
   const price = parseFloat(v.price) || 0;
@@ -100,7 +101,11 @@ export function MenuItemModal({ item, onClose, onSave }) {
         </div>
       </Field>
 
-      <Field as="div" label="Receta" hint="insumos por porción · se descuentan al enviar a cocina">
+      <Field
+        as="div"
+        label="Receta"
+        hint="insumos por porción, en la unidad en que se gastan · se descuentan al enviar a cocina"
+      >
         <div className="stack-tight gap-8">
           {v.recipe.map((r, i) => {
             const it = state.inventory.find((x) => x.id === r.itemId);
@@ -110,7 +115,7 @@ export function MenuItemModal({ item, onClose, onSave }) {
                   <option value="">Insumo…</option>
                   {state.inventory.map((x) => (
                     <option key={x.id} value={x.id}>
-                      {x.name} ({x.unit})
+                      {x.name} ({spendUnit(x)})
                     </option>
                   ))}
                 </select>
@@ -123,7 +128,7 @@ export function MenuItemModal({ item, onClose, onSave }) {
                   onChange={(e) => setRecipe(i, { qty: e.target.value })}
                   placeholder="Cantidad"
                 />
-                <span className="panel-sub">{it?.unit || ''}</span>
+                <span className="panel-sub">{spendUnit(it)}</span>
                 <button
                   className="icon-btn"
                   title="Quitar"

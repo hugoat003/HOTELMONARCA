@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { INV_CATS, INV_MOVES, INV_UNITS } from '@shared/data.js';
 import { fmtDateTime } from '@shared/dates.js';
-import { qtyFmt, stockStatus } from '@shared/inventory.js';
+import { fixedFactor, perUnit, qtyFmt, stockStatus, USE_UNITS, spendUnit } from '@shared/inventory.js';
+import { A } from '../store/actions.js';
+import { useStore } from '../store/store.jsx';
 import DataTable, { rowClass } from './DataTable.jsx';
 import Modal, { Field } from './ui/Modal.jsx';
 
@@ -118,17 +120,42 @@ export function MoveModal({ item, type: initialType, moves = INV_MOVES, onClose,
 
 // withPrice agrega el precio de venta (tienda)
 // priceLocked: el precio de venta de un producto que ya existe lo cambia la administración general
+// Si cambia la unidad en que se gasta un insumo, las recetas que lo llevan se pasan a la nueva
+// (la misma cantidad real: 0.25 kg → 250 g). Se llama dentro de update().
+export function rescaleRecipes(d, menu, old, next) {
+  if (!old || spendUnit(old) === spendUnit(next)) return;
+  const f = fixedFactor(spendUnit(old), spendUnit(next)) ?? perUnit(next) / perUnit(old);
+  for (const m of menu) {
+    if (!(m.recipe || []).some((r) => r.itemId === next.id)) continue;
+    const recipe = m.recipe.map((r) => (r.itemId === next.id ? { ...r, qty: Math.round(r.qty * f * 1e6) / 1e6 } : r));
+    A.upsert(d, 'menu', { id: m.id, recipe });
+  }
+}
+
+// withUse: insumos de cocina, que se compran en una unidad y se gastan en otra (kg → g)
 export function ItemModal({
   item,
   cats = INV_CATS,
   withPrice = false,
+  withUse = false,
   priceLocked = false,
   onClose,
   onSave,
   onDelete,
 }) {
-  const [v, setV] = useState(item);
+  const { fmt } = useStore();
+  const [v, setV] = useState({
+    ...item,
+    useUnit: item.useUnit || item.unit,
+    perUnit: item.perUnit && item.useUnit ? String(item.perUnit) : '',
+  });
   const set = (k) => (e) => setV({ ...v, [k]: e.target.value });
+  // Al cambiar la unidad de compra, si se gastaba en la misma, se sigue gastando en la misma
+  const setUnit = (e) =>
+    setV({ ...v, unit: e.target.value, useUnit: v.useUnit === v.unit ? e.target.value : v.useUnit });
+  const fixed = fixedFactor(v.unit, v.useUnit);
+  const per = fixed ?? parseFloat(v.perUnit);
+  const unitCost = per > 0 ? (parseFloat(v.cost) || 0) / per : null;
   const problem = !v.name.trim()
     ? 'Falta el nombre'
     : !(parseFloat(v.min) >= 0)
@@ -137,14 +164,20 @@ export function ItemModal({
         ? 'Falta el costo'
         : withPrice && !(parseFloat(v.price) > 0)
           ? 'Falta el precio de venta'
-          : '';
+          : withUse && !(per > 0)
+            ? `Falta cuánto trae cada ${v.unit}`
+            : '';
+  const save = () => {
+    const { useUnit: uu, perUnit: _, ...rest } = v;
+    onSave(withUse ? { ...rest, useUnit: uu, perUnit: per } : rest);
+  };
   const margin =
     withPrice && parseFloat(v.price) > 0
       ? Math.round(((parseFloat(v.price) - (parseFloat(v.cost) || 0)) / parseFloat(v.price)) * 100)
       : null;
   return (
     <Modal
-      title={item.isNew ? 'Nuevo producto' : 'Editar producto'}
+      title={(item.isNew ? 'Nuevo ' : 'Editar ') + (withUse ? 'insumo' : 'producto')}
       onClose={onClose}
       width={560}
       footer={
@@ -158,7 +191,7 @@ export function ItemModal({
               Cancelar
             </button>
           )}
-          <button className="btn btn-primary" disabled={!!problem} onClick={() => onSave(v)}>
+          <button className="btn btn-primary" disabled={!!problem} onClick={save}>
             {problem || 'Guardar'}
           </button>
         </>
@@ -175,13 +208,42 @@ export function ItemModal({
             ))}
           </select>
         </Field>
-        <Field label="Unidad">
-          <select className="input" value={v.unit} onChange={set('unit')}>
+        <Field label={withUse ? 'Se compra en' : 'Unidad'} hint={withUse ? 'así se cuenta la existencia' : undefined}>
+          <select className="input" value={v.unit} onChange={withUse ? setUnit : set('unit')}>
             {INV_UNITS.map((u) => (
               <option key={u}>{u}</option>
             ))}
           </select>
         </Field>
+        {withUse && (
+          <>
+            <Field label="Se gasta en" hint="así se escribe en las recetas">
+              <select className="input" value={v.useUnit} onChange={set('useUnit')}>
+                {[...new Set([v.unit, ...USE_UNITS])].map((u) => (
+                  <option key={u}>{u}</option>
+                ))}
+              </select>
+            </Field>
+            {fixed !== null ? (
+              <div className="unit-note">
+                {fixed === 1
+                  ? `Se gasta en la misma unidad en que se compra (${v.unit}).`
+                  : `1 ${v.unit} = ${qtyFmt(fixed)} ${v.useUnit}. El sistema convierte solo.`}
+              </div>
+            ) : (
+              <Field label={`¿Cuántos ${v.useUnit} trae cada ${v.unit}?`}>
+                <input
+                  className="input"
+                  type="number"
+                  inputMode="decimal"
+                  value={v.perUnit}
+                  onChange={set('perUnit')}
+                  placeholder={`Ej. 750`}
+                />
+              </Field>
+            )}
+          </>
+        )}
         <Field label="Existencia" hint={item.isNew ? 'inicial' : 'usa Ajuste para corregir'}>
           <input
             className="input"
@@ -195,7 +257,10 @@ export function ItemModal({
         <Field label="Mínimo" hint="avisa al bajar de aquí">
           <input className="input" type="number" inputMode="decimal" value={v.min} onChange={set('min')} />
         </Field>
-        <Field label="Costo por unidad">
+        <Field
+          label={withUse ? `Costo por ${v.unit}` : 'Costo por unidad'}
+          hint={withUse && unitCost !== null && v.useUnit !== v.unit ? `${fmt(unitCost)} por ${v.useUnit}` : undefined}
+        >
           <input className="input" type="number" inputMode="decimal" value={v.cost} onChange={set('cost')} />
         </Field>
         {withPrice && (

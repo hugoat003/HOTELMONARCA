@@ -4,6 +4,7 @@ import { isAvailable } from './hotel.js';
 import { isHeldOnSend, orderLabel, sameLine, unitPrice } from './orders.js';
 import { placed } from './tablemap.js';
 import { COURSES } from './data.js';
+import { toStock } from './inventory.js';
 
 const byId = (arr, id, key = 'id') => arr.find((x) => x[key] === id);
 
@@ -73,14 +74,16 @@ const CATALOG_LABELS = {
   eventMenus: 'Menús de eventos',
 };
 
-// Movimiento de inventario por la receta de un platillo (consumo al enviar a cocina o devolución)
+// Movimiento de inventario por la receta de un platillo (consumo al enviar a cocina o devolución).
+// La receta está en unidad de uso (g); la existencia, en unidad de compra (kg).
 function applyRecipe(d, mid, qty, sign, { type, note, userId }) {
   const m = byId(d.menu, mid);
   for (const r of m?.recipe || []) {
     const it = byId(d.inventory, r.itemId);
     if (!it) continue;
-    const q = Math.round(r.qty * qty * 1000) / 1000;
-    it.stock = Math.max(0, Math.round((it.stock + sign * q) * 1000) / 1000);
+    // 6 decimales: 1 g de algo que se compra por libra son 0.0022 lb
+    const q = Math.round(toStock(it, r.qty) * qty * 1e6) / 1e6;
+    it.stock = Math.max(0, Math.round((it.stock + sign * q) * 1e6) / 1e6);
     d.invMoves.push({
       id: uid('im'),
       ts: Date.now(),

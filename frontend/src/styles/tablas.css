@@ -43,7 +43,7 @@
   font-size: 14px;
 }
 .tx-row.shop {
-  grid-template-columns: 1.6fr 1.1fr 90px 90px 70px 120px 110px 170px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr) 90px 80px 64px 110px 110px 170px;
   align-items: center;
 }
 .tx-row.invoices {

@@ -50,7 +50,7 @@ export default function Pedido({ orderId, go }) {
   const total = linesTotal(order.lines);
   const pending = order.lines.filter((l) => !l.sent);
   const pendingQty = pending.reduce((a, l) => a + l.qty, 0);
-  const reserved = reservedStock(state.orders, state.menu);
+  const reserved = reservedStock(state.orders, state.menu, state.inventory);
   const q = search.trim().toLowerCase();
   const items = state.menu.filter(
     (m) => (cat === 'Todos' || m.cat === cat) && (!q || m.name.toLowerCase().includes(q)),

@@ -1,12 +1,12 @@
 // Configuración → Insumos: catálogo de insumos y en qué platillos se usan (receta por porción)
 import { useState } from 'react';
 import DataTable, { rowClass } from '../../components/DataTable.jsx';
-import { ItemModal } from '../../components/Stock.jsx';
+import { ItemModal, rescaleRecipes } from '../../components/Stock.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { INV_CATS } from '@shared/data.js';
 import { uid } from '@shared/dates.js';
-import { qtyFmt } from '@shared/inventory.js';
+import { qtyFmt, spendUnit } from '@shared/inventory.js';
 import { A } from '../../store/actions.js';
 import { useStore } from '../../store/store.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
@@ -81,6 +81,7 @@ export default function InsumosTab() {
               <span className="panel-sub">{it.cat}</span>
               <span>
                 {fmt(it.cost)} <span className="panel-sub">/ {it.unit}</span>
+                {spendUnit(it) !== it.unit && <div className="panel-sub">se gasta en {spendUnit(it)}</div>}
               </span>
               <span className="panel-sub">
                 {dishes.length ? dishes.map((m) => m.name).join(' · ') : 'En ningún platillo'}
@@ -106,6 +107,7 @@ export default function InsumosTab() {
       {edit && (
         <ItemModal
           item={edit}
+          withUse
           onClose={() => setEdit(null)}
           onDelete={() => {
             const used = usedIn(state.menu, edit.id);
@@ -125,15 +127,22 @@ export default function InsumosTab() {
             );
           }}
           onSave={({ isNew, ...v }) => {
-            update((d) =>
-              A.upsert(d, 'inventory', {
-                ...v,
-                name: v.name.trim(),
-                stock: parseFloat(v.stock) || 0,
-                min: parseFloat(v.min) || 0,
-                cost: parseFloat(v.cost) || 0,
-              }),
-            );
+            const item = {
+              ...v,
+              name: v.name.trim(),
+              stock: parseFloat(v.stock) || 0,
+              min: parseFloat(v.min) || 0,
+              cost: parseFloat(v.cost) || 0,
+            };
+            update((d) => {
+              A.upsert(d, 'inventory', item);
+              rescaleRecipes(
+                d,
+                state.menu,
+                state.inventory.find((i) => i.id === item.id),
+                item,
+              );
+            });
             setEdit(null);
             ui.notify(isNew ? 'Insumo agregado' : 'Insumo actualizado');
           }}
@@ -201,7 +210,9 @@ function AssignModal({ item, onClose, onSave }) {
         </>
       }
     >
-      <div className="panel-sub">Escribe cuánto lleva una porción, en {item.unit}. Deja vacío lo que no lo lleva.</div>
+      <div className="panel-sub">
+        Escribe cuánto lleva una porción, en {spendUnit(item)}. Deja vacío lo que no lo lleva.
+      </div>
       <div className="chips">
         {['Con este insumo', ...state.categories].map((c) => (
           <button key={c} className={'chip small' + (cat === c ? ' active' : '')} onClick={() => setCat(c)}>
@@ -226,7 +237,7 @@ function AssignModal({ item, onClose, onSave }) {
               placeholder="—"
               aria-label={`Cantidad en ${m.name}`}
             />
-            <span className="panel-sub">{item.unit}</span>
+            <span className="panel-sub">{spendUnit(item)}</span>
             <span />
           </div>
         ))}

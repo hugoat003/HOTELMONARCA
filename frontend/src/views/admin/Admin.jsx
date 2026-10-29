@@ -14,6 +14,7 @@ import MapEditor from '../restaurante/MapEditor.jsx';
 import { MenuItemModal, ModifierGroups } from './MenuModals.jsx';
 import Impresoras from './Impresoras.jsx';
 import InsumosTab from './Insumos.jsx';
+import { Existencias as TiendaTab } from '../hotel/Tienda.jsx';
 import Seasons from './Seasons.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
 
@@ -21,6 +22,7 @@ const TABS = [
   ['menu', 'Menú'],
   ['modificadores', 'Modificadores'],
   ['insumos', 'Insumos'],
+  ['tienda', 'Tienda'],
   ['mesas', 'Mapa de mesas'],
   ['habitaciones', 'Habitaciones'],
   ['eventos', 'Eventos'],
@@ -44,6 +46,7 @@ export default function Admin() {
       {tab === 'menu' && <MenuTab />}
       {tab === 'modificadores' && <ModifierGroups />}
       {tab === 'insumos' && <InsumosTab />}
+      {tab === 'tienda' && <TiendaTab />}
       {tab === 'mesas' && <MesasTab />}
       {tab === 'habitaciones' && <HabitacionesTab />}
       {tab === 'eventos' && <EventosTab />}

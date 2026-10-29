@@ -175,7 +175,21 @@ export const EVENT_EXTRAS = [
 
 // Inventario
 export const INV_CATS = ['Insumos', 'Bebidas', 'Desechables', 'Utensilios', 'Limpieza'];
-export const INV_UNITS = ['unidad', 'kg', 'lb', 'litro', 'galón', 'botella', 'paquete', 'caja', 'ciento'];
+// Unidades de compra. Las de contenido variable (botella, paquete…) piden cuánto trae cada una.
+export const INV_UNITS = [
+  'unidad',
+  'kg',
+  'lb',
+  'g',
+  'litro',
+  'galón',
+  'ml',
+  'botella',
+  'paquete',
+  'caja',
+  'docena',
+  'ciento',
+];
 export const INV_MOVES = {
   entrada: 'Entrada',
   salida: 'Salida',

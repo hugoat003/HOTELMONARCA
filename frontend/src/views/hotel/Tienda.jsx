@@ -205,7 +205,8 @@ function Vender() {
   );
 }
 
-function Existencias() {
+// También en Configuración → Tienda
+export function Existencias() {
   const { state, user, fmt, update } = useStore();
   const ui = useUI();
   const [cat, setCat] = usePersisted('tienda.existencias.categoria', 'Todas');

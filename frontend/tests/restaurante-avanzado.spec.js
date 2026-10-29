@@ -162,3 +162,63 @@ test('configuración: un insumo se agrega a la receta de varios platillos', asyn
   expect(recipe('Chilaquiles verdes')).toContainEqual({ itemId: 'i4', qty: 0.5 });
   expect(recipe('Chilaquiles verdes')).toHaveLength(3);
 });
+
+test('insumo que se compra en kg y se gasta en g: la receta se escribe en g y se descuenta en kg', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Marta Gerente');
+  await nav(page, 'Configuración');
+  await page.locator('.tabs').getByRole('button', { name: 'Insumos' }).click();
+  await page
+    .locator('.tx-row.insumos', { hasText: /^Pollo/ })
+    .getByRole('button', { name: 'Editar' })
+    .click();
+  const modal = page.locator('.modal');
+  await modal.getByLabel(/Se gasta en/).selectOption('g');
+  await expect(modal).toContainText('1 kg = 1000 g');
+  await expect(modal).toContainText('Q 0.03 por g');
+  await modalClick(page, 'Guardar');
+  let s = await state(page);
+  expect(s.inventory.find((i) => i.name === 'Pollo')).toMatchObject({ unit: 'kg', useUnit: 'g', perUnit: 1000 });
+  // La receta que estaba en kg (0.35) pasa a g
+  expect(s.menu.find((m) => m.name === 'Pepián de pollo').recipe).toContainEqual({ itemId: 'i1', qty: 350 });
+
+  await page
+    .locator('.tx-row.insumos', { hasText: /^Pollo/ })
+    .getByRole('button', { name: 'Platillos' })
+    .click();
+  await expect(page.locator('.modal')).toContainText('en g');
+  await page.getByLabel('Cantidad en Pepián de pollo').fill('200');
+  await modalClick(page, 'Guardar · 2 platillos');
+
+  const pollo0 = await inv(page, 'Pollo');
+  await nav(page, 'Mesas');
+  await openTable(page, 3);
+  await page.locator('.menu-item', { hasText: 'Pepián de pollo' }).click();
+  await page.getByRole('button', { name: /Enviar a cocina/ }).click();
+  await modalClick(page, 'Cerrar');
+  expect(await inv(page, 'Pollo')).toBeCloseTo(pollo0 - 0.2, 6);
+});
+
+test('insumo por botella: se pide cuánto trae y se gasta en ml', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Marta Gerente');
+  await nav(page, 'Configuración');
+  await page.locator('.tabs').getByRole('button', { name: 'Insumos' }).click();
+  await page.getByRole('button', { name: '+ Insumo' }).click();
+  const modal = page.locator('.modal');
+  await modal.getByLabel(/^Nombre/).fill('Ron añejo');
+  await modal.getByLabel(/Se compra en/).selectOption('botella');
+  await modal.getByLabel(/Se gasta en/).selectOption('ml');
+  await modal.getByLabel(/^Mínimo/).fill('2');
+  await modal.getByLabel(/^Costo por botella/).fill('150');
+  await expect(modal.getByRole('button', { name: 'Falta cuánto trae cada botella' })).toBeDisabled();
+  await modal.getByLabel('¿Cuántos ml trae cada botella?').fill('750');
+  await expect(modal).toContainText('Q 0.20 por ml');
+  await modalClick(page, 'Guardar');
+  const s = await state(page);
+  expect(s.inventory.find((i) => i.name === 'Ron añejo')).toMatchObject({
+    unit: 'botella',
+    useUnit: 'ml',
+    perUnit: 750,
+  });
+});

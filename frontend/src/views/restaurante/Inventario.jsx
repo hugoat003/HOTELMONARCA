@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import DataTable, { rowClass } from '../../components/DataTable.jsx';
 import KpiCard from '../../components/KpiCard.jsx';
-import { ItemModal, MoveModal, StockMoves, StockTag } from '../../components/Stock.jsx';
+import { ItemModal, MoveModal, rescaleRecipes, StockMoves, StockTag } from '../../components/Stock.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { INV_CATS, INV_MOVE_LABELS, INV_MOVES } from '@shared/data.js';
 import { today, uid } from '@shared/dates.js';
@@ -187,6 +187,7 @@ export default function Inventario() {
       {edit && (
         <ItemModal
           item={edit}
+          withUse
           onClose={() => setEdit(null)}
           onDelete={() => {
             const used = state.menu.filter((m) => (m.recipe || []).some((r) => r.itemId === edit.id));
@@ -206,21 +207,22 @@ export default function Inventario() {
             );
           }}
           onSave={({ isNew, authId, ...v }) => {
-            update((d) =>
-              A.upsert(
+            const item = {
+              ...v,
+              name: v.name.trim(),
+              stock: parseFloat(v.stock) || 0,
+              min: parseFloat(v.min) || 0,
+              cost: parseFloat(v.cost) || 0,
+            };
+            update((d) => {
+              A.upsert(d, 'inventory', item, 'id', { authId });
+              rescaleRecipes(
                 d,
-                'inventory',
-                {
-                  ...v,
-                  name: v.name.trim(),
-                  stock: parseFloat(v.stock) || 0,
-                  min: parseFloat(v.min) || 0,
-                  cost: parseFloat(v.cost) || 0,
-                },
-                'id',
-                { authId },
-              ),
-            );
+                state.menu,
+                state.inventory.find((i) => i.id === item.id),
+                item,
+              );
+            });
             setEdit(null);
             ui.notify(isNew ? 'Producto agregado' : 'Producto actualizado');
           }}
