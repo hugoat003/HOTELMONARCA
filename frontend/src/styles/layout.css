@@ -181,6 +181,15 @@
   display: grid;
   place-items: center;
   padding: 24px;
+  position: relative;
+}
+.login-corner {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+.fullscreen-btn {
+  white-space: nowrap;
 }
 .login-card {
   width: 560px;

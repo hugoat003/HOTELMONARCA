@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import FullscreenButton from '../components/ui/FullscreenButton.jsx';
 import PasswordForm from '../components/ui/PasswordForm.jsx';
 import PinPad from '../components/ui/PinPad.jsx';
 import { DEMO } from '../config.js';
@@ -14,6 +15,9 @@ export default function Login() {
 
   return (
     <div className="login">
+      <div className="login-corner">
+        <FullscreenButton />
+      </div>
       <div className="login-card">
         <img src="/logo-monarca.png" alt="Monarca Hotel Boutique" className="login-logo" />
         <div className="panel-sub text-center">{fmtLongDate().replace(/^./, (c) => c.toUpperCase())}</div>

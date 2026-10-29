@@ -19,6 +19,7 @@ import Huespedes from './views/hotel/Huespedes.jsx';
 import Limpieza from './views/hotel/Limpieza.jsx';
 import Tienda from './views/hotel/Tienda.jsx';
 import Reservas from './views/hotel/Reservas.jsx';
+import FullscreenButton from './components/ui/FullscreenButton.jsx';
 import Login from './views/Login.jsx';
 import Mesas from './views/restaurante/Mesas.jsx';
 import Pedido from './views/restaurante/Pedido.jsx';
@@ -219,6 +220,7 @@ function Shell() {
               <span className={'dot' + (state.shift ? ' on' : '')} />
               {state.shift ? 'Caja abierta' : 'Caja cerrada'}
             </button>
+            <FullscreenButton />
           </div>
         </header>
 
