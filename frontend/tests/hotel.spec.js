@@ -1,4 +1,4 @@
-import { expect, fresh, login, modalClick, nav, payAll, state, test } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, patchState, payAll, state, test } from './helpers.js';
 
 test('llegada, cargo extra, check-out con saldo y limpieza', async ({ page }) => {
   await fresh(page);
@@ -49,4 +49,21 @@ test('nueva reserva desde el calendario', async ({ page }) => {
   expect((await state(page)).reservations.some((r) => r.guest.name === 'Huésped Prueba' && r.roomN === '102')).toBe(
     true,
   );
+});
+
+test('calendario de reservas con muchas habitaciones: se desplaza y los días quedan arriba', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await fresh(page);
+  await patchState(page, (s) => {
+    const t = s.rooms[0];
+    for (let i = 1; i <= 12; i++) s.rooms.push({ ...t, n: String(400 + i) });
+  });
+  await login(page, 'Luis Recepción');
+  await nav(page, 'Reservas');
+  const last = page.locator('.cal-room', { hasText: '412' });
+  await expect(last).not.toBeInViewport();
+  await page.locator('.calendar').hover();
+  await page.mouse.wheel(0, 2000);
+  await expect(last).toBeInViewport();
+  await expect(page.locator('.cal-head')).toBeInViewport();
 });

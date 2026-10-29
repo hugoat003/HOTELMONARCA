@@ -28,11 +28,15 @@
   font-size: 13px;
   text-align: center;
 }
+/* Con muchas habitaciones el calendario se desplaza dentro de su recuadro (con el dedo o la rueda)
+   y la fila de los días queda fija arriba */
 .calendar {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 6px;
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
+  min-height: 260px;
 }
 .cal-row {
   display: grid;
@@ -65,6 +69,9 @@
 .cal-head {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 .cal-head .cal-room {
   font-size: 12px;
