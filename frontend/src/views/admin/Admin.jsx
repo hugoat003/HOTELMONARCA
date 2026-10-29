@@ -13,11 +13,14 @@ import { useStore, VERSION } from '../../store/store.jsx';
 import MapEditor from '../restaurante/MapEditor.jsx';
 import { MenuItemModal, ModifierGroups } from './MenuModals.jsx';
 import Impresoras from './Impresoras.jsx';
+import InsumosTab from './Insumos.jsx';
 import Seasons from './Seasons.jsx';
 import { usePersisted } from '../../store/usePersisted.js';
 
 const TABS = [
   ['menu', 'Menú'],
+  ['modificadores', 'Modificadores'],
+  ['insumos', 'Insumos'],
   ['mesas', 'Mapa de mesas'],
   ['habitaciones', 'Habitaciones'],
   ['eventos', 'Eventos'],
@@ -39,6 +42,8 @@ export default function Admin() {
     <div className="page" style={{ gap: 20, maxWidth: 1100 }}>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === 'menu' && <MenuTab />}
+      {tab === 'modificadores' && <ModifierGroups />}
+      {tab === 'insumos' && <InsumosTab />}
       {tab === 'mesas' && <MesasTab />}
       {tab === 'habitaciones' && <HabitacionesTab />}
       {tab === 'eventos' && <EventosTab />}
@@ -202,8 +207,6 @@ function MenuTab() {
           );
         })}
       </DataTable>
-
-      <ModifierGroups />
 
       {edit && (
         <MenuItemModal

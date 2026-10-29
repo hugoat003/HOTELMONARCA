@@ -54,6 +54,10 @@
   grid-template-columns: 1fr 2fr 1.2fr 80px 90px;
   align-items: center;
 }
+.tx-row.insumos {
+  grid-template-columns: 1.2fr 110px 140px 2fr 150px;
+  align-items: center;
+}
 .tx-row.guests {
   grid-template-columns: 1.6fr 1.2fr 1fr 80px 120px 110px;
   align-items: center;

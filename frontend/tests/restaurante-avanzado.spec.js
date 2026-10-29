@@ -121,3 +121,44 @@ test('configuración: receta y modificadores de un platillo', async ({ page }) =
   expect(m.modGroups).toContain('g2');
   expect(m.recipe.length).toBe(2);
 });
+
+test('configuración: un grupo de modificadores se asigna a varios platillos', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Marta Gerente');
+  await nav(page, 'Configuración');
+  await page.locator('.tabs').getByRole('button', { name: 'Modificadores' }).click();
+  await page
+    .locator('.tx-row.mods')
+    .filter({ has: page.getByText('Término', { exact: true }) })
+    .getByRole('button', { name: 'Editar' })
+    .click();
+  const modal = page.locator('.modal');
+  await modal.getByRole('button', { name: 'Lomito a la parrilla' }).click(); // lo quita
+  await modal.getByRole('button', { name: 'Pepián de pollo' }).click();
+  await modal.getByRole('button', { name: 'Chilaquiles verdes' }).click();
+  await modalClick(page, 'Guardar');
+  const s = await state(page);
+  const groups = (name) => s.menu.find((m) => m.name === name).modGroups;
+  expect(groups('Lomito a la parrilla')).toEqual(['g2']);
+  expect(groups('Pepián de pollo')).toContain('g1');
+  expect(groups('Chilaquiles verdes')).toEqual(['g2', 'g1']);
+});
+
+test('configuración: un insumo se agrega a la receta de varios platillos', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Marta Gerente');
+  await nav(page, 'Configuración');
+  await page.locator('.tabs').getByRole('button', { name: 'Insumos' }).click();
+  const row = page.locator('.tx-row.insumos', { hasText: 'Aguacate' });
+  await expect(row).toContainText('Guacamole de la casa');
+  await row.getByRole('button', { name: 'Platillos' }).click();
+  await page.getByLabel('Cantidad en Guacamole de la casa').fill('3');
+  await page.locator('.modal').getByRole('button', { name: 'Desayunos' }).click();
+  await page.getByLabel('Cantidad en Chilaquiles verdes').fill('0.5');
+  await modalClick(page, 'Guardar · 2 platillos');
+  const s = await state(page);
+  const recipe = (name) => s.menu.find((m) => m.name === name).recipe;
+  expect(recipe('Guacamole de la casa')).toEqual([{ itemId: 'i4', qty: 3 }]);
+  expect(recipe('Chilaquiles verdes')).toContainEqual({ itemId: 'i4', qty: 0.5 });
+  expect(recipe('Chilaquiles verdes')).toHaveLength(3);
+});

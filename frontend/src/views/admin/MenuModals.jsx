@@ -28,10 +28,10 @@ export function MenuItemModal({ item, onClose, onSave }) {
     : !v.cat
       ? 'Primero crea una categoría'
       : !(price > 0)
-      ? 'Precio inválido'
-      : v.recipe.some((r) => !r.itemId || !(parseFloat(r.qty) > 0))
-        ? 'Completa la receta'
-        : '';
+        ? 'Precio inválido'
+        : v.recipe.some((r) => !r.itemId || !(parseFloat(r.qty) > 0))
+          ? 'Completa la receta'
+          : '';
 
   return (
     <Modal
@@ -94,7 +94,9 @@ export function MenuItemModal({ item, onClose, onSave }) {
               {g.name}
             </button>
           ))}
-          {!state.modifierGroups.length && <span className="panel-sub">Crea grupos abajo, en “Modificadores”.</span>}
+          {!state.modifierGroups.length && (
+            <span className="panel-sub">Crea grupos en Configuración → Modificadores.</span>
+          )}
         </div>
       </Field>
 
@@ -156,7 +158,7 @@ export function ModifierGroups() {
   return (
     <>
       <div className="row items-center">
-        <span className="card-label">Modificadores</span>
+        <span className="panel-sub">Opciones que el mesero elige al pedir (término, salsa, extras…).</span>
         <button
           className="btn small"
           onClick={() =>
@@ -204,8 +206,17 @@ export function ModifierGroups() {
               },
             )
           }
-          onSave={({ isNew, ...g }) => {
-            update((d) => A.upsert(d, 'modifierGroups', g));
+          onSave={({ isNew, dishes, ...g }) => {
+            update((d) => {
+              A.upsert(d, 'modifierGroups', g);
+              // Solo se tocan los platillos que cambian
+              for (const m of state.menu) {
+                const had = (m.modGroups || []).includes(g.id);
+                if (had === dishes.has(m.id)) continue;
+                const modGroups = had ? m.modGroups.filter((x) => x !== g.id) : [...(m.modGroups || []), g.id];
+                A.upsert(d, 'menu', { id: m.id, modGroups });
+              }
+            });
             setEdit(null);
             ui.notify(isNew ? 'Grupo creado' : 'Grupo actualizado');
           }}
@@ -215,9 +226,50 @@ export function ModifierGroups() {
   );
 }
 
+// Platillos de la carta agrupados por categoría, para marcar varios a la vez
+export function DishPicker({ selected, onToggle }) {
+  const { state } = useStore();
+  return (
+    <div className="stack-tight gap-8">
+      {state.categories.map((c) => {
+        const dishes = state.menu.filter((m) => m.cat === c);
+        if (!dishes.length) return null;
+        return (
+          <div key={c}>
+            <div className="eyebrow">{c}</div>
+            <div className="chips">
+              {dishes.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={'chip small' + (selected.has(m.id) ? ' active' : '')}
+                  onClick={() => onToggle(m.id)}
+                >
+                  {m.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {!state.menu.length && <span className="panel-sub">Aún no hay platillos en el menú.</span>}
+    </div>
+  );
+}
+
 function GroupModal({ group, onClose, onSave, onDelete }) {
-  const { user } = useStore();
+  const { state, user } = useStore();
   const [g, setG] = useState({ ...group, options: group.options.map((o) => ({ ...o, price: String(o.price) })) });
+  const [dishes, setDishes] = useState(
+    () => new Set(state.menu.filter((m) => (m.modGroups || []).includes(group.id)).map((m) => m.id)),
+  );
+  const toggleDish = (id) =>
+    setDishes((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   // El precio de las opciones que ya existen lo cambia la administración general
   const [saved] = useState(() => new Set(group.isNew || isOwner(user.role) ? [] : group.options.map((o) => o.id)));
   const setOpt = (i, patch) => setG({ ...g, options: g.options.map((o, j) => (j === i ? { ...o, ...patch } : o)) });
@@ -232,7 +284,7 @@ function GroupModal({ group, onClose, onSave, onDelete }) {
     <Modal
       title={group.isNew ? 'Nuevo grupo de modificadores' : 'Editar grupo'}
       onClose={onClose}
-      width={560}
+      width={680}
       footer={
         <>
           {!group.isNew ? (
@@ -252,6 +304,7 @@ function GroupModal({ group, onClose, onSave, onDelete }) {
                 ...g,
                 name: g.name.trim(),
                 options: g.options.map((o) => ({ ...o, name: o.name.trim(), price: parseFloat(o.price) || 0 })),
+                dishes,
               })
             }
           >
@@ -314,6 +367,9 @@ function GroupModal({ group, onClose, onSave, onDelete }) {
             + Agregar opción
           </button>
         </div>
+      </Field>
+      <Field as="div" label="Platillos" hint={`toca para agregar o quitar · ${dishes.size} con este grupo`}>
+        <DishPicker selected={dishes} onToggle={toggleDish} />
       </Field>
     </Modal>
   );
