@@ -213,7 +213,8 @@ archivo y no `~\.ssh\authorized_keys`.
 En tu Mac:
 
 ```bash
-brew install cloudflared
+brew install cloudflared   # sin Homebrew: descarga cloudflared-darwin-arm64.tgz de github.com/cloudflare/cloudflared/releases
+                           # a ~/.local/bin y usa esa ruta completa en ProxyCommand
 cat >> ~/.ssh/config <<'EOF'
 Host monarca-soporte.hassistemas.com
   User <usuario administrador de Windows>
