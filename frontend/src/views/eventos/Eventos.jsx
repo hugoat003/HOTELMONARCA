@@ -371,20 +371,30 @@ function EventPanel({ ev, onEdit }) {
         <span>{fmt(t.balance)}</span>
       </div>
 
-      {isActiveEvent(ev) && (
-        <>
-          <div className="btn-row">
+      {/* El saldo se cobra también después del evento: muchos clientes liquidan al terminar */}
+      {ev.status !== 'cancelado' && (isActiveEvent(ev) || t.balance > 0.004) && (
+        <div className="btn-row">
+          {isActiveEvent(ev) && (
             <button className="btn" onClick={onEdit}>
               Editar
             </button>
-            <button
-              className="btn"
-              disabled={t.balance <= 0.004}
-              onClick={() => (state.shift ? setPay('monto') : ui.notify('Abre el turno de caja para registrar pagos.'))}
-            >
-              Registrar pago
-            </button>
-          </div>
+          )}
+          <button
+            className={'btn' + (ev.status === 'realizado' ? ' btn-primary' : '')}
+            disabled={t.balance <= 0.004}
+            onClick={() => (state.shift ? setPay('monto') : ui.notify('Abre el turno de caja para registrar pagos.'))}
+          >
+            {ev.status === 'realizado' ? `Cobrar saldo · ${fmt(t.balance)}` : 'Registrar pago'}
+          </button>
+        </div>
+      )}
+      {ev.status === 'realizado' && t.balance > 0.004 && (
+        <div className="note-box warn">
+          El evento ya se realizó y falta cobrar {fmt(t.balance)}. Ese dinero entra a caja solo al registrar el pago.
+        </div>
+      )}
+      {isActiveEvent(ev) && (
+        <>
           {ev.status === 'cotizado' && (
             <button
               className="btn btn-primary"
@@ -394,7 +404,21 @@ function EventPanel({ ev, onEdit }) {
             </button>
           )}
           {ev.status === 'confirmado' && ev.date <= today() && (
-            <button className="btn btn-primary" onClick={() => setStatus('realizado', 'Evento marcado como realizado')}>
+            <button
+              className="btn btn-primary"
+              onClick={() =>
+                t.balance > 0.004
+                  ? ui.confirm(
+                      {
+                        title: 'Queda saldo por cobrar',
+                        message: `${ev.name} tiene un saldo de ${fmt(t.balance)}. Marcarlo como realizado no registra ningún pago: el dinero entra a caja solo con "Cobrar saldo". ¿Marcarlo como realizado de todos modos?`,
+                        confirmLabel: 'Marcar como realizado',
+                      },
+                      () => setStatus('realizado', 'Evento realizado · falta cobrar el saldo'),
+                    )
+                  : setStatus('realizado', 'Evento marcado como realizado')
+              }
+            >
               Marcar como realizado
             </button>
           )}

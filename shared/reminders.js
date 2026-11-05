@@ -97,7 +97,7 @@ export function buildReminders(state, fmt) {
 
   for (const e of state.events.filter((x) => x.status === 'realizado' && x.date >= addDays(d0, -30))) {
     const b = eventTotals(e, state).balance;
-    if (b > 0.004) add('Eventos', 'mid', `${e.name} ya se realizó y tiene saldo ${fmt(b)}`, 'eventos');
+    if (b > 0.004) add('Eventos', 'high', `${e.name} ya se realizó y falta cobrar ${fmt(b)}`, 'eventos');
   }
 
   // Restaurante y tienda
