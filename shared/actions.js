@@ -374,8 +374,14 @@ export const A = {
       amount: s.grand ?? s.total,
       authId,
     });
-    for (const r of d.reservations)
+    // Lo que esa venta hizo en una reserva (cargo a la habitación, anticipo o abono) o en un evento
+    // (anticipo, abono o liquidación) se quita: el saldo vuelve a quedar pendiente
+    for (const r of d.reservations) {
       if (r.charges.some((c) => c.saleId === saleId)) r.charges = r.charges.filter((c) => c.saleId !== saleId);
+      if (r.payments?.some((p) => p.saleId === saleId)) r.payments = r.payments.filter((p) => p.saleId !== saleId);
+    }
+    for (const ev of d.events)
+      if (ev.payments?.some((p) => p.saleId === saleId)) ev.payments = ev.payments.filter((p) => p.saleId !== saleId);
     // Anular una venta de tienda regresa los productos a existencia
     if (s.kind === 'tienda') {
       for (const l of s.lines) {

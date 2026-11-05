@@ -194,4 +194,39 @@ describe('cobros y concurrencia', () => {
     assert.equal(JSON.stringify(state(app)), before);
     assert.equal(app.hotel.engine.rev, rev);
   });
+
+  test('anular el pago de un evento o de una reserva deja el saldo pendiente otra vez', async () => {
+    const st = () => state(app);
+    const payment = (extra, amount) => ({
+      id: 's_' + randomUUID().slice(0, 8),
+      number: st().counters.doc + 1,
+      ts: Date.now(),
+      cashierId: 'u2',
+      lines: [{ name: 'Anticipo', qty: 1, price: amount }],
+      total: amount,
+      grand: amount,
+      tip: 0,
+      payments: [{ method: 'efectivo', amount }],
+      ...extra,
+    });
+    // Evento
+    const ev = st().events.find((e) => e.status !== 'cancelado');
+    const paidBefore = ev.payments.length;
+    const evSale = payment({ kind: 'evento', ref: ev.name, eventId: ev.id }, 500);
+    assert.equal((await act(app, recep, ['addEventPayment', ev.id, evSale])).status, 200);
+    assert.equal(st().events.find((e) => e.id === ev.id).payments.length, paidBefore + 1);
+    assert.equal(
+      (await act(app, mgr, ['voidSale', evSale.id, { reason: 'monto equivocado', authId: 'u1' }])).status,
+      200,
+    );
+    assert.equal(st().events.find((e) => e.id === ev.id).payments.length, paidBefore);
+    assert.equal(st().sales.find((s) => s.id === evSale.id).status, 'anulada');
+    // Reserva (anticipo / abono al folio)
+    const res = st().reservations.find((r) => r.status === 'hospedado');
+    const before = res.payments.length;
+    const resSale = payment({ kind: 'hotel', ref: 'Hab. ' + res.roomN, resId: res.id }, 300);
+    assert.equal((await act(app, recep, ['addFolioPayment', res.id, resSale])).status, 200);
+    assert.equal((await act(app, mgr, ['voidSale', resSale.id, { reason: 'duplicado', authId: 'u1' }])).status, 200);
+    assert.equal(st().reservations.find((r) => r.id === res.id).payments.length, before);
+  });
 });

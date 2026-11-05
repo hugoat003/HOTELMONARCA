@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Manual de eventos · POS Monarca</title>
+    <link rel="stylesheet" href="manual.css" />
+  </head>
+  <body>
+    <div class="eyebrow">POS Monarca · Hotel Monarca</div>
+    <h1>Manual de eventos</h1>
+    <p class="lead">
+      Cómo cotizar, confirmar, cobrar y cerrar un evento, apartar habitaciones para los invitados y cómo se ve cada pago
+      en la caja.
+    </p>
+
+    <div class="toc">
+      <div><span>1</span>Cómo funciona un evento</div>
+      <div><span>2</span>Crear la cotización</div>
+      <div><span>3</span>Anticipo y confirmación</div>
+      <div><span>4</span>Habitaciones para invitados</div>
+      <div><span>5</span>El día del evento</div>
+      <div><span>6</span>Liquidar y cerrar</div>
+      <div><span>7</span>Cancelar un evento</div>
+      <div><span>8</span>Los eventos en la caja</div>
+      <div><span>?</span>Dudas frecuentes</div>
+    </div>
+
+    <div class="box">
+      <b>Quién hace qué</b>
+      <ul>
+        <li>
+          <b>Recepción y gerencia</b>: crean y editan eventos, registran anticipos y pagos, confirman, marcan como
+          realizado y cancelan.
+        </li>
+        <li>
+          <b>Administración general</b>: es la única que puede <b>cambiar el precio</b> de un salón o de un menú que ya
+          existe (Configuración → Eventos). El gerente puede crear salones y menús nuevos con su precio.
+        </li>
+        <li><b>Meseros</b>: no ven la pantalla de eventos.</li>
+      </ul>
+    </div>
+
+    <div class="warn">
+      <b>La regla más importante</b>
+      El dinero de un evento entra a la caja <b>solo cuando se registra un pago</b> con
+      <span class="k">Registrar pago</span> (o <span class="k">Cobrar saldo</span> después del evento). Los botones
+      <span class="k">Confirmar evento</span> y <span class="k">Marcar como realizado</span> solo cambian el estado:
+      <b>no registran dinero</b>.
+    </div>
+
+    <h2 class="page-break">1. Cómo funciona un evento</h2>
+    <div class="where"><span><b>Dónde:</b> menú Eventos</span><span><b>Quién:</b> recepción y gerencia</span></div>
+
+    <p>Cada evento pasa por estos estados. El estado se ve en la lista y en el detalle de cada evento.</p>
+    <div class="flow">
+      <div><b>Cotizado</b>Se arma la propuesta y se imprime la cotización para el cliente.</div>
+      <div class="arrow">→</div>
+      <div><b>Confirmado</b>El cliente aceptó. Normalmente ya dejó un anticipo.</div>
+      <div class="arrow">→</div>
+      <div><b>Realizado</b>El evento ya pasó. Lo ideal es que el saldo ya esté en 0.</div>
+    </div>
+    <p>
+      En cualquier momento antes de realizarse, el evento se puede <b>cancelar</b>; el anticipo se retiene o se devuelve
+      (sección 7).
+    </p>
+
+    <h3>Los pagos van aparte del estado</h3>
+    <div class="flow">
+      <div class="money"><b>Anticipo</b>Primer pago, para apartar la fecha. Entrega un <b>recibo</b>.</div>
+      <div class="arrow">→</div>
+      <div class="money"><b>Abonos</b>Pagos parciales, los que el cliente quiera.</div>
+      <div class="arrow">→</div>
+      <div class="money"><b>Liquidación</b>El pago que deja el saldo en 0. Entrega el <b>comprobante del evento</b>.</div>
+    </div>
+
+    <h3>Cómo se calcula el total</h3>
+    <table>
+      <tr>
+        <th>Concepto</th>
+        <th>Cómo se cobra</th>
+      </tr>
+      <tr>
+        <td><b>Menú o paquete</b></td>
+        <td>Precio del menú × cantidad (platos, parejas o un paquete por evento).</td>
+      </tr>
+      <tr>
+        <td><b>Extras</b></td>
+        <td>Decoración, música, pastel, barra libre, proyector u otro que escribas, cada uno con su monto.</td>
+      </tr>
+      <tr>
+        <td><b>Renta del salón</b></td>
+        <td>
+          Se cobra <b>solo si el menú no cubre a todos los invitados</b>. Si el evento consume comida del hotel para
+          todos, el salón no tiene costo.
+        </td>
+      </tr>
+    </table>
+
+    <div class="cards">
+      <div class="card">
+        <h4>Con menú para todos</h4>
+        <div class="kv">
+          <span>Invitados</span><span>80</span> <span>Menú Q 180 × 80</span><span>Q 14,400</span>
+          <span>Decoración</span><span>Q 1,200</span> <span>Salón</span><span>sin costo</span>
+          <span class="total">Total</span><span class="total">Q 15,600</span>
+        </div>
+        <p>El menú cubre a los 80: la renta del salón no se cobra.</p>
+      </div>
+      <div class="card">
+        <h4>Solo el salón</h4>
+        <div class="kv">
+          <span>Invitados</span><span>40</span> <span>Menú</span><span>sin menú</span>
+          <span>Proyector y sonido</span><span>Q 400</span> <span>Salón</span><span>Q 3,500</span>
+          <span class="total">Total</span><span class="total">Q 3,900</span>
+        </div>
+        <p>No consumen comida del hotel: se cobra la renta del salón.</p>
+      </div>
+    </div>
+
+    <h2>2. Crear la cotización</h2>
+    <div class="where">
+      <span><b>Dónde:</b> Eventos → <span class="k">+ Nuevo evento</span></span><span><b>Quién:</b> recepción y gerencia</span>
+    </div>
+    <ol class="steps">
+      <li>
+        Entra a <b>Eventos</b> y toca <span class="k">+ Nuevo evento</span>. También puedes ir a la vista
+        <span class="k">Calendario</span> y tocar un día vacío: el evento se crea con esa fecha.
+      </li>
+      <li>Escribe el <b>nombre del evento</b> (por ejemplo, “Boda López – Pérez”), la <b>fecha</b>, la hora de <b>inicio</b> y de <b>fin</b>.</li>
+      <li>
+        Elige el <b>salón</b>, o “Sin salón (restaurante / terraza)”. Si el salón ya está ocupado ese día, el botón de
+        guardar lo avisa: <i>“Salón … ocupado: nombre del otro evento”</i>.
+      </li>
+      <li>Elige el <b>menú o paquete</b> y escribe los <b>invitados</b> y la <b>cantidad</b> de platos (o parejas). Si pasas la capacidad del salón, el sistema lo indica.</li>
+      <li>Escribe el <b>cliente</b> (nombre o empresa) y su <b>teléfono</b>. En <b>Notas</b> pon montaje, horario de proveedores, alergias…</li>
+      <li>
+        En <b>Extras</b>, toca los que lleva (Decoración, Música / DJ, Pastel, Barra libre, Proyector y sonido) o escribe
+        uno con su monto. Abajo verás el total: salón, menú, extras.
+      </li>
+      <li>Toca <span class="k">Guardar evento</span>. El evento queda <b>Cotizado</b>.</li>
+      <li>En el detalle, toca <span class="k">Imprimir cotización</span> para entregarla o enviarla al cliente.</li>
+    </ol>
+
+    <div class="box">
+      <b>Para cambiar algo después</b>
+      Toca el evento en la lista y luego <span class="k">Editar</span>. Se puede editar mientras esté cotizado o
+      confirmado. El total y el saldo se recalculan solos; los pagos ya registrados no cambian.
+    </div>
+
+    <h3>Vistas de la lista</h3>
+    <p>
+      Arriba de la lista puedes filtrar: <span class="k">Próximos</span>, <span class="k">Cotizados</span>,
+      <span class="k">Confirmados</span>, <span class="k">Realizados</span>, <span class="k">Cancelados</span> y
+      <span class="k">Todos</span>. Cada fila muestra el total y, si falta cobrar, el <b>saldo</b>.
+    </p>
+
+    <h2>3. Anticipo y confirmación</h2>
+    <div class="where"><span><b>Dónde:</b> Eventos → el evento</span><span><b>Quién:</b> recepción y gerencia</span></div>
+
+    <div class="warn">
+      <b>La caja debe estar abierta</b>
+      Para registrar cualquier pago tiene que haber un turno de caja abierto. Si no, el sistema avisa “Abre el turno de
+      caja para registrar pagos”.
+    </div>
+
+    <h3>Registrar el anticipo</h3>
+    <ol class="steps">
+      <li>Toca el evento en la lista y luego <span class="k">Registrar pago</span>.</li>
+      <li>Escribe el <b>monto</b> del anticipo, o toca <span class="k">Saldo completo</span> si paga todo. Toca <span class="k">Continuar</span>.</li>
+      <li>Elige la <b>forma de pago</b>: efectivo, tarjeta o transferencia. Si paga con dos formas, divide el monto en dos filas.</li>
+      <li>Si el cliente necesita factura, marca <b>Requiere factura</b> y escribe su NIT.</li>
+      <li>
+        Toca <span class="k">Confirmar pago</span>. Sale el <b>recibo</b>; toca <span class="k">Imprimir</span> para
+        darlo al cliente. El pago aparece en el detalle del evento y el saldo baja.
+      </li>
+    </ol>
+
+    <h3>Confirmar el evento</h3>
+    <p>
+      Cuando el cliente acepta (normalmente al dejar el anticipo), toca <span class="k">Confirmar evento</span>. El evento
+      pasa a <b>Confirmado</b> y aparece en el Resumen de gerencia como evento próximo.
+    </p>
+
+    <div class="ok">
+      <b>Recomendación</b>
+      Confirma un evento solo cuando ya registraste el anticipo. Así la lista de confirmados es también la de eventos
+      con dinero recibido. El Resumen de gerencia avisa los eventos de las próximas dos semanas que siguen en cotización
+      sin anticipo, y los confirmados con saldo.
+    </div>
+
+    <h2>4. Habitaciones para invitados</h2>
+    <div class="where"><span><b>Dónde:</b> Eventos → Editar → Habitaciones para invitados</span><span><b>Quién:</b> recepción y gerencia</span></div>
+    <p>Sirve para apartar habitaciones para los invitados que se quedarán en el hotel.</p>
+    <ol class="steps">
+      <li>Dentro del evento (nuevo o con <span class="k">Editar</span>), en <b>Habitaciones para invitados</b>, toca las habitaciones que se apartan. Las ocupadas en esas noches no se pueden elegir.</li>
+      <li>Escribe las <b>noches</b>. Si se pactó un precio especial, escríbelo en <b>Tarifa especial por noche</b>; si lo dejas vacío, se usa la tarifa normal de cada habitación.</li>
+      <li>Al guardar, aparecen en <b>Reservas</b> como <i>“Bloqueo · nombre del evento”</i>.</li>
+      <li>Cuando llega cada invitado, recepción abre esa reserva, escribe sus datos y hace el <b>check-in</b> como cualquier reserva.</li>
+    </ol>
+    <div class="box">
+      <b>El hospedaje se cobra en la habitación, no en el evento</b>
+      Las noches de los invitados no suman al total del evento: se cobran en el folio de cada habitación al hacer el
+      check-out. Si el evento se cancela, las habitaciones apartadas que aún no tienen huésped quedan libres solas.
+    </div>
+
+    <h2>5. El día del evento</h2>
+    <div class="where"><span><b>Dónde:</b> Eventos → el evento</span><span><b>Quién:</b> recepción y gerencia</span></div>
+    <ul>
+      <li>
+        <span class="k">Orden de servicio (BEO)</span>: hoja para cocina y montaje con horario, salón, menú y cantidades,
+        extras, notas y alergias. Imprímela uno o dos días antes y entrégala a cocina.
+      </li>
+      <li>
+        <span class="k">Imprimir estado de cuenta</span>: muestra el total, cada pago registrado y el saldo. Úsalo para
+        cobrar la liquidación.
+      </li>
+      <li>El calendario y el Resumen muestran los eventos del día y del día siguiente.</li>
+    </ul>
+
+    <h2>6. Liquidar y cerrar el evento</h2>
+    <div class="where"><span><b>Dónde:</b> Eventos → el evento</span><span><b>Quién:</b> recepción y gerencia</span></div>
+
+    <h3>Lo normal: liquidar y luego marcar como realizado</h3>
+    <ol class="steps">
+      <li>Toca <span class="k">Registrar pago</span> → <span class="k">Saldo completo</span> → <span class="k">Continuar</span>.</li>
+      <li>Elige la forma de pago y toca <span class="k">Confirmar pago</span>. Sale el <b>comprobante del evento</b> con el detalle completo y los anticipos descontados. El saldo queda en <b>Q 0.00</b>.</li>
+      <li>Desde el día del evento aparece <span class="k">Marcar como realizado</span>. Tócalo. El evento pasa a <b>Realizado</b>.</li>
+    </ol>
+
+    <h3>Si el cliente paga después del evento</h3>
+    <p>
+      Si tocas <span class="k">Marcar como realizado</span> con saldo pendiente, el sistema pregunta primero:
+      <i>“Queda saldo por cobrar… Marcarlo como realizado no registra ningún pago”</i>. Si confirmas, el evento queda
+      realizado y en su detalle aparecen:
+    </p>
+    <ul>
+      <li>un aviso: <i>“El evento ya se realizó y falta cobrar Q …”</i>;</li>
+      <li>el botón <span class="k">Cobrar saldo · Q …</span>, que funciona igual que Registrar pago.</li>
+    </ul>
+    <p>Mientras falte cobrar, el Resumen de gerencia lo muestra en rojo: <i>“… ya se realizó y falta cobrar Q …”</i>.</p>
+
+    <div class="warn">
+      <b>Revisa el saldo antes de dar por cerrado un evento</b>
+      Un evento “Realizado” con saldo es dinero que todavía no entró a la caja. Si el cliente ya pagó y no se registró,
+      regístralo con <span class="k">Cobrar saldo</span> y la forma de pago real. Si pagó en efectivo otro día, cuenta
+      ese efectivo en el turno de hoy, porque el pago entra al turno abierto al registrarlo.
+    </div>
+
+    <h2>7. Cancelar un evento</h2>
+    <div class="where"><span><b>Dónde:</b> Eventos → el evento → Cancelar evento</span><span><b>Quién:</b> recepción y gerencia</span></div>
+    <ol class="steps">
+      <li>Toca <span class="k">Cancelar evento</span> y escribe el <b>motivo</b>.</li>
+      <li>
+        Si hubo anticipo, elige:
+        <ul>
+          <li><b>Retener el anticipo como penalidad</b>: el dinero se queda en el hotel y no sale nada de caja.</li>
+          <li><b>Devolver</b>: escribe el monto (todo o una parte) y la forma de devolución. Si es en efectivo, <b>sale de la caja</b> del turno abierto.</li>
+        </ul>
+      </li>
+      <li>Toca <span class="k">Cancelar evento</span>. El salón y las habitaciones apartadas quedan libres, y la cancelación queda en la bitácora.</li>
+    </ol>
+    <div class="box">
+      <b>¿El cliente cambió de fecha?</b>
+      No canceles: toca <span class="k">Editar</span> y cambia la fecha. Así el anticipo sigue en el mismo evento.
+    </div>
+
+    <h2>8. Los eventos en la caja</h2>
+    <p>Cada pago de un evento es un cobro más del turno de caja <b>en el que se registró</b>:</p>
+    <ul>
+      <li>En <b>Caja</b>, suma en “Cobros por forma de pago”. Si fue en efectivo, suma al efectivo esperado del arqueo.</li>
+      <li>En el <b>cierre de caja</b> y en <b>Reporte / RDP</b> aparece en “Cobros de eventos”, con su cantidad y monto.</li>
+      <li>En <b>Ventas</b> aparece como recibo (anticipo o abono) o comprobante del evento (liquidación).</li>
+    </ul>
+
+    <table>
+      <tr>
+        <th>Fecha</th>
+        <th>Qué se hizo</th>
+        <th>En qué cierre aparece</th>
+      </tr>
+      <tr>
+        <td>3 de noviembre</td>
+        <td>Anticipo Q 3,000 en efectivo</td>
+        <td>Cierre del 3 de noviembre (efectivo)</td>
+      </tr>
+      <tr>
+        <td>8 de noviembre</td>
+        <td>Liquidación Q 12,600 con tarjeta</td>
+        <td>Cierre del 8 de noviembre (tarjeta)</td>
+      </tr>
+      <tr>
+        <td>8 de noviembre</td>
+        <td>Confirmar o marcar como realizado</td>
+        <td>Ninguno: no es dinero</td>
+      </tr>
+    </table>
+
+    <div class="box">
+      <b>Me equivoqué al registrar un pago</b>
+      En <b>Ventas</b>, busca el recibo o comprobante y anúlalo (pide la autorización de gerencia y solo se puede con
+      cobros del turno abierto). El pago se quita del evento y el saldo vuelve a quedar pendiente; luego regístralo bien.
+    </div>
+
+    <h2 class="page-break">Dudas frecuentes</h2>
+    <div class="faq">
+      <b>Hicimos el evento pero no aparece en el cierre de caja.</b>
+      No se registró ningún pago. Confirmar o marcar como realizado no mueven dinero. Abre el evento: si tiene saldo,
+      toca <span class="k">Cobrar saldo</span> (o <span class="k">Registrar pago</span>) y regístralo con la forma de pago
+      real.
+    </div>
+    <div class="faq">
+      <b>El anticipo no aparece en el cierre del día del evento.</b>
+      Aparece en el cierre del día en que se cobró. Para ver varios días juntos, la administración general tiene el reporte
+      por fechas en Reporte / RDP.
+    </div>
+    <div class="faq">
+      <b>No veo el botón Registrar pago.</b>
+      Revisa tres cosas: que haya un turno de caja abierto, que el saldo no esté ya en Q 0.00, y que el evento no esté
+      cancelado.
+    </div>
+    <div class="faq">
+      <b>Marcar como realizado no aparece.</b>
+      Aparece a partir del día del evento y solo si está confirmado. Un evento cotizado primero se confirma.
+    </div>
+    <div class="faq">
+      <b>El salón sale sin costo y sí queríamos cobrarlo.</b>
+      El salón no se cobra cuando el menú cubre a todos los invitados. Si se pactó cobrarlo igual, agrégalo como un extra
+      con su monto (por ejemplo, “Renta del salón”).
+    </div>
+    <div class="faq">
+      <b>No puedo cambiar el precio de un salón o de un menú.</b>
+      Cambiar precios que ya existen es solo de la administración general (Configuración → Eventos). Para un precio
+      especial de un solo evento, ajusta la cantidad o agrega un extra con el monto pactado.
+    </div>
+    <div class="faq">
+      <b>¿Dónde veo cuánto deben todos los eventos?</b>
+      En la lista de Eventos (filtro <span class="k">Todos</span>), cada fila muestra el saldo. El Resumen de gerencia avisa
+      los eventos próximos con saldo y los realizados que falta cobrar.
+    </div>
+
+    <div class="colophon">POS Monarca · versión __VERSION__ · noviembre de 2026</div>
+  </body>
+</html>
