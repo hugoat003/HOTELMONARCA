@@ -11,6 +11,21 @@ export function isAvailable(reservations, roomN, checkIn, checkOut, ignoreId) {
   );
 }
 
+// Estancia ya cerrada (check-out hecho) que ocupó esa habitación en alguna de esas noches.
+// Crear otra encima casi siempre es un error: un check-out tocado por equivocación que luego se
+// "arregla" creando otra reserva y cobrándola de nuevo.
+export function closedStayOn(reservations, roomN, checkIn, checkOut, ignoreId) {
+  return (
+    reservations.find(
+      (r) =>
+        r.id !== ignoreId &&
+        r.roomN === roomN &&
+        r.status === 'salida' &&
+        overlaps(checkIn, checkOut, r.checkIn, r.checkOut),
+    ) || null
+  );
+}
+
 // Estado operativo de una habitación para el día indicado
 export function roomState(room, reservations, day) {
   const inHouse = reservations.find((r) => r.roomN === room.n && r.status === 'hospedado');

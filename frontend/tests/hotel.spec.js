@@ -67,3 +67,51 @@ test('calendario de reservas con muchas habitaciones: se desplaza y los días qu
   await expect(last).toBeInViewport();
   await expect(page.locator('.cal-head')).toBeInViewport();
 });
+
+test('crear otra reserva encima de una estancia con check-out hecho avisa y pide confirmar', async ({ page }) => {
+  await fresh(page);
+  await login(page, 'Luis Recepción');
+  // La 102 tuvo una estancia ya cerrada y cobrada que cubre estos días (como un check-out por error)
+  await patchState(page, (s) => {
+    const d = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+    s.reservations = s.reservations.filter((r) => r.roomN !== '102');
+    s.reservations.push({
+      id: 'r_cerrada',
+      roomN: '102',
+      guest: { name: 'Efraín Prueba', phone: '', email: '', doc: 'DPI 1', nationality: 'Guatemala' },
+      adults: 1,
+      children: 0,
+      checkIn: d(-1),
+      checkOut: d(1),
+      channel: 'Directo',
+      rateType: 'noche',
+      pricing: 'fija',
+      rate: 150,
+      status: 'salida',
+      checkedOutAt: Date.now(),
+      notes: '',
+      charges: [],
+      payments: [{ id: 'p1', ts: Date.now(), method: 'efectivo', amount: 150, desc: 'Hospedaje' }],
+      createdAt: Date.now(),
+    });
+  });
+  await nav(page, 'Reservas');
+  // Como en el hotel: + Nueva reserva, hoy, la misma habitación
+  await page.getByRole('button', { name: '+ Nueva reserva' }).click();
+  await page.getByLabel('Habitación').selectOption('102');
+  await page.getByPlaceholder('Nombre completo').fill('Efraín Prueba');
+  await expect(page.locator('.modal .note-box.warn')).toContainText('ya tuvo una estancia esa noche: Efraín Prueba');
+  await page.getByRole('button', { name: 'Guardar reserva' }).click();
+  // Pide confirmar; al volver, no se crea
+  await expect(page.locator('.modal', { hasText: '¿Otra estancia en la misma noche?' })).toBeVisible();
+  await page
+    .locator('.modal', { hasText: '¿Otra estancia en la misma noche?' })
+    .getByRole('button', { name: 'Cancelar' })
+    .click();
+  expect((await state(page)).reservations.filter((r) => r.roomN === '102')).toHaveLength(1);
+  // Si de verdad es otro huésped, se puede crear
+  await page.getByRole('button', { name: 'Guardar reserva' }).click();
+  await modalClick(page, 'Crear de todos modos');
+  await expect(page.getByText(/Reserva creada/)).toBeVisible();
+  expect((await state(page)).reservations.filter((r) => r.roomN === '102')).toHaveLength(2);
+});

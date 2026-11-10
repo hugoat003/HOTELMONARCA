@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import Modal, { Field } from '../../components/ui/Modal.jsx';
+import { useUI } from '../../components/ui/UIProvider.jsx';
 import { CHANNELS, RATE_TYPES } from '@shared/data.js';
-import { addDays, addMonths, fmtDate, nightsBetween, today, uid } from '@shared/dates.js';
-import { folio, groupText, guestStays, isAvailable, isFrequent } from '@shared/hotel.js';
+import { addDays, addMonths, dateOf, fmtDate, nightsBetween, today, uid } from '@shared/dates.js';
+import { closedStayOn, folio, groupText, guestStays, isAvailable, isFrequent } from '@shared/hotel.js';
 import { useStore } from '../../store/store.jsx';
 
 // mode: 'new' | 'edit' | 'checkin' (confirmar datos al llegar) | 'walkin' (llega sin reserva)
 // guest (opcional): ficha con la que se precarga una reserva nueva
 export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, onClose, onSave }) {
   const { state, fmt } = useStore();
+  const ui = useUI();
   const d0 = today();
   const typeOf = (n) => state.roomTypes.find((t) => t.id === state.rooms.find((r) => r.n === n)?.typeId);
   const typeRate = (n, rateType = 'noche') => (rateType === 'mensual' ? typeOf(n)?.monthlyRate : typeOf(n)?.rate) || 0;
@@ -101,6 +103,24 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
   else if ((mode === 'checkin' || mode === 'walkin') && !f.guest.doc.trim())
     problem = 'Falta el documento de identidad';
 
+  // ¿Esa habitación ya tuvo una estancia cerrada en esas noches? (posible check-out por error)
+  const closed =
+    !problem && (mode === 'new' || mode === 'walkin')
+      ? closedStayOn(state.reservations, f.roomN, f.checkIn, f.checkOut, f.id)
+      : null;
+  const closedText =
+    closed &&
+    `La ${closed.roomN} ya tuvo una estancia esa noche: ${closed.guest.name}, con check-out hecho` +
+      `${closed.checkedOutAt ? ` el ${fmtDate(dateOf(closed.checkedOutAt))}` : ''}` +
+      `${folio(closed, state).paid > 0 ? ` y ${fmt(folio(closed, state).paid)} cobrados` : ''}.`;
+  const save = () =>
+    onSave({
+      ...f,
+      block: stillBlock,
+      rate: Number(f.rate),
+      guest: { ...f.guest, name: f.guest.name.trim() },
+    });
+
   const title = {
     new: 'Nueva reserva',
     edit: 'Editar reserva',
@@ -128,12 +148,17 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
             className="btn btn-primary"
             disabled={!!problem}
             onClick={() =>
-              onSave({
-                ...f,
-                block: stillBlock,
-                rate: Number(f.rate),
-                guest: { ...f.guest, name: f.guest.name.trim() },
-              })
+              closed
+                ? ui.confirm(
+                    {
+                      title: '¿Otra estancia en la misma noche?',
+                      message: `${closedText} Si ese check-out fue por error, no crees otra reserva ni la cobres de nuevo: avisa a gerencia. ¿Es otro huésped y quieres crearla de todos modos?`,
+                      confirmLabel: 'Crear de todos modos',
+                      danger: true,
+                    },
+                    save,
+                  )
+                : save()
             }
           >
             {problem || cta}
@@ -141,6 +166,11 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
         </>
       }
     >
+      {closed && (
+        <div className="note-box warn" role="alert">
+          {closedText} Si fue un check-out por error, no la vuelvas a cobrar: avisa a gerencia.
+        </div>
+      )}
       <div className="form-grid">
         <Field label="Huésped" className="span-2">
           <input
