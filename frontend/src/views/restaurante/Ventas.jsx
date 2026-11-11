@@ -6,6 +6,7 @@ import { useUI } from '../../components/ui/UIProvider.jsx';
 import { isManager, isOwner, METHOD_LABELS } from '@shared/data.js';
 import { fmtDateTime, fmtTime, today } from '@shared/dates.js';
 import { exportXlsx } from '../../lib/excel.js';
+import { saleVoidBlock } from '@shared/hotel.js';
 import { sum } from '@shared/money.js';
 import { TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
@@ -51,14 +52,16 @@ function Cobros({ embedded = false }) {
     .sort((a, b) => b.ts - a.ts);
   const userName = (id) => state.users.find((u) => u.id === id)?.name || '—';
 
-  // Solo se anula lo cobrado en el turno abierto (el efectivo de turnos cerrados ya se entregó),
-  // y no un cargo a habitación que el huésped ya pagó al salir
-  const voidBlock = (s) => {
-    if (s.shiftId !== state.shift?.id) return 'Solo se anulan cobros del turno abierto';
-    const room = s.payments.find((p) => p.method === 'habitacion');
-    const r = room && state.reservations.find((x) => x.id === room.resId);
-    if (r && r.status !== 'hospedado') return `${r.guest.name} ya pagó este cargo en su check-out`;
-    return '';
+  // Las reglas son las mismas que revisa el servidor (turno abierto, estancia no cerrada)
+  const voidBlock = (s) => saleVoidBlock(state, s);
+  // A qué reserva o evento se le quita el pago al anular
+  const voidTarget = (s) => {
+    const r = state.reservations.find(
+      (x) => x.charges.some((c) => c.saleId === s.id) || x.payments?.some((p) => p.saleId === s.id),
+    );
+    if (r) return `la Hab. ${r.roomN} (${r.guest.name})`;
+    const ev = state.events.find((e) => e.payments?.some((p) => p.saleId === s.id));
+    return ev ? `el evento ${ev.name}` : '';
   };
 
   const doVoid = () => {
@@ -146,7 +149,7 @@ function Cobros({ embedded = false }) {
               >
                 Ver
               </button>
-              {s.status === 'ok' && (s.kind === 'restaurante' || s.kind === 'tienda') && (
+              {s.status === 'ok' && (
                 <button
                   className="link danger"
                   onClick={() => (voidBlock(s) ? ui.notify(voidBlock(s)) : setVoiding(s))}
@@ -197,8 +200,10 @@ function Cobros({ embedded = false }) {
         >
           <div className="note-box">
             El comprobante queda marcado como anulado y sale de los totales del turno.
-            {voiding.payments.some((p) => p.method === 'habitacion') &&
-              ' El cargo a la habitación también se elimina del folio.'}
+            {voiding.payments.some((p) => p.method === 'habitacion')
+              ? ' El cargo a la habitación también se elimina del folio.'
+              : voidTarget(voiding) &&
+                ` El pago se quita de ${voidTarget(voiding)}: ese saldo vuelve a quedar pendiente de cobro.`}
             {voiding.kind === 'tienda' && ' Los productos regresan a la existencia de la tienda.'}
           </div>
           <Field label="Motivo">

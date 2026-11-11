@@ -152,7 +152,7 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
                 ? ui.confirm(
                     {
                       title: '¿Otra estancia en la misma noche?',
-                      message: `${closedText} Si ese check-out fue por error, no crees otra reserva ni la cobres de nuevo: avisa a gerencia. ¿Es otro huésped y quieres crearla de todos modos?`,
+                      message: `${closedText} Si ese check-out fue por error, no crees otra reserva ni la cobres de nuevo: abre esa estancia y usa «Deshacer check-out». ¿Es otro huésped y quieres crearla de todos modos?`,
                       confirmLabel: 'Crear de todos modos',
                       danger: true,
                     },
@@ -168,7 +168,8 @@ export default function ReservaForm({ mode = 'new', res, roomN, checkIn, guest, 
     >
       {closed && (
         <div className="note-box warn" role="alert">
-          {closedText} Si fue un check-out por error, no la vuelvas a cobrar: avisa a gerencia.
+          {closedText} Si fue un check-out por error, no la vuelvas a cobrar: abre esa estancia y usa «Deshacer
+          check-out».
         </div>
       )}
       <div className="form-grid">

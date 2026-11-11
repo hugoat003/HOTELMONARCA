@@ -26,6 +26,43 @@ export function closedStayOn(reservations, roomN, checkIn, checkOut, ignoreId) {
   );
 }
 
+// ¿Se puede deshacer el check-out de esta estancia? Devuelve el motivo si no ('' si sí).
+// Solo mientras la estancia no haya terminado (hasta su fecha de salida original) y nadie más
+// ocupe o tenga reservada la habitación en las noches que faltan.
+export function undoCheckOutBlock(reservations, res, d0) {
+  if (res.status !== 'salida') return 'Esa estancia no tiene check-out';
+  const until = undoCheckOutUntil(res);
+  if (until < d0) return 'La estancia ya terminó: su check-out no se puede deshacer';
+  const other = reservations.find(
+    (x) =>
+      x.id !== res.id &&
+      x.roomN === res.roomN &&
+      (x.status === 'hospedado' || (x.status === 'reservada' && overlaps(d0, until, x.checkIn, x.checkOut))),
+  );
+  if (other)
+    return `La habitación ${res.roomN} ya ${other.status === 'hospedado' ? 'tiene hospedado a' : 'está reservada para'} ${other.guest.name}`;
+  return '';
+}
+// Fecha de salida que recupera la estancia al deshacer el check-out (la original si se fue antes)
+export const undoCheckOutUntil = (res) =>
+  res.plannedCheckOut && res.plannedCheckOut > res.checkOut ? res.plannedCheckOut : res.checkOut;
+
+// ¿Se puede anular este cobro? Devuelve el motivo si no ('' si sí). Solo se anula lo cobrado en
+// el turno abierto (el efectivo de turnos cerrados ya se entregó) y no lo de una estancia o
+// reserva ya cerrada: su saldo quedaría pendiente sin que nadie lo cobre.
+export function saleVoidBlock(state, sale) {
+  if (sale.status === 'anulada') return `El comprobante #${sale.number} ya está anulado`;
+  if (!state.shift || sale.shiftId !== state.shift.id) return 'Solo se anulan cobros del turno abierto';
+  const r = state.reservations.find(
+    (x) => x.charges.some((c) => c.saleId === sale.id) || x.payments?.some((p) => p.saleId === sale.id),
+  );
+  if (r?.status === 'salida')
+    return `${r.guest.name} (Hab. ${r.roomN}) ya hizo check-out. Si fue por error, primero deshaz el check-out desde su reserva.`;
+  if (r && r.status !== 'hospedado' && r.status !== 'reservada')
+    return `La reserva de ${r.guest.name} (Hab. ${r.roomN}) ya está cerrada`;
+  return '';
+}
+
 // Estado operativo de una habitación para el día indicado
 export function roomState(room, reservations, day) {
   const inHouse = reservations.find((r) => r.roomN === room.n && r.status === 'hospedado');

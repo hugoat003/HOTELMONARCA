@@ -3,7 +3,7 @@ import Modal, { Field } from '../../components/ui/Modal.jsx';
 import { useUI } from '../../components/ui/UIProvider.jsx';
 import { EXTRA_CHARGES, METHOD_LABELS, RES_STATUS } from '@shared/data.js';
 import { fmtDate, fmtTime, nightsBetween, today, uid } from '@shared/dates.js';
-import { folio as calcFolio, groupText } from '@shared/hotel.js';
+import { folio as calcFolio, groupText, undoCheckOutBlock, undoCheckOutUntil } from '@shared/hotel.js';
 import { refundSale } from '@shared/sales.js';
 import { FolioDoc, TicketDoc } from '../../print/Docs.jsx';
 import { A } from '../../store/actions.js';
@@ -135,6 +135,24 @@ export default function ReservaPanel({ res, onRoomChanged }) {
         () => setCheckout({ early: true }),
       );
     } else setCheckout({ early: false });
+  };
+
+  // Check-out tocado por error: la estancia vuelve a hospedada con lo que ya pagó (no se cobra otra vez)
+  const undoCheckOut = () => {
+    const block = undoCheckOutBlock(state.reservations, res, d0);
+    if (block) return ui.notify(block);
+    ui.confirm(
+      {
+        title: '¿Deshacer el check-out?',
+        message: `${res.guest.name} vuelve a estar hospedado en la ${res.roomN} hasta el ${fmtDate(undoCheckOutUntil(res))}, con sus pagos tal como están. No se cobra nada de nuevo.`,
+        confirmLabel: 'Deshacer check-out',
+      },
+      () =>
+        ui.authorize('Deshacer un check-out', (mgr) => {
+          update((d) => A.undoCheckOut(d, res.id, { authId: mgr.id }));
+          ui.notify(`${res.guest.name} vuelve a estar hospedado en la ${res.roomN}`);
+        }),
+    );
   };
 
   // Otro huésped sigue en la habitación (salida tardía): no se puede registrar la llegada
@@ -359,6 +377,11 @@ export default function ReservaPanel({ res, onRoomChanged }) {
         </>
       )}
 
+      {res.status === 'salida' && undoCheckOutUntil(res) >= d0 && (
+        <button className="btn" onClick={undoCheckOut}>
+          Deshacer check-out
+        </button>
+      )}
       {(res.status === 'salida' || res.status === 'cancelada') && (
         <button
           className="btn btn-quiet"

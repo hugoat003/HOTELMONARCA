@@ -54,6 +54,7 @@ export const AUDIT_TYPES = {
   devolucion: 'Devolución',
   cancelacion: 'Cancelación',
   cargo: 'Cargo quitado',
+  checkout: 'Check-out deshecho',
   inventario: 'Inventario',
   precio: 'Cambio de precio',
   catalogo: 'Producto eliminado',

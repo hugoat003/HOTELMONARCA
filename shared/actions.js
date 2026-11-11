@@ -1,6 +1,6 @@
 // Recetas para store.update(d => A.algo(d, ...)). Modifican el borrador directamente.
 import { addDays, today, uid } from './dates.js';
-import { isAvailable } from './hotel.js';
+import { isAvailable, saleVoidBlock, undoCheckOutBlock, undoCheckOutUntil } from './hotel.js';
 import { isHeldOnSend, orderLabel, sameLine, unitPrice } from './orders.js';
 import { placed } from './tablemap.js';
 import { COURSES } from './data.js';
@@ -25,7 +25,8 @@ const need = (arr, id, what, key = 'id') => byId(arr, id, key) || fail(`${what} 
 // (el servidor), así dos cajas cobrando al mismo tiempo nunca repiten número.
 function pushSale(d, sale) {
   if (!d.shift) fail('La caja está cerrada. Abre la caja para cobrar.');
-  const s = { ...sale, number: d.counters.doc + 1 };
+  // Siempre al turno abierto en el servidor, aunque la pantalla que cobró tuviera uno ya cerrado
+  const s = { ...sale, shiftId: d.shift.id, number: d.counters.doc + 1 };
   d.counters.doc = s.number;
   d.sales.push(s);
   return s;
@@ -364,6 +365,8 @@ export const A = {
   },
   voidSale(d, saleId, { reason, authId }) {
     const s = need(d.sales, saleId, 'La venta');
+    const block = saleVoidBlock(d, s);
+    if (block) fail(block);
     s.status = 'anulada';
     s.voidReason = reason;
     s.voidedAt = Date.now();
@@ -547,7 +550,12 @@ export const A = {
   // Check-out con su cobro final (sale puede ser null si la cuenta ya está saldada).
   // checkOut: nueva fecha de salida si se va antes. refund: venta de devolución del saldo a favor.
   checkOutWith(d, resId, sale, { checkOut, refund } = {}) {
-    if (checkOut) need(d.reservations, resId, 'La reserva').checkOut = checkOut;
+    if (checkOut) {
+      const r = need(d.reservations, resId, 'La reserva');
+      // Se guarda la salida original por si el check-out fue por error y hay que deshacerlo
+      if (checkOut !== r.checkOut) r.plannedCheckOut = r.checkOut;
+      r.checkOut = checkOut;
+    }
     if (sale) A.addFolioPayment(d, resId, sale);
     if (refund) {
       A.addFolioPayment(d, resId, refund);
@@ -560,6 +568,23 @@ export const A = {
       });
     }
     A.checkOut(d, resId);
+  },
+  // Check-out hecho por error: la estancia vuelve a "hospedado" con su folio y pagos intactos,
+  // así no se crea otra reserva ni se cobra dos veces. Pide autorización de gerencia.
+  undoCheckOut(d, resId, { authId } = {}) {
+    const r = need(d.reservations, resId, 'La reserva');
+    const block = undoCheckOutBlock(d.reservations, r, today());
+    if (block) fail(block);
+    r.checkOut = undoCheckOutUntil(r);
+    r.status = 'hospedado';
+    delete r.checkedOutAt;
+    delete r.checkedOutOn;
+    delete r.plannedCheckOut;
+    audit(d, 'checkout', {
+      ref: `Hab. ${r.roomN} · ${r.guest.name}`,
+      detail: 'Check-out deshecho: la estancia vuelve a estar hospedada',
+      authId,
+    });
   },
   setHk(d, roomN, hk) {
     byId(d.rooms, roomN, 'n').hk = hk;

@@ -34,6 +34,7 @@ const RECEPCION = [
   'closeReservation',
   'checkInWith',
   'checkIn',
+  'undoCheckOut',
   'cancelReservation',
   'addCharge',
   'removeCharge',
@@ -112,6 +113,7 @@ export function needsManager(state, { name, args }) {
     case 'remove':
       return true; // recepción solo llega aquí con inventario o tienda
     case 'voidSale':
+    case 'undoCheckOut':
     case 'removeCharge':
     case 'closeShift':
       return true;

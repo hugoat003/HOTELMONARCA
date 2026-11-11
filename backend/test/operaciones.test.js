@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, describe, test } from 'node:test';
 import { act, call, login, restaurantSale, start, state } from './helpers.js';
+import { addDays, today } from '../../shared/dates.js';
 
 describe('cobros y concurrencia', () => {
   let app, juan, ana, recep, mgr;
@@ -228,5 +229,94 @@ describe('cobros y concurrencia', () => {
     assert.equal((await act(app, recep, ['addFolioPayment', res.id, resSale])).status, 200);
     assert.equal((await act(app, mgr, ['voidSale', resSale.id, { reason: 'duplicado', authId: 'u1' }])).status, 200);
     assert.equal(st().reservations.find((r) => r.id === res.id).payments.length, before);
+  });
+  test('no se anula un cobro de un turno cerrado ni uno ya anulado', async () => {
+    const st = state(app);
+    const old = st.sales.find((s) => s.status === 'ok' && s.shiftId !== st.shift.id);
+    const r = await act(app, mgr, ['voidSale', old.id, { reason: 'prueba', authId: 'u1' }]);
+    assert.equal(r.status, 409);
+    assert.match(r.body.error, /turno abierto/);
+    const done = state(app).sales.find((s) => s.status === 'anulada');
+    const again = await act(app, mgr, ['voidSale', done.id, { reason: 'otra vez', authId: 'u1' }]);
+    assert.equal(again.status, 409);
+    assert.match(again.body.error, /ya está anulado/);
+  });
+
+  test('deshacer un check-out por error: vuelve a hospedado con sus pagos, sin cobrar de nuevo', async () => {
+    const st = () => state(app);
+    const d0 = today();
+    const res = st().reservations.find((r) => r.status === 'hospedado' && r.checkOut > d0);
+    const planned = res.checkOut;
+    // Abono del huésped y luego check-out anticipado por error
+    const sale = {
+      id: 's_' + randomUUID().slice(0, 8),
+      number: st().counters.doc + 1,
+      kind: 'hotel',
+      ts: Date.now(),
+      ref: 'Hab. ' + res.roomN,
+      resId: res.id,
+      cashierId: 'u2',
+      lines: [{ name: 'Abono a cuenta', qty: 1, price: 150 }],
+      total: 150,
+      grand: 150,
+      tip: 0,
+      payments: [{ method: 'efectivo', amount: 150 }],
+    };
+    assert.equal((await act(app, recep, ['addFolioPayment', res.id, sale])).status, 200);
+    assert.equal(st().sales.find((s) => s.id === sale.id).shiftId, st().shift.id);
+    assert.equal((await act(app, recep, ['checkOutWith', res.id, null, { checkOut: d0 }])).status, 200);
+    const out = st().reservations.find((r) => r.id === res.id);
+    assert.equal(out.status, 'salida');
+    assert.equal(out.plannedCheckOut, planned);
+    const paid = out.payments.length;
+
+    // Con la estancia cerrada no se anula su cobro (el saldo quedaría sin cobrar)
+    const v = await act(app, mgr, ['voidSale', sale.id, { reason: 'prueba', authId: 'u1' }]);
+    assert.equal(v.status, 409);
+    assert.match(v.body.error, /deshaz el check-out/);
+
+    // Recepción necesita autorización de gerencia
+    assert.equal((await act(app, recep, ['undoCheckOut', res.id, {}])).status, 403);
+    await call(app, 'POST', '/api/authorize', { token: recep, body: { password: 'gerencia2026' } });
+    assert.equal((await act(app, recep, ['undoCheckOut', res.id, { authId: 'u1' }])).status, 200);
+    const back = st().reservations.find((r) => r.id === res.id);
+    assert.equal(back.status, 'hospedado');
+    assert.equal(back.checkOut, planned);
+    assert.equal(back.payments.length, paid);
+    assert.equal(back.checkedOutAt, undefined);
+    const log = st().audit.at(-1);
+    assert.equal(log.type, 'checkout');
+    assert.equal(log.authId, 'u1');
+
+    // Ya hospedado otra vez, el cobro sí se puede anular
+    assert.equal((await act(app, mgr, ['voidSale', sale.id, { reason: 'duplicado', authId: 'u1' }])).status, 200);
+  });
+
+  test('no se deshace el check-out si la estancia ya terminó o si otro huésped ocupa la habitación', async () => {
+    const st = () => state(app);
+    const d0 = today();
+    const ended = st().reservations.find((r) => r.status === 'salida' && r.checkOut < d0);
+    const r1 = await act(app, mgr, ['undoCheckOut', ended.id, { authId: 'u1' }]);
+    assert.equal(r1.status, 409);
+    assert.match(r1.body.error, /ya terminó/);
+
+    // Otro huésped ya entró a la habitación
+    const res = st().reservations.find((r) => r.status === 'hospedado' && r.checkOut > d0);
+    assert.equal((await act(app, mgr, ['checkOutWith', res.id, null, { checkOut: d0 }])).status, 200);
+    const next = {
+      ...res,
+      id: 'r_' + randomUUID().slice(0, 8),
+      status: 'hospedado',
+      checkIn: d0,
+      checkOut: addDays(d0, 1),
+      payments: [],
+      charges: [],
+      guest: { ...res.guest, name: 'Otra Persona' },
+    };
+    delete next.plannedCheckOut;
+    assert.equal((await act(app, mgr, ['saveReservation', next])).status, 200);
+    const r2 = await act(app, mgr, ['undoCheckOut', res.id, { authId: 'u1' }]);
+    assert.equal(r2.status, 409);
+    assert.match(r2.body.error, /Otra Persona/);
   });
 });
