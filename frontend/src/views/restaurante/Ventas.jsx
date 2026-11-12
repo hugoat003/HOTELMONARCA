@@ -35,9 +35,10 @@ export default function Ventas() {
 }
 
 function Cobros({ embedded = false }) {
-  const { state, user, fmt, update } = useStore();
+  const { state, user, fmt, update, print } = useStore();
   const ui = useUI();
   const [scope, setScope] = usePersisted('ventas.alcance', 'turno');
+  const [search, setSearch] = useState('');
   // El mesero solo ve las cuentas que atendió; recepción y gerencia ven todo
   const mine = user.role === 'mesero';
   const [voiding, setVoiding] = useState(null);
@@ -46,6 +47,9 @@ function Cobros({ embedded = false }) {
   const sales = state.sales
     .filter((s) => (scope === 'todas' || s.shiftId === state.shift?.id) && (!mine || s.waiterId === user.id))
     .sort((a, b) => b.ts - a.ts);
+  // Buscar por número de ticket o por cuenta (mesa, habitación, huésped)
+  const q = search.trim().toLowerCase().replace(/^#/, '');
+  const shown = q ? sales.filter((s) => String(s.number) === q || (s.ref || '').toLowerCase().includes(q)) : sales;
   const ok = sales.filter((s) => s.status === 'ok');
   const voids = state.voids
     .filter((v) => (scope === 'todas' || v.shiftId === state.shift?.id) && (!mine || v.userId === user.id))
@@ -63,6 +67,26 @@ function Cobros({ embedded = false }) {
     const ev = state.events.find((e) => e.payments?.some((p) => p.saleId === s.id));
     return ev ? `el evento ${ev.name}` : '';
   };
+
+  // Reimprimir: va directo a la impresora de tickets de caja (sin el diálogo del navegador)
+  const reprint = (s) =>
+    ui.confirm(
+      {
+        title: `¿Seguro que quieres reimprimir el ticket #${s.number}?`,
+        message: `${s.ref} · ${fmt(s.grand)}. Sale una copia en la impresora de caja.`,
+        confirmLabel: 'Sí, reimprimir',
+      },
+      async () => {
+        const r = await print('ticket', s.id);
+        ui.notify(
+          !r.ok
+            ? r.error
+            : r.mode === 'simulada'
+              ? 'Guardado en la lista de tickets (impresora simulada)'
+              : `Ticket #${s.number} enviado a la impresora de ${r.printer}`,
+        );
+      },
+    );
 
   const doVoid = () => {
     const s = voiding;
@@ -85,6 +109,13 @@ function Cobros({ embedded = false }) {
             Todas
           </button>
         </div>
+        <input
+          className="input search"
+          style={{ width: 240 }}
+          placeholder="Buscar ticket # o cuenta"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <div className="header-stats">
           <span className="pill">{ok.length} cobros</span>
           <span className="pill">Total {fmt(sum(ok, (s) => s.grand))}</span>
@@ -122,7 +153,7 @@ function Cobros({ embedded = false }) {
       {scope === 'turno' && !state.shift && <div className="note-box">No hay un turno de caja abierto.</div>}
 
       <DataTable variant="sales" columns={['No.', 'Hora', 'Cuenta', 'Forma de pago', 'Cajero', 'Total', '']}>
-        {sales.map((s) => (
+        {shown.map((s) => (
           <div key={s.id} className={'tx-row sales' + (s.status === 'anulada' ? ' voided' : '')}>
             <span className="panel-sub">#{s.number}</span>
             <span className="panel-sub">{scope === 'todas' ? fmtDateTime(s.ts) : fmtTime(s.ts)}</span>
@@ -150,6 +181,11 @@ function Cobros({ embedded = false }) {
                 Ver
               </button>
               {s.status === 'ok' && (
+                <button className="link" onClick={() => reprint(s)}>
+                  Reimprimir
+                </button>
+              )}
+              {s.status === 'ok' && (
                 <button
                   className="link danger"
                   onClick={() => (voidBlock(s) ? ui.notify(voidBlock(s)) : setVoiding(s))}
@@ -161,7 +197,9 @@ function Cobros({ embedded = false }) {
             </span>
           </div>
         ))}
-        {!sales.length && <div className="panel-sub pad-12">Sin cobros todavía.</div>}
+        {!shown.length && (
+          <div className="panel-sub pad-12">{q ? 'Ningún cobro coincide con la búsqueda.' : 'Sin cobros todavía.'}</div>
+        )}
       </DataTable>
 
       {voids.length > 0 && (

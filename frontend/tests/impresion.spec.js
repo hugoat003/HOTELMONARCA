@@ -1,5 +1,5 @@
 import net from 'node:net';
-import { expect, fresh, login, modalClick, nav, payAll, pickMethod, test } from './helpers.js';
+import { expect, fresh, login, modalClick, nav, payAll, pickMethod, state, test } from './helpers.js';
 
 // Impresora falsa en la red (como la 3nstar RPT004 en el puerto 9100): guarda lo que recibe
 async function fakePrinter(port = 0) {
@@ -119,4 +119,36 @@ test('el mesero no ve la configuración de impresoras', async ({ page }) => {
   await fresh(page);
   await login(page, 'Juan');
   await expect(page.locator('.nav').getByRole('button', { name: 'Configuración' })).toHaveCount(0);
+});
+
+test('reimprimir un ticket desde Ventas: pide confirmar y va directo a la impresora, sin el navegador', async ({
+  page,
+}) => {
+  await fresh(page);
+  await login(page, 'Luis Recepción');
+  await page.evaluate(() => {
+    window.print = () => (window.__browserPrint = true);
+  });
+  const s = await state(page);
+  const sale = s.sales.find((x) => x.status === 'ok' && x.shiftId === s.shift.id);
+  await nav(page, 'Ventas');
+  await page.getByPlaceholder('Buscar ticket # o cuenta').fill('#' + sale.number);
+  // Solo queda ese ticket (la otra fila es el encabezado de la tabla)
+  const rows = page.locator('.tx-row.sales', { has: page.getByRole('button', { name: 'Reimprimir' }) });
+  await expect(rows).toHaveCount(1);
+  await expect(rows).toContainText('#' + sale.number);
+  await rows.getByRole('button', { name: 'Reimprimir' }).click();
+  const ask = page.locator('.modal', { hasText: `¿Seguro que quieres reimprimir el ticket #${sale.number}?` });
+  await expect(ask).toBeVisible();
+  // Si se arrepiente, no imprime nada
+  await ask.getByRole('button', { name: 'Cancelar' }).click();
+  await rows.getByRole('button', { name: 'Reimprimir' }).click();
+  await modalClick(page, 'Sí, reimprimir');
+  await expect(page.getByText('Guardado en la lista de tickets (impresora simulada)')).toBeVisible();
+  expect(await page.evaluate(() => window.__browserPrint || false)).toBe(false);
+
+  await login(page, 'Marta Gerente');
+  await nav(page, 'Configuración');
+  await page.locator('.tabs').getByRole('button', { name: 'Impresoras' }).click();
+  await expect(page.locator('.tx-row.print-jobs', { hasText: 'Copia' })).toHaveCount(1);
 });

@@ -1,7 +1,7 @@
 /* Tablas */
 
 .tx-row.sales {
-  grid-template-columns: 60px 110px 1.3fr 1.3fr 1fr 110px 110px;
+  grid-template-columns: 60px 110px 1.3fr 1.3fr 1fr 110px 220px;
   align-items: center;
 }
 .tx-row.voids {
